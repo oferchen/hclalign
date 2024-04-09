@@ -35,4 +35,3 @@ func RunE(cmd *cobra.Command, args []string) error {
 	// Process target dynamically
 	return config.ProcessTargetDynamically(target, criteria, order)
 }
-

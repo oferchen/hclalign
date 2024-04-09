@@ -56,4 +56,3 @@ func sortAttributes(attributes map[string]*hclwrite.Attribute, order []string) [
 
 	return sortedKeys
 }
-

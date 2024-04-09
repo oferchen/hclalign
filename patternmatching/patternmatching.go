@@ -4,10 +4,10 @@
 package patternmatching
 
 import (
+	"log"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"log"
 )
 
 // CompilePatterns compiles glob patterns into regular expressions for file matching.
@@ -55,15 +55,14 @@ func IsValidCriteria(criteria []string) bool {
 	validPattern := regexp.MustCompile(`^(\*|[a-zA-Z0-9_-]+)(\.[a-zA-Z0-9]+)?(/)?$`)
 
 	for _, criterion := range criteria {
-			if criterion == "" {
-					log.Printf("Invalid criterion found: Criterion is empty")
-					return false
-			}
-			if !validPattern.MatchString(criterion) {
-					log.Printf("Invalid criterion found: %s", criterion)
-					return false
-			}
+		if criterion == "" {
+			log.Printf("Invalid criterion found: Criterion is empty")
+			return false
+		}
+		if !validPattern.MatchString(criterion) {
+			log.Printf("Invalid criterion found: %s", criterion)
+			return false
+		}
 	}
 	return true
 }
-

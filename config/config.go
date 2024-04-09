@@ -54,4 +54,3 @@ func ProcessTargetDynamically(target string, criteria []string, order []string) 
 	// Further processing logic to be implemented in fileprocessing.ProcessFiles
 	return fileprocessing.ProcessFiles(target, criteria, order)
 }
-
