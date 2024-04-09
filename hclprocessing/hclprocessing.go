@@ -4,8 +4,9 @@
 package hclprocessing
 
 import (
-	"github.com/hashicorp/hcl/v2/hclwrite"
 	"sort"
+
+	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
 // ReorderAttributes reorders the attributes of the given HCL file according to the specified order.
@@ -34,24 +35,29 @@ func reorderBlockAttributes(block *hclwrite.Block, order []string) {
 }
 
 // sortAttributes sorts the attributes based on the specified order.
+// This version improves on handling attributes not explicitly mentioned in the order.
 func sortAttributes(attributes map[string]*hclwrite.Attribute, order []string) []string {
-	var sortedKeys []string
-	orderIndex := make(map[string]int)
+	orderMap := make(map[string]int)
+	for i, attrName := range order {
+		orderMap[attrName] = i
+	}
 
-	for _, attr := range order {
-		orderIndex[attr] = len(sortedKeys)
+	var sortedKeys []string
+	for attr := range attributes {
 		sortedKeys = append(sortedKeys, attr)
 	}
 
-	for attr := range attributes {
-		if _, exists := orderIndex[attr]; !exists {
-			orderIndex[attr] = len(sortedKeys)
-			sortedKeys = append(sortedKeys, attr)
-		}
-	}
+	sort.Slice(sortedKeys, func(i, j int) bool {
+		indexI, foundI := orderMap[sortedKeys[i]]
+		indexJ, foundJ := orderMap[sortedKeys[j]]
 
-	sort.SliceStable(sortedKeys, func(i, j int) bool {
-		return orderIndex[sortedKeys[i]] < orderIndex[sortedKeys[j]]
+		if foundI && foundJ {
+			return indexI < indexJ // Both are in order, sort by order index
+		}
+		if foundI || foundJ {
+			return foundI // If only one is found, it comes first
+		}
+		return sortedKeys[i] < sortedKeys[j] // Neither in order, sort alphabetically
 	})
 
 	return sortedKeys
