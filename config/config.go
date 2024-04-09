@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/oferchen/hclalign/fileprocessing"
 	"github.com/oferchen/hclalign/patternmatching"
+	"strings"
 )
 
 // Config stores configuration for processing HCL files.
