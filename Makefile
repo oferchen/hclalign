@@ -29,6 +29,7 @@ clean:
 	@echo "Cleaning up..."
 	go clean
 	rm -f ${BINARY_NAME}
+	rm -f go.mod go.sum
 
 init:
 	@echo "Initializing Go module..."
