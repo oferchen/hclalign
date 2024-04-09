@@ -5,9 +5,11 @@ package config
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/oferchen/hclalign/cli"
 	"github.com/oferchen/hclalign/fileprocessing"
 	"github.com/oferchen/hclalign/patternmatching"
-	"strings"
 )
 
 // Config stores configuration for processing HCL files.
@@ -17,28 +19,33 @@ type Config struct {
 	Order    []string
 }
 
-// IsValidOrder checks if the provided order is valid.
-func IsValidOrder(order []string) bool {
-	defaultOrder := []string{"description", "type", "default", "sensitive", "nullable", "validation"}
+// IsValidOrder checks if the provided order is valid, returning an error with specific feedback if not.
+func IsValidOrder(order []string) (bool, error) {
+	defaultOrder := cli.DefaultOrder
 	providedSet := make(map[string]struct{})
+
 	for _, item := range order {
 		if _, exists := providedSet[item]; exists {
-			return false // Duplicate item found, invalid order
+			// Duplicate item found, invalid order
+			return false, fmt.Errorf("duplicate attribute '%s' found in order", item)
 		}
 		providedSet[item] = struct{}{}
 	}
 
 	if len(providedSet) != len(defaultOrder) {
-		return false // Ensures the provided order has the exact number of items as the default order
+		// Provided order doesn't match the default order's length
+		return false, fmt.Errorf("provided order length %d doesn't match expected %d", len(providedSet), len(defaultOrder))
 	}
 
 	for _, item := range defaultOrder {
 		if _, exists := providedSet[item]; !exists {
-			return false // An item from defaultOrder is not in the provided order, invalid order
+			// An item from the defaultOrder is not in the provided order
+			return false, fmt.Errorf("missing expected attribute '%s' in provided order", item)
 		}
 	}
 
-	return true // All checks passed, valid order
+	// All checks passed, valid order
+	return true, nil
 }
 
 // ProcessTargetDynamically processes files in the target directory based on criteria and order.
