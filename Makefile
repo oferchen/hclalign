@@ -1,6 +1,7 @@
 # Makefile for the HCL Align project.
 
 BINARY_NAME=hclalign
+MODULE_NAME=hclalign
 
 all: build
 
@@ -29,6 +30,10 @@ clean:
 	go clean
 	rm -f ${BINARY_NAME}
 
+init:
+	@echo "Initializing Go module..."
+	go mod init ${MODULE_NAME}
+
 help:
 	@echo "Makefile commands:"
 	@echo "all    - Compiles the project."
@@ -38,5 +43,6 @@ help:
 	@echo "tidy   - Tidies and verifies the module dependencies."
 	@echo "test   - Runs all the tests."
 	@echo "clean  - Cleans up the project."
+	@echo "init   - Initializes a new Go module."
 	@echo "help   - Prints this help message."
 
