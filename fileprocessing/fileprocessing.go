@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/oferchen/hclalign/hclprocessing"
 	"github.com/oferchen/hclalign/patternmatching"
@@ -70,7 +71,7 @@ func processSingleFile(filePath string, order []string) error {
 		return fmt.Errorf("error reading file %s: %w", filePath, err)
 	}
 
-	file, diags := hclwrite.ParseConfig(fileContent, filePath, hclwrite.Pos{Line: 1, Column: 1})
+	file, diags := hclwrite.ParseConfig(fileContent, filePath, hcl.InitialPos)
 	if diags.HasErrors() {
 		return fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
