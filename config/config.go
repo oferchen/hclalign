@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/oferchen/hclalign/fileprocessing"
 	"github.com/oferchen/hclalign/patternmatching"
-	"os"
 	"strings"
 )
 
