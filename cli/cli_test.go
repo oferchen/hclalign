@@ -12,7 +12,7 @@ import (
 
 func setupTestCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "testcli",
+		Use:  "testcli",
 		RunE: cli.RunE,
 	}
 	cmd.Flags().StringSlice("criteria", cli.DefaultCriteria, "Set the criteria")
