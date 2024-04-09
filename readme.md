@@ -1,6 +1,6 @@
 # hclalign
 
-`hclalign` is a Command Line Interface (CLI) application designed to organize and align HCL (HashiCorp Configuration Language) files. This tool is invaluable for projects utilizing HCL, including Terraform configurations, by improving readability and ensuring consistency across your codebase.
+`hclalign` is a Command Line Interface (CLI) application designed to organize and align HCL (HashiCorp Configuration Language) files.
 
 ## Features
 
