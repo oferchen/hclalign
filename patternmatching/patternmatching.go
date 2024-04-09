@@ -43,3 +43,18 @@ func translateGlobToRegex(glob string) string {
 	return "^" + regex + "$"
 }
 
+func IsValidCriteria(criteria string) bool {
+	criteriaList := strings.Split(criteria, ",")
+
+	for _, crit := range criteriaList {
+		crit = strings.TrimSpace(crit)
+
+		// Check if the criteria is empty after trimming spaces
+		if crit == "" {
+			return false
+		}
+
+	}
+
+	return true
+}
