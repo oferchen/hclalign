@@ -43,6 +43,7 @@ func translateGlobToRegex(glob string) string {
 	return "^" + regex + "$"
 }
 
+// IsValidCriteria checks if the criteria string is a valid glob pattern.
 func IsValidCriteria(criteria string) bool {
 	criteriaList := strings.Split(criteria, ",")
 
