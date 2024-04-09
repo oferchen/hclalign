@@ -4,6 +4,7 @@
 package patternmatching
 
 import (
+	"fmt"
 	"log"
 	"path/filepath"
 	"regexp"
@@ -14,14 +15,42 @@ import (
 func CompilePatterns(criteria []string) ([]*regexp.Regexp, error) {
 	var compiledPatterns []*regexp.Regexp
 	for _, globPattern := range criteria {
+		// Validate the glob pattern before translation to avoid known bad patterns
+		if !isValidGlobPattern(globPattern) {
+			return nil, fmt.Errorf("invalid glob pattern: %s", globPattern)
+		}
 		regexPattern := translateGlobToRegex(globPattern)
 		compiledPattern, err := regexp.Compile(regexPattern)
 		if err != nil {
-			return nil, err
+			// Return compilation error with additional context
+			return nil, fmt.Errorf("failed to compile regex pattern '%s' from glob '%s': %w", regexPattern, globPattern, err)
 		}
 		compiledPatterns = append(compiledPatterns, compiledPattern)
 	}
 	return compiledPatterns, nil
+}
+
+// isValidGlobPattern performs basic validation on a glob pattern.
+// You can extend this function to catch common errors in glob patterns that might result in invalid regex.
+func isValidGlobPattern(glob string) bool {
+	// Example validation: Reject patterns with unmatched brackets or parentheses
+	// This is a simplistic check and might not cover all edge cases.
+	count := map[rune]int{
+		'[': 0,
+		']': 0,
+		'(': 0,
+		')': 0,
+	}
+	for _, char := range glob {
+		if _, ok := count[char]; ok {
+			count[char]++
+		}
+	}
+	// Check for balanced brackets and parentheses
+	if count['['] != count[']'] || count['('] != count[')'] {
+		return false
+	}
+	return true
 }
 
 // MatchesFileCriteria checks if the file name matches any of the compiled regex patterns.
