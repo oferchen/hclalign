@@ -84,4 +84,3 @@ func processSingleFile(filePath string, order []string) error {
 
 	return nil
 }
-
