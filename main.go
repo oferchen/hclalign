@@ -3,19 +3,19 @@
 package main
 
 import (
-	"log"
-	"os"
-
 	"github.com/oferchen/hclalign/cli"
 	"github.com/spf13/cobra"
+	"log"
+	"os"
 )
 
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "hcl_align [target file or directory]",
 		Short: "Aligns HCL files based on given criteria",
-		Args:  cobra.ExactArgs(1),
-		RunE:  cli.RunE,
+		//Args:  cobra.ExactArgs(1),
+		Args: cobra.NoArgs,
+		RunE: cli.RunE,
 	}
 
 	rootCmd.Flags().StringSliceP("criteria", "c", cli.DefaultCriteria, "List of file criteria to align")
