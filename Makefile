@@ -27,7 +27,7 @@ test:
 
 clean:
 	@echo "Cleaning up..."
-	go clean
+	go clean -modcache -fuzzcache
 	rm -f ${BINARY_NAME}
 	rm -f go.mod go.sum
 
