@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"log"
 )
 
 // CompilePatterns compiles glob patterns into regular expressions for file matching.
@@ -47,7 +48,6 @@ func translateGlobToRegex(glob string) string {
 // A valid criterion can be a specific filename (e.g., "main.tf"), a wildcard pattern (e.g., "*.tf"),
 // or a directory pattern (with or without trailing slash).
 func IsValidCriteria(criteria []string) bool {
-	debugLog("Received criteria for validation: %v", criteria)
 	// This regex checks for:
 	// - Wildcard patterns like "*.tf"
 	// - Specific filenames like "main.tf"
