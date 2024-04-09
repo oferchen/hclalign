@@ -43,19 +43,27 @@ func translateGlobToRegex(glob string) string {
 	return "^" + regex + "$"
 }
 
-// IsValidCriteria checks if the criteria string is a valid glob pattern.
-func IsValidCriteria(criteria string) bool {
-	criteriaList := strings.Split(criteria, ",")
+// IsValidCriteria checks if each criterion in the criteria slice is valid.
+// A valid criterion can be a specific filename (e.g., "main.tf"), a wildcard pattern (e.g., "*.tf"),
+// or a directory pattern (with or without trailing slash).
+func IsValidCriteria(criteria []string) bool {
+	debugLog("Received criteria for validation: %v", criteria)
+	// This regex checks for:
+	// - Wildcard patterns like "*.tf"
+	// - Specific filenames like "main.tf"
+	// - Directory patterns, which may end with a slash or have no extension
+	validPattern := regexp.MustCompile(`^(\*|[a-zA-Z0-9_-]+)(\.[a-zA-Z0-9]+)?(/)?$`)
 
-	for _, crit := range criteriaList {
-		crit = strings.TrimSpace(crit)
-
-		// Check if the criteria is empty after trimming spaces
-		if crit == "" {
-			return false
-		}
-
+	for _, criterion := range criteria {
+			if criterion == "" {
+					log.Printf("Invalid criterion found: Criterion is empty")
+					return false
+			}
+			if !validPattern.MatchString(criterion) {
+					log.Printf("Invalid criterion found: %s", criterion)
+					return false
+			}
 	}
-
 	return true
 }
+
