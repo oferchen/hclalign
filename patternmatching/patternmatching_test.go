@@ -49,23 +49,23 @@ func TestCompilePatterns(t *testing.T) {
 func TestMatchesFileCriteria(t *testing.T) {
 	compiledPatterns, _ := CompilePatterns([]string{"*.txt", "README.*"})
 	tests := []struct {
-		name          string
-		filePath      string
+		name         string
+		filePath     string
 		expectToMatch bool
 	}{
 		{
-			name:          "match txt file",
-			filePath:      "document.txt",
+			name:         "match txt file",
+			filePath:     "document.txt",
 			expectToMatch: true,
 		},
 		{
-			name:          "match README",
-			filePath:      "README.md",
+			name:         "match README",
+			filePath:     "README.md",
 			expectToMatch: true,
 		},
 		{
-			name:          "no match",
-			filePath:      "image.jpg",
+			name:         "no match",
+			filePath:     "image.jpg",
 			expectToMatch: false,
 		},
 	}
@@ -80,28 +80,28 @@ func TestMatchesFileCriteria(t *testing.T) {
 
 func TestIsValidCriteria(t *testing.T) {
 	tests := []struct {
-		name          string
-		criteria      []string
+		name        string
+		criteria    []string
 		expectedValid bool
 	}{
 		{
-			name:          "valid single wildcard",
-			criteria:      []string{"*.tf"},
+			name:        "valid single wildcard",
+			criteria:    []string{"*.tf"},
 			expectedValid: true,
 		},
 		{
-			name:          "valid multiple criteria",
-			criteria:      []string{"main.tf", "*.jpg", "directory/"},
+			name:        "valid multiple criteria",
+			criteria:    []string{"main.tf", "*.jpg", "directory/"},
 			expectedValid: true,
 		},
 		{
-			name:          "invalid pattern",
-			criteria:      []string{"???.>tf"},
+			name:        "invalid pattern",
+			criteria:    []string{"???.>tf"},
 			expectedValid: false,
 		},
 		{
-			name:          "empty criterion",
-			criteria:      []string{""},
+			name:        "empty criterion",
+			criteria:    []string{""},
 			expectedValid: false,
 		},
 	}
