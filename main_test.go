@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/oferchen/hclalign/cli"
+	"github.com/oferchen/hclalign/config"
 	"github.com/spf13/cobra"
 )
 
@@ -26,10 +27,9 @@ func createTempHCLFile(t *testing.T, content string) string {
 }
 
 func TestMainFunctionality(t *testing.T) {
-	// Define test cases
 	tests := []struct {
 		name    string
-		setup   func(*testing.T) []string // Function to set up test case, returns args
+		setup   func(*testing.T) []string
 		wantErr bool
 		errMsg  string
 	}{
@@ -75,8 +75,8 @@ func TestMainFunctionality(t *testing.T) {
 				Args:  cobra.ExactArgs(1),
 				RunE:  cli.RunE,
 			}
-			rootCmd.Flags().StringSliceP("criteria", "c", cli.DefaultCriteria, "List of file criteria to align")
-			rootCmd.Flags().StringSliceP("order", "o", cli.DefaultOrder, "Comma-separated list of the order of variable block fields")
+			rootCmd.Flags().StringSliceP("criteria", "c", config.DefaultCriteria, "List of file criteria to align")
+			rootCmd.Flags().StringSliceP("order", "o", config.DefaultOrder, "Comma-separated list of the order of variable block fields")
 
 			rootCmd.SetArgs(args)
 

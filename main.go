@@ -3,10 +3,12 @@
 package main
 
 import (
-	"github.com/oferchen/hclalign/cli"
-	"github.com/spf13/cobra"
 	"log"
 	"os"
+
+	"github.com/oferchen/hclalign/cli"
+	"github.com/oferchen/hclalign/config"
+	"github.com/spf13/cobra"
 )
 
 func main() {
@@ -18,8 +20,8 @@ func main() {
 		RunE: cli.RunE,
 	}
 
-	rootCmd.Flags().StringSliceP("criteria", "c", cli.DefaultCriteria, "List of file criteria to align")
-	rootCmd.Flags().StringSliceP("order", "o", cli.DefaultOrder, "Comma-separated list of the order of variable block fields")
+	rootCmd.Flags().StringSliceP("criteria", "c", config.DefaultCriteria, "List of file criteria to align")
+	rootCmd.Flags().StringSliceP("order", "o", config.DefaultOrder, "Comma-separated list of the order of variable block fields")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatalf("Error: %v", err)
