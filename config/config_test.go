@@ -4,13 +4,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/oferchen/hclalign/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/oferchen/hclalign/config"
-	"github.com/oferchen/hclalign/fileprocessing"
+)
 
 func TestIsValidOrder(t *testing.T) {
-	// Define test cases
 	tests := []struct {
 		name      string
 		order     []string
@@ -71,7 +70,6 @@ func TestIsValidOrder(t *testing.T) {
 }
 
 func TestProcessTargetDynamically(t *testing.T) {
-	// Define test cases
 	tests := []struct {
 		name      string
 		setupFunc func(t *testing.T) string
