@@ -15,9 +15,8 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "hcl_align [target file or directory]",
 		Short: "Aligns HCL files based on given criteria",
-		//Args:  cobra.ExactArgs(1),
-		Args: cobra.NoArgs,
-		RunE: cli.RunE,
+		Args:  cobra.MinimumNArgs(1),
+		RunE:  cli.RunE,
 	}
 
 	rootCmd.Flags().StringSliceP("criteria", "c", config.DefaultCriteria, "List of file criteria to align")
