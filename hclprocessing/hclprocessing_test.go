@@ -1,9 +1,13 @@
 package hclprocessing
 
 import (
+	"io/fs"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/oferchen/hclalign/hclprocessing"
 	"github.com/stretchr/testify/require"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -16,7 +20,6 @@ func createTestHCLFile(attributesOrder []string) *hclwrite.File {
 	blockBody := block.Body()
 
 	for _, attr := range attributesOrder {
-		// Correctly create a cty.Value from string and set the attribute
 		blockBody.SetAttributeValue(attr, cty.StringVal(attr))
 	}
 
@@ -59,9 +62,32 @@ func TestReorderAttributes(t *testing.T) {
 			for attrName := range file.Body().Blocks()[0].Body().Attributes() {
 				resultOrder = append(resultOrder, attrName)
 			}
-			// Ensure the resultOrder slice matches the expectedOrder,
-			// This assumes that the order of map iteration matches the insertion order, which is true for this specific use case but not a general property of Go maps.
 			require.ElementsMatch(t, tt.expectedOrder, resultOrder)
 		})
 	}
+}
+
+func TestProcessSingleFile_ValidHCL_PermissionsPreserved(t *testing.T) {
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "test.hcl")
+	initialContent := `variable "test" {
+  attribute1 = "value1"
+  attribute2 = "value2"
+}`
+	// Define custom permissions for the test file
+	customPerms := fs.FileMode(0644)
+	require.NoError(t, os.WriteFile(filePath, []byte(initialContent), customPerms))
+
+	// Retrieve and store the original permissions of the file
+	originalFileInfo, err := os.Stat(filePath)
+	require.NoError(t, err)
+	originalPerms := originalFileInfo.Mode()
+
+	order := []string{"attribute2", "attribute1"}
+	require.NoError(t, hclprocessing.ProcessSingleFile(filePath, order))
+
+	// After processing, check that the file permissions have not changed
+	processedFileInfo, err := os.Stat(filePath)
+	require.NoError(t, err)
+	require.Equal(t, originalPerms, processedFileInfo.Mode(), "File permissions should be preserved after processing")
 }

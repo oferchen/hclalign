@@ -33,7 +33,7 @@ func CompilePatterns(criteria []string) ([]*regexp.Regexp, error) {
 // isValidGlobPattern performs basic validation on a glob pattern.
 // You can extend this function to catch common errors in glob patterns that might result in invalid regex.
 func isValidGlobPattern(glob string) bool {
-	// Example validation: Reject patterns with unmatched brackets or parentheses
+	// Reject patterns with unmatched brackets or parentheses
 	// This is a simplistic check and might not cover all edge cases.
 	count := map[rune]int{
 		'[': 0,
