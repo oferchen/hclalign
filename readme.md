@@ -62,14 +62,20 @@ Execute `hclalign` with your target directory or file and optional flags for cri
 ```hcl
 variable "instance_type" {
   type        = string
-  description = "EC2 instance type"
   default     = "t2.micro"
+  description = "EC2 instance type"
 }
 
 variable "instance_count" {
-  description = "Number of instances to launch"
   type        = number
   default     = 1
+  description = "Number of instances to launch"
+}
+
+variable "ami" {
+  type        = string
+  default     = "ami-0c94855ba95c71c99"
+  description = "AMI to use for the instances"
 }
 ```
 
@@ -86,6 +92,12 @@ variable "instance_count" {
   description = "Number of instances to launch"
   type        = number
   default     = 1
+}
+
+variable "ami" {
+  description = "AMI to use for the instances"
+  type        = string
+  default     = "ami-0c94855ba95c71c99"
 }
 ```
 
