@@ -5,18 +5,17 @@ package cli
 
 import (
 	"fmt"
+
 	"github.com/oferchen/hclalign/config"
 	"github.com/spf13/cobra"
 )
 
-// DefaultCriteria and DefaultOrder define the default behavior of the CLI.
-var (
-	DefaultCriteria = []string{"*.tf"}
-	DefaultOrder    = []string{"description", "type", "default", "sensitive", "nullable", "validation"}
-)
-
-// RunE is the execution logic for the root command.
 func RunE(cmd *cobra.Command, args []string) error {
+	if len(args) < 1 {
+		cmd.Printf("Error: accepts 1 arg(s), received %d\n\n", len(args))
+		cmd.Usage()
+		return fmt.Errorf(config.MissingTarget)
+	}
 	target := args[0]
 	criteria, err := cmd.Flags().GetStringSlice("criteria")
 	if err != nil {
@@ -28,10 +27,10 @@ func RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// Validate the order
-	if !config.IsValidOrder(order) {
-		return fmt.Errorf("invalid order: %v", order)
+	orderValid, err := config.IsValidOrder(order)
+	if !orderValid {
+		return fmt.Errorf("invalid order provided: %v", err)
 	}
-
 	// Process target dynamically
 	return config.ProcessTargetDynamically(target, criteria, order)
 }

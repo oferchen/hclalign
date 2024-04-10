@@ -1,68 +1,93 @@
-// main_test.go
-
 package main
 
 import (
-	"bytes"
 	"os"
+	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/oferchen/hclalign/cli"
+	"github.com/oferchen/hclalign/config"
+	"github.com/spf13/cobra"
 )
 
-func TestMain_Execute(t *testing.T) {
+// Helper function to create a temporary HCL file.
+func createTempHCLFile(t *testing.T, content string) string {
+	t.Helper()
+	tempFile, err := os.CreateTemp("", "*.hcl")
+	if err != nil {
+		t.Fatalf("Failed to create temp HCL file: %v", err)
+	}
+	defer tempFile.Close()
+
+	if _, err := tempFile.WriteString(content); err != nil {
+		t.Fatalf("Failed to write to temp HCL file: %v", err)
+	}
+
+	return tempFile.Name()
+}
+
+func TestMainFunctionality(t *testing.T) {
 	tests := []struct {
-		name           string
-		args           []string
-		expectedOutput string
-		expectedError  string
+		name    string
+		setup   func(*testing.T) []string
+		wantErr bool
+		errMsg  string
 	}{
 		{
-			name:           "ValidArgs",
-			args:           []string{"testdata/example.hcl"},
-			expectedOutput: "Executing with target: testdata/example.hcl\n",
-			expectedError:  "",
+			name: "Missing Target Argument",
+			setup: func(t *testing.T) []string {
+				return []string{} // No args means the target is missing
+			},
+			wantErr: true,
+			errMsg:  "accepts 1 arg(s), received 0",
 		},
 		{
-			name:           "MissingArgs",
-			args:           []string{},
-			expectedOutput: "",
-			expectedError:  "Error: accept 1 arg(s), received 0\n",
+			name: "Valid Single File",
+			setup: func(t *testing.T) []string {
+				// Create a temp file with valid HCL content
+				filePath := createTempHCLFile(t, `variable "test" {}`)
+				return []string{filePath}
+			},
+			wantErr: false,
 		},
 		{
-			name:           "MultipleArgs",
-			args:           []string{"file1.hcl", "file2.hcl"},
-			expectedOutput: "",
-			expectedError:  "Error: accept 1 arg(s), received 2\n",
+			name: "Multiple Files",
+			setup: func(t *testing.T) []string {
+				// Create two temp files, but since the command only accepts one, this should cause an error
+				filePath1 := createTempHCLFile(t, `variable "test1" {}`)
+				filePath2 := createTempHCLFile(t, `variable "test2" {}`)
+				return []string{filePath1, filePath2}
+			},
+			wantErr: true,
+			errMsg:  "accepts 1 arg(s), received 2",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Redirect stdout to capture output
-			old := os.Stdout
-			r, w, _ := os.Pipe()
-			os.Stdout = w
+	// Iterate over test cases
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup
+			args := tc.setup(t)
 
-			// Restore stdout when done
-			defer func() {
-				os.Stdout = old
-			}()
+			rootCmd := &cobra.Command{
+				Use:   "hcl_align [target file or directory]",
+				Short: "Aligns HCL files based on given criteria",
+				Args:  cobra.ExactArgs(1),
+				RunE:  cli.RunE,
+			}
+			rootCmd.Flags().StringSliceP("criteria", "c", config.DefaultCriteria, "List of file criteria to align")
+			rootCmd.Flags().StringSliceP("order", "o", config.DefaultOrder, "Comma-separated list of the order of variable block fields")
 
-			// Execute main with test args
-			os.Args = append([]string{"hcl_align"}, tt.args...)
-			main()
+			rootCmd.SetArgs(args)
 
-			// Close pipe and read captured output
-			w.Close()
-			var buf bytes.Buffer
-			_, _ = buf.ReadFrom(r)
-			actualOutput := buf.String()
+			_, err := rootCmd.ExecuteC()
 
-			// Assert output and error
-			assert.Equal(t, tt.expectedOutput, actualOutput)
-			if tt.expectedError != "" {
-				assert.Contains(t, actualOutput, tt.expectedError)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("Unexpected error status: got error = %v, wantErr = %v", err, tc.wantErr)
+			}
+
+			if tc.wantErr && !strings.Contains(err.Error(), tc.errMsg) {
+				t.Errorf("Expected error message to contain '%s', but got '%s'", tc.errMsg, err.Error())
 			}
 		})
 	}
