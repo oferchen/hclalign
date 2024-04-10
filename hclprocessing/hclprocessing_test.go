@@ -1,4 +1,4 @@
-package hclprocessing
+package hclprocessing_test
 
 import (
 	"io/fs"
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/oferchen/hclalign/fileprocessing"
 	"github.com/oferchen/hclalign/hclprocessing"
 	"github.com/stretchr/testify/require"
 	"github.com/zclconf/go-cty/cty"
@@ -56,7 +57,7 @@ func TestReorderAttributes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			file := createTestHCLFile(tt.originalOrder)
-			ReorderAttributes(file, tt.desiredOrder)
+			hclprocessing.ReorderAttributes(file, tt.desiredOrder)
 
 			var resultOrder []string
 			for attrName := range file.Body().Blocks()[0].Body().Attributes() {
@@ -84,7 +85,7 @@ func TestProcessSingleFile_ValidHCL_PermissionsPreserved(t *testing.T) {
 	originalPerms := originalFileInfo.Mode()
 
 	order := []string{"attribute2", "attribute1"}
-	require.NoError(t, hclprocessing.ProcessSingleFile(filePath, order))
+	require.NoError(t, fileprocessing.ProcessSingleFile(filePath, order))
 
 	// After processing, check that the file permissions have not changed
 	processedFileInfo, err := os.Stat(filePath)

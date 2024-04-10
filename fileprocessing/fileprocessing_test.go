@@ -5,11 +5,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"io/fs"
+	"strings"
+
 	"github.com/oferchen/hclalign/fileprocessing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/fs"
-	"strings"
 )
 
 // Helper function to setup a test environment with HCL files.
@@ -111,11 +112,13 @@ func TestProcessSingleFile_NonHCLContent(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "test.txt")
 	nonHCLContent := "This is not HCL content."
+
 	require.NoError(t, os.WriteFile(filePath, []byte(nonHCLContent), 0644))
 
-	// The processing should not error out on non-HCL content
+	// Process the file; expect an error because the content is not valid HCL
 	err := fileprocessing.ProcessSingleFile(filePath, []string{})
-	assert.NoError(t, err, "Processing a non-HCL file should not produce an error.")
+	require.Error(t, err, "Processing non-HCL content should result in an error")
+	require.Contains(t, err.Error(), "parsing error", "The error message should indicate a parsing error")
 
 	// Verify the file content remains unchanged
 	resultContent, err := os.ReadFile(filePath)
