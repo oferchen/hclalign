@@ -11,12 +11,34 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/oferchen/hclalign/hclprocessing"
 	"github.com/oferchen/hclalign/patternmatching"
+
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclwrite"
 	"golang.org/x/sync/semaphore"
 )
+
+// DefaultProcessFile provides the default processing logic for a file.
+func DefaultProcessFile(filePath string, order []string) error {
+	fileContent, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("error reading file %s: %w", filePath, err)
+	}
+
+	file, diags := hclwrite.ParseConfig(fileContent, filePath, hcl.InitialPos)
+	if diags.HasErrors() {
+		return fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
+	}
+
+	hclprocessing.ReorderAttributes(file, order)
+
+	if err := os.WriteFile(filePath, file.Bytes(), 0644); err != nil {
+		return fmt.Errorf("error writing file %s: %w", filePath, err)
+	}
+
+	return nil
+}
 
 // ProcessFiles processes files in the specified target directory according to criteria and order.
 func ProcessFiles(target string, criteria []string, order []string) error {
@@ -45,7 +67,7 @@ func ProcessFiles(target string, criteria []string, order []string) error {
 				defer wg.Done()
 				defer sem.Release(1)
 
-				if err := processSingleFile(filePath, order); err != nil {
+				if err := ProcessSingleFile(filePath, order); err != nil {
 					select {
 					case errChan <- err:
 					default:
@@ -65,7 +87,11 @@ func ProcessFiles(target string, criteria []string, order []string) error {
 }
 
 // processSingleFile reads and processes a single HCL file based on the given order.
-func processSingleFile(filePath string, order []string) error {
+func ProcessSingleFile(filePath string, order []string) error {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return fmt.Errorf("error retrieving file info for %s: %w", filePath, err)
+	}
 	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("error reading file %s: %w", filePath, err)
@@ -78,8 +104,8 @@ func processSingleFile(filePath string, order []string) error {
 
 	hclprocessing.ReorderAttributes(file, order)
 
-	if err := os.WriteFile(filePath, file.Bytes(), 0644); err != nil {
-		return fmt.Errorf("error writing file %s: %w", filePath, err)
+	if err := os.WriteFile(filePath, file.Bytes(), fileInfo.Mode()); err != nil {
+		return fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
 	}
 
 	return nil
