@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/oferchen/hclalign/config"
 	"github.com/oferchen/hclalign/fileprocessing"
+)
 
 func TestIsValidOrder(t *testing.T) {
 	// Define test cases
