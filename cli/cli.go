@@ -10,20 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// DefaultCriteria and DefaultOrder define the default behavior of the CLI.
-var (
-	DefaultCriteria = []string{"*.tf"}
-	DefaultOrder    = []string{"description", "type", "default", "sensitive", "nullable", "validation"}
-)
-
-const MissingTarget = "missing target file or directory. Please provide a valid target as an argument"
-
-// RunE is the execution logic for the root command.
 func RunE(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
 		cmd.Printf("Error: accepts 1 arg(s), received %d\n\n", len(args))
 		cmd.Usage()
-		return fmt.Errorf(MissingTarget)
+		return fmt.Errorf(config.MissingTarget)
 	}
 	target := args[0]
 	criteria, err := cmd.Flags().GetStringSlice("criteria")
@@ -40,7 +31,6 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if !orderValid {
 		return fmt.Errorf("invalid order provided: %v", err)
 	}
-
 	// Process target dynamically
 	return config.ProcessTargetDynamically(target, criteria, order)
 }
