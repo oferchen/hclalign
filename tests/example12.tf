@@ -27,9 +27,10 @@ variable "edge_case_demo" { # Inline comment next to the block opener
 
   /* Multi-line comment before heredoc attribute */
   message = <<-EOT
-  Multi-line heredoc content here,
-  with special characters: {}, [], #, etc.
-  EOT /* This heredoc ends with an inline comment */
+Multi-line heredoc content here,
+with special characters: {}, [], #, etc.
+EOT
+// This heredoc ends with an inline comment
 
   // Comment before sensitive attribute
   sensitive = true /* Inline comment after sensitive attribute */
