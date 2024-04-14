@@ -3,15 +3,17 @@
 BINARY_NAME=hclalign
 MODULE_NAME=hclalign
 
+.PHONY: all build run deps tidy test clean init help
+
 all: build
 
 build:
 	@echo "Compiling the project..."
-	go build -o ${BINARY_NAME} main.go
+	go build -o $(BINARY_NAME) main.go
 
 run: build
 	@echo "Running the project..."
-	./${BINARY_NAME}
+	./$(BINARY_NAME)
 
 deps:
 	@echo "Checking and downloading dependencies..."
@@ -28,12 +30,12 @@ test:
 clean:
 	@echo "Cleaning up..."
 	go clean -modcache -fuzzcache
-	rm -f ${BINARY_NAME}
-	rm -f go.mod go.sum
+	rm -f $(BINARY_NAME)
+	rm -f go.*
 
 init:
 	@echo "Initializing Go module..."
-	go mod init ${MODULE_NAME}
+	go mod init $(MODULE_NAME)
 
 help:
 	@echo "Makefile commands:"
@@ -46,4 +48,3 @@ help:
 	@echo "clean  - Cleans up the project."
 	@echo "init   - Initializes a new Go module."
 	@echo "help   - Prints this help message."
-
