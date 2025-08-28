@@ -4,86 +4,84 @@
 package hclprocessing
 
 import (
-	"sort"
-
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
-// ReorderAttributes reorders the attributes of the given HCL file according to the specified order.
-func ReorderAttributes(file *hclwrite.File, order []string) {
+var canonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
+
+// ReorderAttributes reorders attributes of "variable" blocks into canonical order.
+func ReorderAttributes(file *hclwrite.File, _ []string) {
+	if _, diags := hclwrite.ParseConfig(file.Bytes(), "", hcl.InitialPos); diags.HasErrors() {
+		return
+	}
+
 	body := file.Body()
-	blocks := body.Blocks()
-	for _, b := range blocks {
-		body.RemoveBlock(b)
-	}
+	for _, block := range body.Blocks() {
+		if block.Type() != "variable" {
+			continue
+		}
 
-	reorderBodyAttributes(body, order)
-
-	for _, b := range blocks {
-		body.AppendBlock(b)
-		reorderBlockAttributes(b, order)
+		reorderVariableBlock(block)
 	}
 }
 
-// reorderBlockAttributes reorders attributes within a single block based on the specified order.
-func reorderBlockAttributes(block *hclwrite.Block, order []string) {
+func reorderVariableBlock(block *hclwrite.Block) {
 	body := block.Body()
+
+	// Preserve nested blocks to re-append later.
 	nested := body.Blocks()
-	for _, b := range nested {
-		body.RemoveBlock(b)
+	for _, nb := range nested {
+		body.RemoveBlock(nb)
 	}
 
-	reorderBodyAttributes(body, order)
-
-	for _, b := range nested {
-		body.AppendBlock(b)
-		reorderBlockAttributes(b, order)
+	attrs := body.Attributes()
+	tokensMap := make(map[string]hclwrite.Tokens)
+	for name, attr := range attrs {
+		tokensMap[name] = attr.Expr().BuildTokens(nil)
 	}
-}
 
-// reorderBodyAttributes reorders attributes in the given body based on the specified order.
-func reorderBodyAttributes(body *hclwrite.Body, order []string) {
-	originalAttributes := body.Attributes()
-	sortedAttributes := sortAttributes(originalAttributes, order)
+	// Capture original attribute ordering.
+	orderedNames := attributeOrder(body, attrs)
 
-	// Remove all attributes to re-add them in the correct order.
-	for name := range originalAttributes {
+	for name := range attrs {
 		body.RemoveAttribute(name)
 	}
 
-	// Re-add attributes in the specified order.
-	for _, name := range sortedAttributes {
-		if attr, exists := originalAttributes[name]; exists {
-			body.SetAttributeRaw(name, attr.Expr().BuildTokens(nil))
+	canonSet := map[string]struct{}{}
+	for _, name := range canonicalOrder {
+		canonSet[name] = struct{}{}
+		if tokens, ok := tokensMap[name]; ok {
+			body.SetAttributeRaw(name, tokens)
 		}
+	}
+
+	for _, name := range orderedNames {
+		if _, isCanonical := canonSet[name]; isCanonical {
+			continue
+		}
+		if tokens, ok := tokensMap[name]; ok {
+			body.SetAttributeRaw(name, tokens)
+		}
+	}
+
+	for _, nb := range nested {
+		body.AppendBlock(nb)
 	}
 }
 
-// sortAttributes sorts the attributes based on the specified order.
-// This version improves on handling attributes not explicitly mentioned in the order.
-func sortAttributes(attributes map[string]*hclwrite.Attribute, order []string) []string {
-	orderMap := make(map[string]int)
-	for i, attrName := range order {
-		orderMap[attrName] = i
-	}
-
-	var sortedKeys []string
-	for attr := range attributes {
-		sortedKeys = append(sortedKeys, attr)
-	}
-
-	sort.Slice(sortedKeys, func(i, j int) bool {
-		indexI, foundI := orderMap[sortedKeys[i]]
-		indexJ, foundJ := orderMap[sortedKeys[j]]
-
-		if foundI && foundJ {
-			return indexI < indexJ // Both are in order, sort by order index
+func attributeOrder(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) []string {
+	tokens := body.BuildTokens(nil)
+	var order []string
+	for i := 0; i < len(tokens)-1; i++ {
+		tok := tokens[i]
+		if tok.Type == hclsyntax.TokenIdent {
+			name := string(tok.Bytes)
+			if _, ok := attrs[name]; ok && tokens[i+1].Type == hclsyntax.TokenEqual {
+				order = append(order, name)
+			}
 		}
-		if foundI || foundJ {
-			return foundI // If only one is found, it comes first
-		}
-		return sortedKeys[i] < sortedKeys[j] // Neither in order, sort alphabetically
-	})
-
-	return sortedKeys
+	}
+	return order
 }

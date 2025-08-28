@@ -32,19 +32,23 @@ func setupTestDir(t *testing.T, files map[string]string) string {
 func TestProcessFiles(t *testing.T) {
 	t.Run("process matching files", func(t *testing.T) {
 		files := map[string]string{
-			"match1.hcl": `attribute1 = "value1"
-attribute2 = "value2"`,
-			"match2.hcl": `attribute3 = "value3"
-attribute4 = "value4"`,
+			"match1.hcl": `variable "v1" {
+  default     = "v1"
+  description = "d1"
+  extra       = true
+}`,
+			"match2.hcl": `variable "v2" {
+  default     = "v2"
+  description = "d2"
+}`,
 			"nomatch.txt": "This should not be modified.",
 		}
 		tmpDir := setupTestDir(t, files)
 		defer os.RemoveAll(tmpDir)
 
 		criteria := []string{"*.hcl"}
-		order := []string{"attribute2", "attribute1", "attribute4", "attribute3"}
 
-		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, order)
+		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, nil)
 		require.NoError(t, err)
 
 		// Verify contents of the files after processing
@@ -56,9 +60,16 @@ attribute4 = "value4"`,
 				content, err := os.ReadFile(path)
 				require.NoError(t, err)
 				if strings.HasSuffix(path, "match1.hcl") {
-					assert.Contains(t, string(content), `attribute2 = "value2"`)
+					assert.Equal(t, `variable "v1" {
+  description = "d1"
+  default     = "v1"
+  extra       = true
+}`, string(content))
 				} else if strings.HasSuffix(path, "match2.hcl") {
-					assert.Contains(t, string(content), `attribute4 = "value4"`)
+					assert.Equal(t, `variable "v2" {
+  description = "d2"
+  default     = "v2"
+}`, string(content))
 				} else if strings.HasSuffix(path, "nomatch.txt") {
 					assert.Equal(t, "This should not be modified.", string(content))
 				}
@@ -72,7 +83,7 @@ attribute4 = "value4"`,
 		tmpDir := setupTestDir(t, map[string]string{})
 		defer os.RemoveAll(tmpDir)
 
-		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, []string{"*.hcl"}, []string{"attribute1", "attribute2"})
+		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, []string{"*.hcl"}, nil)
 		assert.NoError(t, err)
 	})
 
@@ -83,21 +94,19 @@ func TestProcessSingleFile_ValidHCL(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "test.hcl")
 	initialContent := `variable "test" {
-  attribute1 = "value1"
-  attribute2 = "value2"
+  default     = "value1"
+  description = "value2"
 }`
 	require.NoError(t, os.WriteFile(filePath, []byte(initialContent), 0644))
 
-	order := []string{"attribute2", "attribute1"}
-	require.NoError(t, fileprocessing.ProcessSingleFile(context.Background(), filePath, order))
+	require.NoError(t, fileprocessing.ProcessSingleFile(context.Background(), filePath, nil))
 
 	resultContent, err := os.ReadFile(filePath)
 	require.NoError(t, err)
 
-	// Assuming the ReorderAttributes function places unmatched attributes alphabetically at the end.
 	expectedContent := `variable "test" {
-  attribute2 = "value2"
-  attribute1 = "value1"
+  description = "value2"
+  default     = "value1"
 }`
 	assert.Equal(t, expectedContent, string(resultContent), "Attribute order is incorrect.")
 }
@@ -111,7 +120,7 @@ func TestProcessSingleFile_NonHCLContent(t *testing.T) {
 	require.NoError(t, os.WriteFile(filePath, []byte(nonHCLContent), 0644))
 
 	// Process the file; expect an error because the content is not valid HCL
-	err := fileprocessing.ProcessSingleFile(context.Background(), filePath, []string{})
+	err := fileprocessing.ProcessSingleFile(context.Background(), filePath, nil)
 	require.Error(t, err, "Processing non-HCL content should result in an error")
 	require.Contains(t, err.Error(), "parsing error", "The error message should indicate a parsing error")
 
@@ -132,10 +141,9 @@ func TestProcessFiles_Idempotent(t *testing.T) {
 	require.NoError(t, os.WriteFile(testFile, inputBytes, 0644))
 
 	criteria := []string{"*.hcl"}
-	order := []string{"a", "b"}
 
 	// First run
-	require.NoError(t, fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, order))
+	require.NoError(t, fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, nil))
 	expected, err := os.ReadFile(goldenPath)
 	require.NoError(t, err)
 	result1, err := os.ReadFile(testFile)
@@ -143,7 +151,7 @@ func TestProcessFiles_Idempotent(t *testing.T) {
 	require.Equal(t, string(expected), string(result1))
 
 	// Second run should be idempotent
-	require.NoError(t, fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, order))
+	require.NoError(t, fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, nil))
 	result2, err := os.ReadFile(testFile)
 	require.NoError(t, err)
 	require.Equal(t, string(expected), string(result2))
