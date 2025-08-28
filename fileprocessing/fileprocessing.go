@@ -8,9 +8,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
+	"sync/atomic"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -56,17 +60,41 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		return false, err
 	}
 	sort.Strings(files)
-	changed := false
+
+	sem := make(chan struct{}, cfg.Concurrency)
+	g, ctx := errgroup.WithContext(ctx)
+	var changed atomic.Bool
 	for _, f := range files {
-		ch, err := processSingleFile(ctx, f, cfg)
-		if err != nil {
-			return changed, err
+		f := f
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			break
 		}
-		if ch {
-			changed = true
-		}
+		g.Go(func() error {
+			defer func() { <-sem }()
+			ch, err := processSingleFile(ctx, f, cfg)
+			if err != nil {
+				return err
+			}
+			if ch {
+				changed.Store(true)
+			}
+			if cfg.Verbose {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+					log.Printf("processed file: %s", f)
+				}
+			}
+			return nil
+		})
 	}
-	return changed, nil
+	if err := g.Wait(); err != nil {
+		return changed.Load(), err
+	}
+	return changed.Load(), nil
 }
 
 func processSingleFile(ctx context.Context, filePath string, cfg *config.Config) (bool, error) {
