@@ -25,6 +25,13 @@ import (
 	"github.com/oferchen/hclalign/patternmatching"
 )
 
+// test hooks for simulating context cancellation in unit tests
+var (
+	testHookAfterParse   func()
+	testHookAfterReorder func()
+	reorderAttributes    = hclalign.ReorderAttributes
+)
+
 func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 	if cfg.Stdin {
 		return processReader(ctx, os.Stdin, cfg)
@@ -183,8 +190,20 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	if diags.HasErrors() {
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
+	if testHookAfterParse != nil {
+		testHookAfterParse()
+	}
+	if err := ctx.Err(); err != nil {
+		return false, nil, err
+	}
 
-	if err := hclalign.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+	if err := reorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+		return false, nil, err
+	}
+	if testHookAfterReorder != nil {
+		testHookAfterReorder()
+	}
+	if err := ctx.Err(); err != nil {
 		return false, nil, err
 	}
 

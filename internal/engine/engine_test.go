@@ -188,6 +188,52 @@ func TestProcessContextCanceledNoLog(t *testing.T) {
 	}
 }
 
+func TestProcessSingleFileCanceledAfterParse(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a.tf")
+	require.NoError(t, os.WriteFile(path, []byte("variable \"a\" {\n type = string\n}\n"), 0644))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	testHookAfterParse = func() { cancel() }
+	defer func() { testHookAfterParse = nil }()
+
+	called := false
+	reorderAttributes = func(f *hclwrite.File, order []string, strict bool) error {
+		called = true
+		return nil
+	}
+	defer func() { reorderAttributes = hclalign.ReorderAttributes }()
+
+	changed, out, err := processSingleFile(ctx, path, &config.Config{Mode: config.ModeCheck, Order: config.CanonicalOrder})
+	require.ErrorIs(t, err, context.Canceled)
+	require.False(t, changed)
+	require.Nil(t, out)
+	require.False(t, called, "reorderAttributes should not be called on canceled context")
+}
+
+func TestProcessSingleFileCanceledAfterReorder(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a.tf")
+	require.NoError(t, os.WriteFile(path, []byte("variable \"a\" {\n type = string\n}\n"), 0644))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	testHookAfterReorder = func() { cancel() }
+	defer func() { testHookAfterReorder = nil }()
+
+	called := false
+	reorderAttributes = func(f *hclwrite.File, order []string, strict bool) error {
+		called = true
+		return nil
+	}
+	defer func() { reorderAttributes = hclalign.ReorderAttributes }()
+
+	changed, out, err := processSingleFile(ctx, path, &config.Config{Mode: config.ModeCheck, Order: config.CanonicalOrder})
+	require.ErrorIs(t, err, context.Canceled)
+	require.False(t, changed)
+	require.Nil(t, out)
+	require.True(t, called, "reorderAttributes should be called before cancellation")
+}
+
 func TestProcessPropagatesFileError(t *testing.T) {
 	dir := t.TempDir()
 
