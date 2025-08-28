@@ -40,7 +40,10 @@ type Config struct {
 var (
 	DefaultInclude = []string{"**/*.tf"}
 	DefaultExclude = []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
-	DefaultOrder   = []string{"description", "type", "default", "sensitive", "nullable", "validation"}
+	// DefaultOrder defines the canonical ordering of variable block attributes.
+	// Nested blocks such as "validation" are always appended after attributes
+	// and therefore are not part of this list.
+	DefaultOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 )
 
 const (
@@ -67,7 +70,9 @@ func (c *Config) Validate() error {
 
 // ValidateOrder checks whether the provided order is valid. Duplicate
 // attributes always cause an error. When strict is true, all attributes must be
-// from the canonical DefaultOrder list and each must appear exactly once.
+// from the canonical DefaultOrder list and each must appear exactly once. The
+// canonical list only contains attribute names; nested blocks like "validation"
+// are not considered part of the order.
 func ValidateOrder(order []string, strict bool) error {
 	providedSet := make(map[string]struct{})
 	canonicalSet := make(map[string]struct{}, len(DefaultOrder))

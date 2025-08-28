@@ -25,9 +25,15 @@ func TestValidateOrder_StrictDefaultOrder(t *testing.T) {
 }
 
 func TestDefaultOrderMatchesBuiltInAttributes(t *testing.T) {
-	expected := []string{"description", "type", "default", "sensitive", "nullable", "validation"}
+	expected := []string{"description", "type", "default", "sensitive", "nullable"}
 	if !reflect.DeepEqual(DefaultOrder, expected) {
 		t.Fatalf("expected DefaultOrder to be %v, got %v", expected, DefaultOrder)
+	}
+}
+
+func TestValidateOrder_StrictValidationBlock(t *testing.T) {
+	if err := ValidateOrder([]string{"description", "validation"}, true); err == nil {
+		t.Fatalf("expected error for validation block in strict mode")
 	}
 }
 
