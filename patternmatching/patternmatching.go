@@ -52,6 +52,8 @@ func (m *Matcher) Matches(path string) bool {
 	if err != nil {
 		rel = path
 	}
+	// Normalize path separators for consistent glob matching across platforms.
+	rel = filepath.ToSlash(rel)
 	// Check excludes first.
 	for _, ex := range m.exclude {
 		if ok, _ := doublestar.PathMatch(ex, rel); ok {
