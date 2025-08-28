@@ -162,9 +162,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder)
 
 	formatted := bytes.ReplaceAll(file.Bytes(), []byte("\r\n"), []byte("\n"))
-	fmt.Printf("formatted bytes: %v\n", formatted)
 	styled := internalfs.ApplyHints(formatted, hints)
-	fmt.Printf("styled bytes: %v\n", styled)
 	original := data
 	if bom := hints.BOM(); len(bom) > 0 {
 		original = append(append([]byte{}, bom...), original...)
