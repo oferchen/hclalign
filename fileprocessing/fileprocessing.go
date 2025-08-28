@@ -84,7 +84,21 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if info.IsDir() {
+	if info.Mode()&os.ModeSymlink != 0 {
+		resolved, err := os.Stat(cfg.Target)
+		if err != nil {
+			return false, err
+		}
+		if resolved.IsDir() {
+			if cfg.FollowSymlinks {
+				if err := walk(cfg.Target); err != nil {
+					return false, err
+				}
+			}
+		} else if matcher.Matches(cfg.Target) {
+			files = append(files, cfg.Target)
+		}
+	} else if info.IsDir() {
 		if err := walk(cfg.Target); err != nil {
 			return false, err
 		}
