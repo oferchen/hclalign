@@ -183,8 +183,14 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	if diags.HasErrors() {
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
+	if err := ctx.Err(); err != nil {
+		return false, nil, err
+	}
 
 	if err := hclalign.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+		return false, nil, err
+	}
+	if err := ctx.Err(); err != nil {
 		return false, nil, err
 	}
 

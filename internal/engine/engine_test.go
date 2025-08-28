@@ -4,12 +4,15 @@ package engine
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -185,6 +188,40 @@ func TestProcessContextCanceledNoLog(t *testing.T) {
 	}
 	if buf.Len() != 0 {
 		t.Fatalf("expected no logs, got %q", buf.String())
+	}
+}
+
+func TestProcessSingleFileContextCanceled(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a.tf")
+
+	var buf bytes.Buffer
+	buf.WriteString("variable \"a\" {\n")
+	for i := 2000; i >= 0; i-- {
+		fmt.Fprintf(&buf, "  attr%04d = %d\n", i, i)
+	}
+	buf.WriteString("}\n")
+	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+
+	cfg := &config.Config{Order: config.CanonicalOrder, Mode: config.ModeCheck, Concurrency: 1}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		_, _, err := processSingleFile(ctx, path, cfg)
+		done <- err
+	}()
+
+	time.Sleep(10 * time.Millisecond)
+	cancel()
+
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected context canceled error, got %v", err)
 	}
 }
 
