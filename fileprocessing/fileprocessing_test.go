@@ -414,8 +414,6 @@ func TestProcessStopsAfterMalformedFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read good file: %v", err)
 	}
-	// The good file should remain unmodified since processing stops after
-	// encountering the malformed file and the write operation is canceled.
 	expected := []byte("variable \"a\" {\n  default = 1\n  type = number\n}\n")
 	if string(data) != string(expected) {
 		t.Fatalf("good file unexpectedly processed: got %q, want %q", data, expected)

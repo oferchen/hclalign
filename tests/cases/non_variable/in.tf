@@ -42,3 +42,26 @@ import {
   id = "i-123"
   to = aws_instance.example
 }
+
+dynamic "d" {
+  for_each = [1]
+  content {
+    b = 1
+    a = 2
+  }
+}
+
+lifecycle {
+  prevent_destroy       = false
+  create_before_destroy = true
+
+  precondition {
+    error_message = "pre"
+    condition     = true
+  }
+
+  postcondition {
+    error_message = "post"
+    condition     = true
+  }
+}

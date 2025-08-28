@@ -19,8 +19,8 @@ func ReorderAttributes(file *hclwrite.File, order []string, strict bool) error {
 		order = config.CanonicalOrder
 	}
 
-	canonicalSet := make(map[string]struct{}, len(canonicalOrder))
-	for _, name := range canonicalOrder {
+	canonicalSet := make(map[string]struct{}, len(config.CanonicalOrder))
+	for _, name := range config.CanonicalOrder {
 		canonicalSet[name] = struct{}{}
 	}
 
@@ -179,7 +179,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	body.AppendUnstructuredTokens(prefixTokens)
 
 	canonicalOrderSet := map[string]struct{}{}
-	orderedKnown := make([]string, 0, len(canonicalOrder))
+	orderedKnown := make([]string, 0, len(config.CanonicalOrder))
 	for _, name := range order {
 		canonicalOrderSet[name] = struct{}{}
 		if _, ok := attrTokensMap[name]; ok {
@@ -187,7 +187,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		}
 	}
 
-	for _, name := range canonicalOrder {
+	for _, name := range config.CanonicalOrder {
 		if _, already := canonicalOrderSet[name]; already {
 			continue
 		}
