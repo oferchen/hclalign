@@ -189,6 +189,21 @@ func TestProcessContextCanceledNoLog(t *testing.T) {
 	}
 }
 
+func TestProcessMissingTarget(t *testing.T) {
+	dir := t.TempDir()
+	missing := filepath.Join(dir, "missing.tf")
+	cfg := &config.Config{
+		Target:      missing,
+		Mode:        config.ModeCheck,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.CanonicalOrder,
+		Concurrency: 1,
+	}
+	require.NoError(t, cfg.Validate())
+	_, err := Process(context.Background(), cfg)
+	require.EqualError(t, err, fmt.Sprintf("target %q does not exist", missing))
+=======
 func TestProcessSingleFileCanceledAfterParse(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "a.tf")
@@ -233,6 +248,7 @@ func TestProcessSingleFileCanceledAfterReorder(t *testing.T) {
 	require.False(t, changed)
 	require.Nil(t, out)
 	require.True(t, called, "reorderAttributes should be called before cancellation")
+
 }
 
 func TestProcessPropagatesFileError(t *testing.T) {
