@@ -32,6 +32,10 @@ func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 	return processFiles(ctx, cfg)
 }
 
+// processFiles walks the target path, queuing files that match the include and
+// exclude patterns. Files are processed concurrently by a worker pool which
+// stops dispatching new work after the first error. The provided context
+// cancels both dispatcher and workers to avoid unnecessary processing.
 func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	matcher, err := patternmatching.NewMatcher(cfg.Include, cfg.Exclude)
 	if err != nil {
@@ -110,40 +114,64 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	}
 	sort.Strings(files)
 
-	sem := make(chan struct{}, cfg.Concurrency)
-	g, ctx := errgroup.WithContext(ctx)
-	var changed atomic.Bool
+	// A worker pool consumes file paths from fileCh. The dispatcher stops
+	// sending new files if any worker returns an error via errgroup, which
+	// cancels the context. Workers exit promptly when ctx.Done() is closed.
 	type result struct {
 		path string
 		data []byte
 	}
+	g, ctx := errgroup.WithContext(ctx)
+	fileCh := make(chan string)
 	results := make(chan result, len(files))
-	for _, f := range files {
-		f := f
-		select {
-		case sem <- struct{}{}:
-		case <-ctx.Done():
-			return changed.Load(), ctx.Err()
+	var changed atomic.Bool
+
+	// dispatcher
+	g.Go(func() error {
+		defer close(fileCh)
+		for _, f := range files {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case fileCh <- f:
+			}
 		}
+		return nil
+	})
+
+	// workers
+	for i := 0; i < cfg.Concurrency; i++ {
 		g.Go(func() error {
-			defer func() { <-sem }()
-			ch, out, err := processSingleFile(ctx, f, cfg)
-			if err != nil {
-				if !errors.Is(err, context.Canceled) {
-					log.Printf("error processing file %s: %v", f, err)
+			for {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case f, ok := <-fileCh:
+					if !ok {
+						return nil
+					}
+					ch, out, err := processSingleFile(ctx, f, cfg)
+					if err != nil {
+						if !errors.Is(err, context.Canceled) {
+							log.Printf("error processing file %s: %v", f, err)
+						}
+						return fmt.Errorf("%s: %w", f, err)
+					}
+					if ch {
+						changed.Store(true)
+					}
+					if len(out) > 0 {
+						select {
+						case results <- result{path: f, data: out}:
+						case <-ctx.Done():
+							return ctx.Err()
+						}
+					}
+					if cfg.Verbose {
+						log.Printf("processed file: %s", f)
+					}
 				}
-				return fmt.Errorf("%s: %w", f, err)
 			}
-			if ch {
-				changed.Store(true)
-			}
-			if len(out) > 0 {
-				results <- result{path: f, data: out}
-			}
-			if cfg.Verbose {
-				log.Printf("processed file: %s", f)
-			}
-			return nil
 		})
 	}
 	if err := g.Wait(); err != nil {
