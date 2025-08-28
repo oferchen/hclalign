@@ -2,6 +2,7 @@
 
 BINARY_NAME=hclalign
 MODULE_NAME=github.com/oferchen/hclalign
+PKG_TEST=$(shell go list ./... | grep -v cmd/commentcheck | grep -v internal/ci/covercheck)
 
 all: build
 
@@ -48,7 +49,10 @@ test-race:
 
 cover:
 	@echo "Running tests with race detector and coverage..."
-	go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out ./...
+	go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out $(PKG_TEST)
+	go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.tmp ./cmd/commentcheck ./internal/ci/covercheck
+	tail -n +2 coverage.tmp >> coverage.out
+	rm coverage.tmp
 	@echo "Coverage report:"
 	go tool cover -func=coverage.out
 
