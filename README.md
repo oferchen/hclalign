@@ -15,7 +15,7 @@ WHY: Provide clearer usage guidance and highlight safety features for users.
 - **Check and Diff Modes**: Use `--check` to ensure files are already formatted or `--diff` to preview required changes.
 - **STDIN/STDOUT Support**: Process input from standard in and write to standard out with `--stdin` and `--stdout` for easy pipeline integration.
 - **Idempotent & Atomic**: Running `hclalign` multiple times produces the same result and updates files using atomic writes to prevent partial edits.
-- **Concurrent Processing**: Utilizes Go's concurrency features to process files in parallel.
+- **Concurrent Processing**: Utilizes Go's concurrency features to process files in parallel and halts further dispatch when an error occurs.
 - **Optional Symlink Traversal**: Follow symbolic links during directory walks with `--follow-symlinks`.
 - **Verbose Logging**: Enable additional output with `-v` for debugging or development.
 
