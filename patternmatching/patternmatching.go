@@ -22,11 +22,7 @@ func NewMatcher(include, exclude []string) (*Matcher, error) {
 	if err := validatePatterns(exclude); err != nil {
 		return nil, fmt.Errorf("invalid exclude: %w", err)
 	}
-	root, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	return &Matcher{include: include, exclude: exclude, root: root}, nil
+	return &Matcher{include: include, exclude: exclude}, nil
 }
 
 func validatePatterns(patterns []string) error {
@@ -42,9 +38,21 @@ func validatePatterns(patterns []string) error {
 }
 
 func (m *Matcher) Matches(path string) bool {
-	relPath, err := filepath.Rel(m.root, path)
+	absPath, err := filepath.Abs(path)
 	if err != nil {
-		relPath = path
+		absPath = path
+	}
+	if m.root == "" {
+		info, err := os.Stat(absPath)
+		if err == nil && info.IsDir() {
+			m.root = absPath
+		} else {
+			m.root = filepath.Dir(absPath)
+		}
+	}
+	relPath, err := filepath.Rel(m.root, absPath)
+	if err != nil {
+		relPath = absPath
 	}
 
 	relPath = filepath.ToSlash(relPath)
