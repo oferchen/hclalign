@@ -25,9 +25,16 @@ import (
 	"github.com/oferchen/hclalign/patternmatching"
 )
 
+// test hooks for simulating context cancellation in unit tests
+var (
+	testHookAfterParse   func()
+	testHookAfterReorder func()
+	reorderAttributes    = hclalign.ReorderAttributes
+)
+
 func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 	if cfg.Stdin {
-		return processReader(ctx, os.Stdin, cfg)
+		return processReader(ctx, os.Stdin, os.Stdout, cfg)
 	}
 	return processFiles(ctx, cfg)
 }
@@ -37,6 +44,12 @@ func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 // stops dispatching new work after the first error. The provided context
 // cancels both dispatcher and workers to avoid unnecessary processing.
 func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
+	if _, err := os.Stat(cfg.Target); err != nil {
+		if os.IsNotExist(err) {
+			return false, fmt.Errorf("target %q does not exist", cfg.Target)
+		}
+		return false, err
+	}
 	matcher, err := patternmatching.NewMatcher(cfg.Include, cfg.Exclude)
 	if err != nil {
 		return false, err
@@ -114,9 +127,54 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	}
 	sort.Strings(files)
 
-	// A worker pool consumes file paths from fileCh. The dispatcher stops
-	// sending new files if any worker returns an error via errgroup, which
-	// cancels the context. Workers exit promptly when ctx.Done() is closed.
+	var changed atomic.Bool
+	outs := make(map[string][]byte, len(files))
+	for _, f := range files {
+		if err := ctx.Err(); err != nil {
+			return changed.Load(), err
+		}
+
+		var (
+			ch  bool
+			out []byte
+		)
+		g, gctx := errgroup.WithContext(ctx)
+		file := f
+		g.Go(func() error {
+			var err error
+			ch, out, err = processSingleFile(gctx, file, cfg)
+			return err
+		})
+		if err := g.Wait(); err != nil {
+			if !errors.Is(err, context.Canceled) {
+				log.Printf("error processing file %s: %v", f, err)
+			}
+			return changed.Load(), fmt.Errorf("%s: %w", f, err)
+		}
+		if ch {
+			changed.Store(true)
+		}
+		if len(out) > 0 {
+			if err := ctx.Err(); err != nil {
+				return changed.Load(), err
+			}
+			outs[f] = out
+		}
+		if cfg.Verbose {
+			if err := ctx.Err(); err != nil {
+				return changed.Load(), err
+			}
+			log.Printf("processed file: %s", f)
+		}
+
+	// Process files using a fixed worker pool. A dispatcher feeds file paths
+	// to the workers and stops enqueueing new paths if the context is
+	// canceled (for example due to the first worker error). Each worker
+	// checks ctx.Done before starting new work to honor cancellation
+	// promptly.
+	g, ctx := errgroup.WithContext(ctx)
+	var changed atomic.Bool
+
 	type result struct {
 		path string
 		data []byte
@@ -124,9 +182,15 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	g, ctx := errgroup.WithContext(ctx)
 	fileCh := make(chan string)
 	results := make(chan result, len(files))
+
 	var changed atomic.Bool
 
 	// dispatcher
+
+	fileCh := make(chan string)
+
+	// Dispatcher goroutine.
+
 	g.Go(func() error {
 		defer close(fileCh)
 		for _, f := range files {
@@ -138,6 +202,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		}
 		return nil
 	})
+
 
 	// workers
 	for i := 0; i < cfg.Concurrency; i++ {
@@ -161,11 +226,15 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 						changed.Store(true)
 					}
 					if len(out) > 0 {
+
 						select {
 						case results <- result{path: f, data: out}:
 						case <-ctx.Done():
 							return ctx.Err()
 						}
+
+						results <- result{path: f, data: out}
+
 					}
 					if cfg.Verbose {
 						log.Printf("processed file: %s", f)
@@ -174,18 +243,21 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 			}
 		})
 	}
+
+	// Wait for all goroutines. An error from any worker cancels the
+	// context, which stops the dispatcher from sending more files and
+	// causes other workers to exit.
 	if err := g.Wait(); err != nil {
 		close(results)
 		return false, err
-	}
-	close(results)
 
-	outs := make(map[string][]byte, len(files))
-	for r := range results {
-		outs[r.path] = r.data
 	}
+
 	for _, f := range files {
 		if out, ok := outs[f]; ok && len(out) > 0 {
+			if err := ctx.Err(); err != nil {
+				return changed.Load(), err
+			}
 			if _, err := os.Stdout.Write(out); err != nil {
 				return changed.Load(), err
 			}
@@ -211,8 +283,20 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	if diags.HasErrors() {
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
+	if testHookAfterParse != nil {
+		testHookAfterParse()
+	}
+	if err := ctx.Err(); err != nil {
+		return false, nil, err
+	}
 
-	if err := hclalign.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+	if err := reorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+		return false, nil, err
+	}
+	if testHookAfterReorder != nil {
+		testHookAfterReorder()
+	}
+	if err := ctx.Err(); err != nil {
 		return false, nil, err
 	}
 
@@ -257,7 +341,11 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	return changed, out, nil
 }
 
-func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, error) {
+func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Config) (bool, error) {
+	if w == nil {
+		w = os.Stdout
+	}
+
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return false, err
@@ -290,13 +378,13 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 			if err != nil {
 				return false, err
 			}
-			if _, err := fmt.Fprint(os.Stdout, text); err != nil {
+			if _, err := fmt.Fprint(w, text); err != nil {
 				return false, err
 			}
 		}
 	default:
 		if cfg.Stdout {
-			if _, err := os.Stdout.Write(styled); err != nil {
+			if _, err := w.Write(styled); err != nil {
 				return changed, err
 			}
 		}

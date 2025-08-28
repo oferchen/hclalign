@@ -45,7 +45,12 @@ jobs:
           govulncheck ./...
 
       - name: Test
-        run: go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out ./...
+        run: |
+          PKG_TEST=$(go list ./... | grep -v cmd/commentcheck | grep -v internal/ci/covercheck)
+          go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out $PKG_TEST
+          go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.tmp ./cmd/commentcheck ./internal/ci/covercheck
+          tail -n +2 coverage.tmp >> coverage.out
+          rm coverage.tmp
 
       - name: Check coverage
         run: go run ./internal/ci/covercheck
