@@ -283,6 +283,12 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	if diags.HasErrors() {
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
+	if testHookAfterParse != nil {
+		testHookAfterParse()
+	}
+	if err := ctx.Err(); err != nil {
+		return false, nil, err
+	}
 
 	if testHookAfterParse != nil {
 		testHookAfterParse()
@@ -292,6 +298,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 		return false, nil, err
 	}
 
+
 	if err := reorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
 		return false, nil, err
 	}
@@ -299,6 +306,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 		testHookAfterReorder()
 	}
 	if err := ctx.Err(); err != nil {
+
 		return false, nil, err
 	}
 	if err := ctx.Err(); err != nil {
