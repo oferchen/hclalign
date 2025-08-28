@@ -113,7 +113,7 @@ func TestProcessDiffDeterministicOrder(t *testing.T) {
 		Mode:        config.ModeDiff,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
-		Order:       config.DefaultOrder,
+		Order:       config.CanonicalOrder,
 		Concurrency: 2,
 	}
 	if err := cfg.Validate(); err != nil {
@@ -534,7 +534,7 @@ func TestProcessStdoutError(t *testing.T) {
 		Mode:        config.ModeCheck,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
-		Order:       config.DefaultOrder,
+		Order:       config.CanonicalOrder,
 		Stdout:      true,
 		Concurrency: 1,
 	}
