@@ -126,7 +126,7 @@ func RunE(cmd *cobra.Command, args []string) error {
 
 	changed, err := fileprocessing.Process(cmd.Context(), cfg)
 	if err != nil {
-		return &ExitCodeError{Err: err, Code: 1}
+		return &ExitCodeError{Err: err, Code: 3}
 	}
 
 	if changed && (mode == config.ModeCheck || mode == config.ModeDiff) {
