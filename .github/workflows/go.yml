@@ -1,0 +1,40 @@
+name: Go
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Tidy modules
+        run: |
+          go mod tidy -v
+          git diff --exit-code go.mod go.sum
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          args: --timeout 5m
+
+      - name: Test
+        run: go test -race -shuffle=on -cover ./...
+
+      - name: Fuzz tests
+        run: go test ./... -run Fuzz
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vulnerability check
+        continue-on-error: true
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...

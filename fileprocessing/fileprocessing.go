@@ -137,8 +137,13 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 				ToFile:   filePath,
 				Context:  3,
 			}
-			text, _ := difflib.GetUnifiedDiffString(ud)
-			fmt.Fprint(os.Stdout, text)
+			text, err := difflib.GetUnifiedDiffString(ud)
+			if err != nil {
+				return false, err
+			}
+			if _, err := fmt.Fprint(os.Stdout, text); err != nil {
+				return false, err
+			}
 		}
 	}
 
@@ -168,8 +173,13 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 				ToFile:   "stdin",
 				Context:  3,
 			}
-			text, _ := difflib.GetUnifiedDiffString(ud)
-			fmt.Fprint(os.Stdout, text)
+			text, err := difflib.GetUnifiedDiffString(ud)
+			if err != nil {
+				return false, err
+			}
+			if _, err := fmt.Fprint(os.Stdout, text); err != nil {
+				return false, err
+			}
 		}
 	default:
 		if cfg.Stdout {
