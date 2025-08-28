@@ -1,5 +1,5 @@
-// hclprocessing/benchmark_test.go
-package hclprocessing
+// internal/hclalign/benchmark_test.go
+package hclalign
 
 import (
 	"github.com/hashicorp/hcl/v2"

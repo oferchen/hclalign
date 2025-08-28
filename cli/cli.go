@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/oferchen/hclalign/config"
-	"github.com/oferchen/hclalign/fileprocessing"
+	"github.com/oferchen/hclalign/internal/engine"
 )
 
 type ExitCodeError struct {
@@ -125,7 +125,7 @@ func RunE(cmd *cobra.Command, args []string) error {
 		return &ExitCodeError{Err: err, Code: 2}
 	}
 
-	changed, err := fileprocessing.Process(cmd.Context(), cfg)
+	changed, err := engine.Process(cmd.Context(), cfg)
 	if err != nil {
 		return &ExitCodeError{Err: err, Code: 3}
 	}
