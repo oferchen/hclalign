@@ -16,6 +16,7 @@ import (
 	"github.com/oferchen/hclalign/config"
 	"github.com/oferchen/hclalign/hclprocessing"
 	internalfs "github.com/oferchen/hclalign/internal/fs"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProcessPreservesNewlineAndBOM(t *testing.T) {
@@ -324,7 +325,7 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 	if diags.HasErrors() {
 		t.Fatalf("parse expected: %v", diags)
 	}
-	hclprocessing.ReorderAttributes(expectedFile, config.CanonicalOrder, false)
+	require.NoError(t, hclprocessing.ReorderAttributes(expectedFile, config.CanonicalOrder, false))
 	expected := internalfs.ApplyHints(expectedFile.Bytes(), internalfs.Hints{HasBOM: true, Newline: "\r\n"})
 	if string(out) != string(expected) {
 		t.Fatalf("unexpected output: got %q, want %q", out, expected)

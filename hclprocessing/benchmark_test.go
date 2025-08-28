@@ -21,6 +21,8 @@ func BenchmarkReorderAttributes(b *testing.B) {
 		if diags.HasErrors() {
 			b.Fatalf("parse: %v", diags)
 		}
-		ReorderAttributes(f, nil, false)
+		if err := ReorderAttributes(f, nil, false); err != nil {
+			b.Fatalf("reorder: %v", err)
+		}
 	}
 }

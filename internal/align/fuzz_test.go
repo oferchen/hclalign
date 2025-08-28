@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/oferchen/hclalign/hclprocessing"
+	"github.com/stretchr/testify/require"
 )
 
 func FuzzReorderStability(f *testing.F) {
@@ -37,7 +38,7 @@ func FuzzReorderStability(f *testing.F) {
 		if diags.HasErrors() {
 			t.Fatalf("parse: %v", diags)
 		}
-		hclprocessing.ReorderAttributes(file, nil, false)
+		require.NoError(t, hclprocessing.ReorderAttributes(file, nil, false))
 		out := file.Bytes()
 
 		if len(out) > maxFuzzBytes {
@@ -48,7 +49,7 @@ func FuzzReorderStability(f *testing.F) {
 		if diags.HasErrors() {
 			t.Fatalf("parse reordered: %v", diags)
 		}
-		hclprocessing.ReorderAttributes(file2, nil, false)
+		require.NoError(t, hclprocessing.ReorderAttributes(file2, nil, false))
 		if !bytes.Equal(out, file2.Bytes()) {
 			t.Fatalf("round-trip mismatch")
 		}
