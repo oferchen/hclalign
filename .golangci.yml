@@ -1,0 +1,26 @@
+version: 2
+
+formatters:
+  enable:
+    - gofumpt
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - revive
+    - misspell
+    - depguard
+
+run:
+  timeout: 5m
+
+linters-settings:
+  depguard:
+    rules:
+      Main:
+        deny:
+          - pkg: "forbidden"
+            desc: "placeholder"

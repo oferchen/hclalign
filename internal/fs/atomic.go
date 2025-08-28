@@ -39,18 +39,18 @@ func WriteFile(ctx context.Context, path string, data []byte, perm iofs.FileMode
 		return err
 	}
 	tmpName := tmp.Name()
-	defer os.Remove(tmpName)
+	defer func() { _ = os.Remove(tmpName) }()
 	if err := tmp.Chmod(perm); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	content := ApplyHints(data, newline, bom)
 	if _, err := tmp.Write(content); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	if err := tmp.Close(); err != nil {
@@ -63,6 +63,6 @@ func WriteFile(ctx context.Context, path string, data []byte, perm iofs.FileMode
 	if err != nil {
 		return err
 	}
-	defer dirf.Close()
+	defer func() { _ = dirf.Close() }()
 	return dirf.Sync()
 }

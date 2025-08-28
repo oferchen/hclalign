@@ -18,7 +18,7 @@ func createTempHCLFile(t *testing.T, content string) string {
 	if err != nil {
 		t.Fatalf("Failed to create temp HCL file: %v", err)
 	}
-	defer tempFile.Close()
+	defer func() { _ = tempFile.Close() }()
 
 	if _, err := tempFile.WriteString(content); err != nil {
 		t.Fatalf("Failed to write to temp HCL file: %v", err)
