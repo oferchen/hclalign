@@ -11,9 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"sync/atomic"
-
-	"golang.org/x/sync/errgroup"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -127,6 +124,35 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	}
 	sort.Strings(files)
 
+	var changed bool
+	outs := make(map[string][]byte, len(files))
+	for _, f := range files {
+		if err := ctx.Err(); err != nil {
+			return changed, err
+		}
+		ch, out, err := processSingleFile(ctx, f, cfg)
+		if err != nil {
+			if !errors.Is(err, context.Canceled) {
+				log.Printf("error processing file %s: %v", f, err)
+			}
+			return false, fmt.Errorf("%s: %w", f, err)
+		}
+		if ch {
+			changed = true
+		}
+		if len(out) > 0 {
+			outs[f] = out
+		}
+		if cfg.Verbose {
+			if err := ctx.Err(); err != nil {
+				return changed, err
+			}
+			log.Printf("processed file: %s", f)
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		return changed, err
+=======
 	var changed atomic.Bool
 	outs := make(map[string][]byte, len(files))
 	for _, f := range files {
@@ -256,15 +282,18 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	for _, f := range files {
 		if out, ok := outs[f]; ok && len(out) > 0 {
 			if err := ctx.Err(); err != nil {
+
+				return changed, err
+=======
 				return changed.Load(), err
 			}
 			if _, err := os.Stdout.Write(out); err != nil {
-				return changed.Load(), err
+				return changed, err
 			}
 		}
 	}
 
-	return changed.Load(), nil
+	return changed, nil
 }
 
 func processSingleFile(ctx context.Context, filePath string, cfg *config.Config) (bool, []byte, error) {
