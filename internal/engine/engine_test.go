@@ -188,32 +188,58 @@ func TestProcessContextCanceledNoLog(t *testing.T) {
 	}
 }
 
-func TestProcessPropagatesFileError(t *testing.T) {
+func TestProcessSkipsFilesAfterMalformed(t *testing.T) {
 	dir := t.TempDir()
 
-	good := filepath.Join(dir, "good.tf")
-	if err := os.WriteFile(good, []byte("variable \"a\" {\n type = string\n}\n"), 0644); err != nil {
-		t.Fatalf("write good file: %v", err)
+	first := filepath.Join(dir, "a.tf")
+	if err := os.WriteFile(first, []byte("variable \"a\" {\n  type = string\n}\n"), 0644); err != nil {
+		t.Fatalf("write first file: %v", err)
 	}
-	bad := filepath.Join(dir, "bad.tf")
+	bad := filepath.Join(dir, "b.tf")
 	if err := os.WriteFile(bad, []byte("variable \"b\" {\n"), 0644); err != nil {
 		t.Fatalf("write bad file: %v", err)
+	}
+	last := filepath.Join(dir, "c.tf")
+	lastContent := "variable \"c\" {\n  default = 1\n  type = number\n}\n"
+	if err := os.WriteFile(last, []byte(lastContent), 0644); err != nil {
+		t.Fatalf("write last file: %v", err)
 	}
 
 	cfg := &config.Config{
 		Target:      dir,
-		Mode:        config.ModeCheck,
+		Mode:        config.ModeWrite,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
 		Order:       config.CanonicalOrder,
-		Concurrency: 2,
+		Concurrency: 1,
+		Verbose:     true,
 	}
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("validate: %v", err)
 	}
 
+	var buf bytes.Buffer
+	old := log.Writer()
+	log.SetOutput(&buf)
+	defer log.SetOutput(old)
+
 	if _, err := Process(context.Background(), cfg); err == nil {
 		t.Fatalf("expected error due to invalid file")
+	}
+
+	out := buf.String()
+	if !strings.Contains(out, "a.tf") {
+		t.Fatalf("expected log for a.tf, got %q", out)
+	}
+	if strings.Contains(out, "c.tf") {
+		t.Fatalf("did not expect log for c.tf, got %q", out)
+	}
+	data, err := os.ReadFile(last)
+	if err != nil {
+		t.Fatalf("read last file: %v", err)
+	}
+	if string(data) != lastContent {
+		t.Fatalf("c.tf was processed: got %q, want %q", data, lastContent)
 	}
 }
 
