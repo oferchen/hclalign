@@ -1,5 +1,5 @@
-// fileprocessing/fileprocessing.go
-package fileprocessing
+// internal/engine/engine.go
+package engine
 
 import (
 	"bytes"
@@ -19,9 +19,9 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	"github.com/oferchen/hclalign/config"
-	"github.com/oferchen/hclalign/hclprocessing"
 	"github.com/oferchen/hclalign/internal/diff"
 	internalfs "github.com/oferchen/hclalign/internal/fs"
+	"github.com/oferchen/hclalign/internal/hclalign"
 	"github.com/oferchen/hclalign/patternmatching"
 )
 
@@ -184,7 +184,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
 
-	if err := hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+	if err := hclalign.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
 		return false, nil, err
 	}
 
@@ -244,7 +244,7 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 	if diags.HasErrors() {
 		return false, fmt.Errorf("parsing error: %v", diags.Errs())
 	}
-	if err := hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+	if err := hclalign.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
 		return false, err
 	}
 	formatted := bytes.ReplaceAll(file.Bytes(), []byte("\r\n"), []byte("\n"))

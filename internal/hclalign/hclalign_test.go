@@ -1,12 +1,12 @@
-// hclprocessing/hclprocessing_test.go
-package hclprocessing_test
+// internal/hclalign/hclalign_test.go
+package hclalign_test
 
 import (
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/hclprocessing"
+	"github.com/oferchen/hclalign/internal/hclalign"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +19,7 @@ func TestReorderAttributes_VariableBlock(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclprocessing.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
 
 	expected := `variable "example" {
   description = "d"
@@ -38,7 +38,7 @@ func TestReorderAttributes_CustomOrder(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclprocessing.ReorderAttributes(f, []string{"default", "description"}, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, []string{"default", "description"}, false))
 
 	expected := `variable "example" {
   default     = "v"
@@ -59,7 +59,7 @@ func TestReorderAttributes_NestedBlocks(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclprocessing.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
 
 	expected := `variable "example" {
   default = "v"
@@ -79,7 +79,7 @@ func TestReorderAttributes_IgnoresNonVariable(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclprocessing.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
 
 	require.Equal(t, src, string(f.Bytes()))
 }
@@ -93,7 +93,7 @@ func TestReorderAttributes_StrictUnknownAttrError(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	err := hclprocessing.ReorderAttributes(f, []string{"custom", "description", "type"}, true)
+	err := hclalign.ReorderAttributes(f, []string{"custom", "description", "type"}, true)
 	require.Error(t, err)
 }
 
@@ -106,7 +106,7 @@ func TestReorderAttributes_LooseKeepsUnknownAtTop(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclprocessing.ReorderAttributes(f, []string{"description", "type"}, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, []string{"description", "type"}, false))
 
 	expected := `variable "example" {
   custom      = true
@@ -121,7 +121,7 @@ func TestReorderAttributes_FirstAttrSameLine(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclprocessing.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
 
 	require.Equal(t, src, string(f.Bytes()))
 }
@@ -135,7 +135,7 @@ func TestReorderAttributes_OnlyNestedBlocks(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclprocessing.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
 
 	require.Equal(t, src, string(f.Bytes()))
 }
@@ -150,7 +150,7 @@ func TestReorderAttributes_DefaultBlockNestedType(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclprocessing.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
 
 	expected := `variable "example" {
   type = string

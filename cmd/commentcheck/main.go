@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-var dirs = []string{"cli", "cmd/commentcheck", "config", "fileprocessing", "hclprocessing", "internal", "patternmatching"}
+var dirs = []string{"cli", "cmd/commentcheck", "config", "internal", "patternmatching"}
 
 func main() {
 	var files []string
