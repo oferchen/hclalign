@@ -59,8 +59,8 @@ func IsValidOrder(order []string) (bool, error) {
 
 // ProcessTargetDynamically processes files in the target directory based on criteria and order.
 func ProcessTargetDynamically(ctx context.Context, target string, criteria []string, order []string) error {
-	if !patternmatching.IsValidCriteria(criteria) {
-		return fmt.Errorf("invalid criteria: %v", criteria)
+	if err := patternmatching.IsValidCriteria(criteria); err != nil {
+		return fmt.Errorf("invalid criteria: %w", err)
 	}
 	if strings.TrimSpace(target) == "" {
 		return fmt.Errorf("no target specified")

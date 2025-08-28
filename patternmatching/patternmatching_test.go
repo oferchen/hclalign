@@ -4,50 +4,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestCompilePatterns(t *testing.T) {
-	tests := []struct {
-		name        string
-		criteria    []string
-		wantErr     bool
-		expectedLen int
-	}{
-		{
-			name:        "compile single pattern",
-			criteria:    []string{"*.txt"},
-			wantErr:     false,
-			expectedLen: 1,
-		},
-		{
-			name:        "compile multiple patterns",
-			criteria:    []string{"*.txt", "*.go", "main.*"},
-			wantErr:     false,
-			expectedLen: 3,
-		},
-		{
-			name:     "compile invalid pattern",
-			criteria: []string{"[a-z"},
-			wantErr:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			patterns, err := CompilePatterns(tt.criteria)
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, tt.expectedLen, len(patterns))
-			}
-		})
-	}
-}
-
 func TestMatchesFileCriteria(t *testing.T) {
-	compiledPatterns, _ := CompilePatterns([]string{"*.txt", "README.*"})
+	criteria := []string{"*.txt", "README.*"}
 	tests := []struct {
 		name          string
 		filePath      string
@@ -72,7 +32,7 @@ func TestMatchesFileCriteria(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := MatchesFileCriteria(tt.filePath, compiledPatterns)
+			result := MatchesFileCriteria(tt.filePath, criteria)
 			assert.Equal(t, tt.expectToMatch, result)
 		})
 	}
@@ -80,36 +40,44 @@ func TestMatchesFileCriteria(t *testing.T) {
 
 func TestIsValidCriteria(t *testing.T) {
 	tests := []struct {
-		name          string
-		criteria      []string
-		expectedValid bool
+		name       string
+		criteria   []string
+		expectErr  bool
+		errMessage string
 	}{
 		{
-			name:          "valid single wildcard",
-			criteria:      []string{"*.tf"},
-			expectedValid: true,
+			name:      "valid single wildcard",
+			criteria:  []string{"*.tf"},
+			expectErr: false,
 		},
 		{
-			name:          "valid multiple criteria",
-			criteria:      []string{"main.tf", "*.jpg", "directory/"},
-			expectedValid: true,
+			name:      "valid multiple criteria",
+			criteria:  []string{"main.tf", "*.jpg", "directory/"},
+			expectErr: false,
 		},
 		{
-			name:          "invalid pattern",
-			criteria:      []string{"???.>tf"},
-			expectedValid: false,
+			name:       "invalid pattern",
+			criteria:   []string{"["},
+			expectErr:  true,
+			errMessage: "invalid criterion",
 		},
 		{
-			name:          "empty criterion",
-			criteria:      []string{""},
-			expectedValid: false,
+			name:       "empty criterion",
+			criteria:   []string{""},
+			expectErr:  true,
+			errMessage: "criterion is empty",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := IsValidCriteria(tt.criteria)
-			assert.Equal(t, tt.expectedValid, result)
+			err := IsValidCriteria(tt.criteria)
+			if tt.expectErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMessage)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
