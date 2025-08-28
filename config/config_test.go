@@ -104,7 +104,7 @@ func TestProcessTargetDynamically(t *testing.T) {
 			setupFunc: func(t *testing.T) string {
 				return t.TempDir()
 			},
-			criteria:  []string{"invalid_criteria]"},
+			criteria:  []string{"["},
 			order:     []string{"description", "type", "default"},
 			expectErr: true,
 		},

@@ -27,11 +27,6 @@ const TargetContextKey contextKey = "target"
 
 // ProcessFiles processes files in the specified target directory according to criteria and order.
 func ProcessFiles(ctx context.Context, target string, criteria []string, order []string) error {
-	compiledPatterns, err := patternmatching.CompilePatterns(criteria)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -52,7 +47,7 @@ func ProcessFiles(ctx context.Context, target string, criteria []string, order [
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if !d.IsDir() && patternmatching.MatchesFileCriteria(filePath, compiledPatterns) {
+		if !d.IsDir() && patternmatching.MatchesFileCriteria(filePath, criteria) {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				once.Do(func() { firstErr = err })
 				errChan <- err

@@ -41,7 +41,7 @@ attribute4 = "value4"`,
 		tmpDir := setupTestDir(t, files)
 		defer os.RemoveAll(tmpDir)
 
-		criteria := []string{`.*\.hcl$`}
+		criteria := []string{"*.hcl"}
 		order := []string{"attribute2", "attribute1", "attribute4", "attribute3"}
 
 		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, order)
@@ -72,17 +72,11 @@ attribute4 = "value4"`,
 		tmpDir := setupTestDir(t, map[string]string{})
 		defer os.RemoveAll(tmpDir)
 
-		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, []string{`.*\.hcl$`}, []string{"attribute1", "attribute2"})
+		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, []string{"*.hcl"}, []string{"attribute1", "attribute2"})
 		assert.NoError(t, err)
 	})
 
-	t.Run("invalid criteria", func(t *testing.T) {
-		tmpDir := setupTestDir(t, map[string]string{"test.hcl": `attribute = "value"`})
-		defer os.RemoveAll(tmpDir)
-
-		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, []string{"[\\"}, []string{"attribute"})
-		assert.Error(t, err)
-	})
+	// Validation of criteria is handled outside ProcessFiles; invalid patterns are tested elsewhere.
 }
 
 func TestProcessSingleFile_ValidHCL(t *testing.T) {
