@@ -123,3 +123,27 @@ func TestReorderAttributes_LoosePreservesUnknownPositions(t *testing.T) {
 }`
 	require.Equal(t, expected, string(f.Bytes()))
 }
+
+func TestReorderAttributes_FirstAttrSameLine(t *testing.T) {
+	src := `variable "example" { default = "v" }`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	hclprocessing.ReorderAttributes(f, nil, false)
+
+	require.Equal(t, src, string(f.Bytes()))
+}
+
+func TestReorderAttributes_OnlyNestedBlocks(t *testing.T) {
+	src := `variable "example" {
+  validation {
+    condition = true
+  }
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	hclprocessing.ReorderAttributes(f, nil, false)
+
+	require.Equal(t, src, string(f.Bytes()))
+}
