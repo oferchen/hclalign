@@ -6,12 +6,14 @@ package fileprocessing
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
 	"sync/atomic"
 
 	"golang.org/x/sync/errgroup"
@@ -96,6 +98,8 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	sem := make(chan struct{}, cfg.Concurrency)
 	g, ctx := errgroup.WithContext(ctx)
 	var changed atomic.Bool
+	var mu sync.Mutex
+	var errs []error
 	for _, f := range files {
 		f := f
 		select {
@@ -107,24 +111,30 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 			defer func() { <-sem }()
 			ch, err := processSingleFile(ctx, f, cfg)
 			if err != nil {
-				return err
+				mu.Lock()
+				errs = append(errs, fmt.Errorf("%s: %w", f, err))
+				mu.Unlock()
+				if !errors.Is(err, context.Canceled) {
+					log.Printf("error processing file %s: %v", f, err)
+				}
+				return nil
 			}
 			if ch {
 				changed.Store(true)
 			}
 			if cfg.Verbose {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				default:
-					log.Printf("processed file: %s", f)
-				}
+				log.Printf("processed file: %s", f)
 			}
 			return nil
 		})
 	}
 	if err := g.Wait(); err != nil {
-		return changed.Load(), err
+		mu.Lock()
+		errs = append(errs, err)
+		mu.Unlock()
+	}
+	if len(errs) > 0 {
+		return changed.Load(), errors.Join(errs...)
 	}
 	return changed.Load(), nil
 }

@@ -204,6 +204,70 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 	}
 }
 
+func TestProcessContinuesAfterMalformedFile(t *testing.T) {
+	dir := t.TempDir()
+
+	good := filepath.Join(dir, "good.tf")
+	if err := os.WriteFile(good, []byte("variable \"a\" {\n  default = 1\n  type = number\n}\n"), 0644); err != nil {
+		t.Fatalf("write good file: %v", err)
+	}
+	bad := filepath.Join(dir, "bad.tf")
+	if err := os.WriteFile(bad, []byte("variable \"b\" {\n  default = 1\n"), 0644); err != nil {
+		t.Fatalf("write bad file: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:      dir,
+		Mode:        config.ModeWrite,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.DefaultOrder,
+		Concurrency: 2,
+		Verbose:     true,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	var buf bytes.Buffer
+	old := log.Writer()
+	log.SetOutput(&buf)
+	defer log.SetOutput(old)
+
+	changed, procErr := Process(context.Background(), cfg)
+	if procErr == nil {
+		t.Fatalf("expected error")
+	}
+	if !changed {
+		t.Fatalf("expected changes")
+	}
+
+	out := buf.String()
+	if !strings.Contains(out, "processed file: "+good) {
+		t.Fatalf("expected log for good file, got %q", out)
+	}
+	if !strings.Contains(out, "error processing file "+bad) {
+		t.Fatalf("expected error log for bad file, got %q", out)
+	}
+
+	data, err := os.ReadFile(good)
+	if err != nil {
+		t.Fatalf("read good file: %v", err)
+	}
+	expectedFile, diags := hclwrite.ParseConfig([]byte("variable \"a\" {\n  default = 1\n  type = number\n}\n"), good, hcl.InitialPos)
+	if diags.HasErrors() {
+		t.Fatalf("parse expected: %v", diags)
+	}
+	hclprocessing.ReorderAttributes(expectedFile, config.DefaultOrder, false)
+	expected := expectedFile.Bytes()
+	if string(data) != string(expected) {
+		t.Fatalf("good file not processed: got %q, want %q", data, expected)
+	}
+	if !strings.Contains(procErr.Error(), "bad.tf") {
+		t.Fatalf("error does not mention bad file: %v", procErr)
+	}
+}
+
 func TestProcessSkipsDefaultExcludedDirs(t *testing.T) {
 	dir := t.TempDir()
 	// valid file to ensure processing succeeds
