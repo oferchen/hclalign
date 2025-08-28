@@ -42,7 +42,7 @@ func TestProcessPreservesNewlineAndBOM(t *testing.T) {
 		t.Fatalf("process: %v", err)
 	}
 
-	_, _, hints, err := internalfs.ReadFileWithHints(path)
+	_, _, hints, err := internalfs.ReadFileWithHints(context.Background(), path)
 	if err != nil {
 		t.Fatalf("read file: %v", err)
 	}
@@ -306,7 +306,7 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 	}
 }
 
-func TestProcessContinuesAfterMalformedFile(t *testing.T) {
+func TestProcessStopsAfterMalformedFile(t *testing.T) {
 	dir := t.TempDir()
 
 	good := filepath.Join(dir, "good.tf")
@@ -340,13 +340,13 @@ func TestProcessContinuesAfterMalformedFile(t *testing.T) {
 	if procErr == nil {
 		t.Fatalf("expected error")
 	}
-	if !changed {
-		t.Fatalf("expected changes")
+	if changed {
+		t.Fatalf("did not expect changes")
 	}
 
 	out := buf.String()
-	if !strings.Contains(out, "processed file: "+good) {
-		t.Fatalf("expected log for good file, got %q", out)
+	if strings.Contains(out, "processed file: "+good) {
+		t.Fatalf("did not expect log for good file, got %q", out)
 	}
 	if !strings.Contains(out, "error processing file "+bad) {
 		t.Fatalf("expected error log for bad file, got %q", out)

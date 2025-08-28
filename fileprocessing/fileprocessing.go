@@ -42,16 +42,22 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		return false, err
 	}
 	var files []string
-	var walk func(string) error
-	walk = func(dir string) error {
+	var walk func(context.Context, string) error
+	walk = func(ctx context.Context, dir string) error {
 		if !matcher.Matches(dir) {
 			return nil
+		}
+		if err := ctx.Err(); err != nil {
+			return err
 		}
 		entries, err := os.ReadDir(dir)
 		if err != nil {
 			return err
 		}
 		for _, entry := range entries {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			path := filepath.Join(dir, entry.Name())
 			if entry.Type()&os.ModeSymlink != 0 {
 				info, err := os.Stat(path)
@@ -60,7 +66,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 				}
 				if info.IsDir() {
 					if cfg.FollowSymlinks {
-						if err := walk(path); err != nil {
+						if err := walk(ctx, path); err != nil {
 							return err
 						}
 					}
@@ -68,7 +74,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 				}
 			}
 			if entry.IsDir() {
-				if err := walk(path); err != nil {
+				if err := walk(ctx, path); err != nil {
 					return err
 				}
 				continue
@@ -90,7 +96,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		}
 		if resolved.IsDir() {
 			if cfg.FollowSymlinks {
-				if err := walk(cfg.Target); err != nil {
+				if err := walk(ctx, cfg.Target); err != nil {
 					return false, err
 				}
 			}
@@ -98,7 +104,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 			files = append(files, cfg.Target)
 		}
 	} else if info.IsDir() {
-		if err := walk(cfg.Target); err != nil {
+		if err := walk(ctx, cfg.Target); err != nil {
 			return false, err
 		}
 	} else {
@@ -146,7 +152,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	if err := ctx.Err(); err != nil {
 		return false, err
 	}
-	data, perm, hints, err := internalfs.ReadFileWithHints(filePath)
+	data, perm, hints, err := internalfs.ReadFileWithHints(ctx, filePath)
 	if err != nil {
 		return false, fmt.Errorf("error reading file %s: %w", filePath, err)
 	}
@@ -179,7 +185,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 			}
 			return false, nil
 		}
-		if err := internalfs.WriteFileAtomic(filePath, formatted, perm, hints); err != nil {
+		if err := internalfs.WriteFileAtomic(ctx, filePath, formatted, perm, hints); err != nil {
 			return false, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
 		}
 		if cfg.Stdout {
