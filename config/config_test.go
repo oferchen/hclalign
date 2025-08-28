@@ -1,6 +1,9 @@
 package config
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestValidateOrder_StrictUnknownAttribute(t *testing.T) {
 	err := ValidateOrder([]string{"description", "unknown"}, true)
@@ -18,5 +21,12 @@ func TestValidateOrder_NonStrictUnknownAttribute(t *testing.T) {
 func TestValidateOrder_StrictDefaultOrder(t *testing.T) {
 	if err := ValidateOrder(DefaultOrder, true); err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestDefaultOrderMatchesBuiltInAttributes(t *testing.T) {
+	expected := []string{"description", "type", "default", "sensitive", "nullable", "validation"}
+	if !reflect.DeepEqual(DefaultOrder, expected) {
+		t.Fatalf("expected DefaultOrder to be %v, got %v", expected, DefaultOrder)
 	}
 }
