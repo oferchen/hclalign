@@ -23,12 +23,12 @@ tidy:
 	git diff --exit-code go.mod go.sum
 
 lint:
-        @echo "Running linters..."
-        golangci-lint run
+	@echo "Running linters..."
+	golangci-lint run
 
 comments:
-        @echo "Checking file comments..."
-        go run ./cmd/commentcheck
+	@echo "Checking file comments..."
+	go run ./cmd/commentcheck
 
 fmt:
 	@echo "Formatting code..."
@@ -85,9 +85,9 @@ help:
 	@echo "tidy      - Tidies and verifies the module dependencies."
 	@echo "fmt       - Formats the code."
 	@echo "vet       - Runs go vet."
-        @echo "lint      - Runs golangci-lint."
-        @echo "comments  - Checks file header comments."
-        @echo "test      - Runs all the tests."
+	@echo "lint      - Runs golangci-lint."
+	@echo "comments  - Checks file header comments."
+	@echo "test      - Runs all the tests."
 	@echo "test-race - Runs tests with the race detector."
 	@echo "cover     - Runs tests with the race detector and generates a coverage report."
 	@echo "fuzz      - Runs fuzz tests."
