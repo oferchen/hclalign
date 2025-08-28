@@ -69,6 +69,50 @@ func TestReorderAttributes(t *testing.T) {
 	}
 }
 
+func TestReorderAttributes_NestedBlocks(t *testing.T) {
+	f := hclwrite.NewEmptyFile()
+	root := f.Body()
+	outer := root.AppendNewBlock("resource", []string{"example", "test"})
+	outerBody := outer.Body()
+	outerBody.SetAttributeValue("b", cty.StringVal("b"))
+	outerBody.SetAttributeValue("a", cty.StringVal("a"))
+	inner := outerBody.AppendNewBlock("nested", nil)
+	innerBody := inner.Body()
+	innerBody.SetAttributeValue("d", cty.StringVal("d"))
+	innerBody.SetAttributeValue("c", cty.StringVal("c"))
+
+	order := []string{"a", "b", "c", "d"}
+	hclprocessing.ReorderAttributes(f, order)
+
+	expected := `resource "example" "test" {
+  a = "a"
+  b = "b"
+  nested {
+    c = "c"
+    d = "d"
+  }
+}
+`
+
+	require.Equal(t, expected, string(f.Bytes()))
+}
+
+func TestReorderAttributes_RootAttributes(t *testing.T) {
+	f := hclwrite.NewEmptyFile()
+	body := f.Body()
+	body.SetAttributeValue("b", cty.StringVal("b"))
+	body.SetAttributeValue("a", cty.StringVal("a"))
+
+	order := []string{"a", "b"}
+	hclprocessing.ReorderAttributes(f, order)
+
+	expected := `a = "a"
+b = "b"
+`
+
+	require.Equal(t, expected, string(f.Bytes()))
+}
+
 func TestProcessSingleFile_ValidHCL_PermissionsPreserved(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "test.hcl")

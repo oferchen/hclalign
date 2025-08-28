@@ -11,25 +11,50 @@ import (
 
 // ReorderAttributes reorders the attributes of the given HCL file according to the specified order.
 func ReorderAttributes(file *hclwrite.File, order []string) {
-	for _, block := range file.Body().Blocks() {
-		reorderBlockAttributes(block, order)
+	body := file.Body()
+	blocks := body.Blocks()
+	for _, b := range blocks {
+		body.RemoveBlock(b)
+	}
+
+	reorderBodyAttributes(body, order)
+
+	for _, b := range blocks {
+		body.AppendBlock(b)
+		reorderBlockAttributes(b, order)
 	}
 }
 
 // reorderBlockAttributes reorders attributes within a single block based on the specified order.
 func reorderBlockAttributes(block *hclwrite.Block, order []string) {
-	originalAttributes := block.Body().Attributes()
+	body := block.Body()
+	nested := body.Blocks()
+	for _, b := range nested {
+		body.RemoveBlock(b)
+	}
+
+	reorderBodyAttributes(body, order)
+
+	for _, b := range nested {
+		body.AppendBlock(b)
+		reorderBlockAttributes(b, order)
+	}
+}
+
+// reorderBodyAttributes reorders attributes in the given body based on the specified order.
+func reorderBodyAttributes(body *hclwrite.Body, order []string) {
+	originalAttributes := body.Attributes()
 	sortedAttributes := sortAttributes(originalAttributes, order)
 
 	// Remove all attributes to re-add them in the correct order.
 	for name := range originalAttributes {
-		block.Body().RemoveAttribute(name)
+		body.RemoveAttribute(name)
 	}
 
 	// Re-add attributes in the specified order.
 	for _, name := range sortedAttributes {
 		if attr, exists := originalAttributes[name]; exists {
-			block.Body().SetAttributeRaw(name, attr.Expr().BuildTokens(nil))
+			body.SetAttributeRaw(name, attr.Expr().BuildTokens(nil))
 		}
 	}
 }
