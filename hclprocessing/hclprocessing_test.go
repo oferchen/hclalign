@@ -147,3 +147,24 @@ func TestReorderAttributes_OnlyNestedBlocks(t *testing.T) {
 
 	require.Equal(t, src, string(f.Bytes()))
 }
+
+func TestReorderAttributes_DefaultBlockNestedType(t *testing.T) {
+	src := `variable "example" {
+  type    = string
+  default = {
+    type = string
+  }
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	hclprocessing.ReorderAttributes(f, nil, false)
+
+	expected := `variable "example" {
+  type = string
+  default = {
+    type = string
+  }
+}`
+	require.Equal(t, expected, string(f.Bytes()))
+}

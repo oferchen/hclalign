@@ -185,10 +185,21 @@ func extractAttrTokens(attr *hclwrite.Attribute) attrTokens {
 
 func attributeOrder(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) []string {
 	tokens := body.BuildTokens(nil)
-	var order []string
+	order := make([]string, 0, len(attrs))
+	depth := 0
 	for i := 0; i < len(tokens)-1; i++ {
 		tok := tokens[i]
-		if tok.Type == hclsyntax.TokenIdent {
+		switch tok.Type {
+		case hclsyntax.TokenOBrace, hclsyntax.TokenOParen:
+			depth++
+			continue
+		case hclsyntax.TokenCBrace, hclsyntax.TokenCParen:
+			if depth > 0 {
+				depth--
+			}
+			continue
+		}
+		if depth == 0 && tok.Type == hclsyntax.TokenIdent {
 			name := string(tok.Bytes)
 			if _, ok := attrs[name]; ok && tokens[i+1].Type == hclsyntax.TokenEqual {
 				order = append(order, name)
