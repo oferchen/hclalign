@@ -1,6 +1,6 @@
 module github.com/oferchen/hclalign
 
-go 1.24.3
+go 1.23.0
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.9.1
