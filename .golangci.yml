@@ -1,24 +1,24 @@
-# .golangci.yml — compatible with golangci-lint >= v1.60
-# Purpose: fast, reproducible linting with pragmatic rules. Optionals are commented.
+# .golangci.yml — validated for golangci-lint v1.60.x
 
 run:
   timeout: 5m
   tests: true
   allow-parallel-runners: true
-  # Optional: limit packages to speed up CI (uncomment & edit)
+  # Optional: limit packages
   # packages:
   #   - ./...
-  # Optional: add custom build tags if you use them
+  # Optional: custom build tags
   # build-tags:
   #   - integration
 
 output:
-  # one of: line-number, colored-line-number, tab, checkstyle, json, junit-xml, code-climate, sarif
-  format: colored-line-number
+  # Use the new 'formats' list (single or multiple outputs). 'format' (singular) is not allowed.
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
   uniq-by-line: false
-  # Optional CI-focused formats (uncomment for SARIF upload to code scanning)
+  # Optional: emit SARIF for code scanning
   # formats:
   #   - format: sarif
   #     path: ./lint.sarif
@@ -40,14 +40,10 @@ linters:
     - typecheck
     - asciicheck
     - unconvert
-    - gosec           # Optional security checks; tune in linters-settings.gosec
-    - exportloopref   # catches loop variable capture bugs
-    - sloglint        # if you use log/slog (harmless if not)
-  disable:
-    # Disable noisy or overlapping linters here if they fight with your code style.
-    # - dupl
-    # - gocyclo
-    # - funlen
+    - gosec
+    - exportloopref
+    # - sloglint        # Optional: enable if you use log/slog and have this linter available
+  disable: []           # must be an array, not null
 
 linters-settings:
   revive:
@@ -59,69 +55,69 @@ linters-settings:
         arguments: [ "checkPrivateReceivers" ]
       - name: receiver-naming
       - name: time-naming
+
   gocritic:
     enabled-tags: [ diagnostic, performance, style ]
     disabled-checks:
       - hugeParam
+
   errcheck:
     check-type-assertions: true
     check-blank: true
-    # Optional: add allow list for common deliberate ignores (context cancel, Close errors)
+    # Optional allowlist for deliberate ignores
     # exclude-functions:
-    #   - (*net/http.Server).Shutdown
     #   - (io.Closer).Close
+    #   - (*net/http.Server).Shutdown
+
   gofmt:
     simplify: true
+
   goimports:
-    local-prefixes: github.com/your/module   # Optional: set to your module path
+    # Optional: set your module path for grouping
+    # local-prefixes: github.com/your/module
+
   misspell:
     locale: US
+
   goconst:
     min-len: 3
     min-occurrences: 3
+
   gosec:
     severity: medium
     confidence: medium
-    # Optional: exclude noisy rules
     excludes:
-      - G115  # integer conversion precision loss
-      - G304  # file path provided as taint input (often noisy in tests/tools)
+      - G115  # int conversion precision loss (noisy)
+      - G304  # filepath from taint input (often noisy in tools/tests)
+
   staticcheck:
     checks: [ "all" ]
-    # Optional: selectively ignore specific SA* checks if you must
-    # go: "1.22" # set your target if needed
-  unused:
-    check-exported: false
-  typecheck:
-    error-func: ''
-  unconvert:
-    fast: true
+    # Optional:
+    # go: "1.22"
+
+  # NOTE: Removed invalid/unsupported settings:
+  # - unconvert.fast (not allowed)
+  # - unused.check-exported (not allowed)
+  # - typecheck.* (no per-linter settings supported)
 
 issues:
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
 
-  # Optional: focus reports by excluding generated, vendor, or testdata directories
+  # Optional focus
   exclude-dirs:
     - vendor
     - testdata
     - .git
     - .github
 
-  # Optional: fine-grained exclusions
   exclude-rules:
     - path: _test\.go
       linters: [ gocyclo, funlen, gosec ]
     - linters: [ errcheck ]
-      text: "Close.*error"   # allow ignored Close() errors in selective places
+      text: "Close.*error"   # allow ignored Close() errors selectively
 
-# Optional: per-package/dir overrides (stricten / relax rules)
-# Annotations apply to the directory containing this file and its children.
-# You can add another .golangci.yml deeper in the tree for different settings.
-
-# Optional: caching tweaks (golangci-lint has internal cache; good defaults already)
+# Optional:
 # service:
-#   golangci-lint-version: 1.60.x
-#   prepare:
-#     - echo "Preparing environment..."
+#   golangci-lint-version: 1.60.3
