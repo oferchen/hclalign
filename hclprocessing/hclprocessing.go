@@ -41,9 +41,9 @@ func reorderVariableBlock(block *hclwrite.Block, order []string) {
 	}
 
 	attrs := body.Attributes()
-	tokensMap := make(map[string]hclwrite.Tokens)
+	tokensMap := make(map[string]attrTokens)
 	for name, attr := range attrs {
-		tokensMap[name] = attr.Expr().BuildTokens(nil)
+		tokensMap[name] = extractAttrTokens(attr)
 	}
 
 	// Capture original attribute ordering.
@@ -53,11 +53,19 @@ func reorderVariableBlock(block *hclwrite.Block, order []string) {
 		body.RemoveAttribute(name)
 	}
 
+	tail := body.BuildTokens(nil)
+	if len(tail) > 0 && tail[0].Type == hclsyntax.TokenNewline {
+		tail = tail[1:]
+	}
+	body.Clear()
+	body.AppendNewline()
+
 	canonSet := map[string]struct{}{}
 	for _, name := range order {
 		canonSet[name] = struct{}{}
-		if tokens, ok := tokensMap[name]; ok {
-			body.SetAttributeRaw(name, tokens)
+		if tok, ok := tokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.lead)
+			body.SetAttributeRaw(name, tok.expr)
 		}
 	}
 
@@ -65,14 +73,44 @@ func reorderVariableBlock(block *hclwrite.Block, order []string) {
 		if _, isCanonical := canonSet[name]; isCanonical {
 			continue
 		}
-		if tokens, ok := tokensMap[name]; ok {
-			body.SetAttributeRaw(name, tokens)
+		if tok, ok := tokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.lead)
+			body.SetAttributeRaw(name, tok.expr)
 		}
 	}
+
+	body.AppendUnstructuredTokens(tail)
 
 	for _, nb := range nested {
 		body.AppendBlock(nb)
 	}
+}
+
+type attrTokens struct {
+	lead hclwrite.Tokens
+	expr hclwrite.Tokens
+}
+
+func extractAttrTokens(attr *hclwrite.Attribute) attrTokens {
+	toks := attr.BuildTokens(nil)
+	i := 0
+	for i < len(toks) && toks[i].Type == hclsyntax.TokenComment {
+		i++
+	}
+	lead := toks[:i]
+	expr := toks[i+2:]
+	if n := len(expr); n > 0 {
+		last := expr[n-1]
+		if last.Type == hclsyntax.TokenNewline {
+			expr = expr[:n-1]
+		} else if last.Type == hclsyntax.TokenComment {
+			b := last.Bytes
+			if len(b) > 0 && b[len(b)-1] == '\n' {
+				expr[n-1].Bytes = b[:len(b)-1]
+			}
+		}
+	}
+	return attrTokens{lead: lead, expr: expr}
 }
 
 func attributeOrder(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) []string {
