@@ -33,6 +33,12 @@ func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 }
 
 func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
+	if _, err := os.Stat(cfg.Target); err != nil {
+		if os.IsNotExist(err) {
+			return false, fmt.Errorf("target %q does not exist", cfg.Target)
+		}
+		return false, err
+	}
 	matcher, err := patternmatching.NewMatcher(cfg.Include, cfg.Exclude)
 	if err != nil {
 		return false, err
@@ -110,6 +116,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	}
 	sort.Strings(files)
 
+
 	var changed atomic.Bool
 	outs := make(map[string][]byte, len(files))
 	for _, f := range files {
@@ -149,6 +156,74 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 			}
 			log.Printf("processed file: %s", f)
 		}
+
+	// Process files using a fixed worker pool. A dispatcher feeds file paths
+	// to the workers and stops enqueueing new paths if the context is
+	// canceled (for example due to the first worker error). Each worker
+	// checks ctx.Done before starting new work to honor cancellation
+	// promptly.
+	g, ctx := errgroup.WithContext(ctx)
+	var changed atomic.Bool
+	type result struct {
+		path string
+		data []byte
+	}
+	results := make(chan result, len(files))
+
+	fileCh := make(chan string)
+
+	// Dispatcher goroutine.
+	g.Go(func() error {
+		defer close(fileCh)
+		for _, f := range files {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case fileCh <- f:
+			}
+		}
+		return nil
+	})
+
+	// Worker goroutines.
+	for i := 0; i < cfg.Concurrency; i++ {
+		g.Go(func() error {
+			for {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case f, ok := <-fileCh:
+					if !ok {
+						return nil
+					}
+					ch, out, err := processSingleFile(ctx, f, cfg)
+					if err != nil {
+						if !errors.Is(err, context.Canceled) {
+							log.Printf("error processing file %s: %v", f, err)
+						}
+						return fmt.Errorf("%s: %w", f, err)
+					}
+					if ch {
+						changed.Store(true)
+					}
+					if len(out) > 0 {
+						results <- result{path: f, data: out}
+					}
+					if cfg.Verbose {
+						log.Printf("processed file: %s", f)
+					}
+				}
+			}
+		})
+	}
+
+	// Wait for all goroutines. An error from any worker cancels the
+	// context, which stops the dispatcher from sending more files and
+	// causes other workers to exit.
+	if err := g.Wait(); err != nil {
+		close(results)
+		return false, err
+
 	}
 
 	for _, f := range files {
