@@ -15,7 +15,7 @@ func TestValidateOrder_NonStrictUnknownAttribute(t *testing.T) {
 	}
 }
 
-func TestValidateOrder_StrictIncludesValidation(t *testing.T) {
+func TestValidateOrder_StrictDefaultOrder(t *testing.T) {
 	if err := ValidateOrder(DefaultOrder, true); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -38,8 +38,8 @@ type Config struct {
 // DefaultInclude, DefaultExclude and DefaultOrder define the default behaviour of the CLI.
 var (
 	DefaultInclude = []string{"**/*.tf"}
-	DefaultExclude = []string{"**/.terraform/**", "**/vendor/**"}
-	DefaultOrder   = []string{"description", "type", "default", "sensitive", "nullable", "validation"}
+	DefaultExclude = []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
+	DefaultOrder   = []string{"description", "type", "default", "sensitive", "nullable"}
 )
 
 const (
