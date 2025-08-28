@@ -12,8 +12,6 @@ import (
 	"github.com/oferchen/hclalign/config"
 )
 
-var canonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
-
 func ReorderAttributes(file *hclwrite.File, order []string, strict bool) error {
 	if len(order) == 0 {
 		order = config.CanonicalOrder
