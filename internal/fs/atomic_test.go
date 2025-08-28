@@ -3,6 +3,7 @@ package fs
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -178,7 +179,7 @@ func TestWriteFileAtomic(t *testing.T) {
 			if tc.setup != nil {
 				ctx = tc.setup(t, dir, path)
 			}
-			if err := WriteFileAtomic(path, tc.data, tc.perm, tc.hints); err != nil {
+			if err := WriteFileAtomic(context.Background(), path, tc.data, tc.perm, tc.hints); err != nil {
 				t.Fatalf("WriteFileAtomic: %v", err)
 			}
 			if tc.validate != nil {

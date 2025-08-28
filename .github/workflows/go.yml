@@ -45,7 +45,21 @@ jobs:
           govulncheck ./...
 
       - name: Test
-        run: go test -race -shuffle=on -cover ./...
+        run: go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Check coverage
+        run: |
+          go tool cover -func=coverage.out
+          total=$(go tool cover -func=coverage.out | grep ^total: | awk '{print substr($3, 1, length($3)-1)}')
+          echo "Total coverage: ${total}%"
+          awk -v total="$total" 'BEGIN {if (total+0 < 95.0) {printf "Coverage %.1f%% is below 95%%\n", total; exit 1}}'
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}-${{ matrix.go }}
+          path: coverage.out
 
       - name: Build
         run: go build -o hclalign ./...

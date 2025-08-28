@@ -19,16 +19,16 @@ func TestValidateOrder_NonStrictUnknownAttribute(t *testing.T) {
 	}
 }
 
-func TestValidateOrder_StrictDefaultOrder(t *testing.T) {
-	if err := ValidateOrder(DefaultOrder, true); err != nil {
+func TestValidateOrder_StrictCanonicalOrder(t *testing.T) {
+	if err := ValidateOrder(CanonicalOrder, true); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestDefaultOrderMatchesBuiltInAttributes(t *testing.T) {
+func TestCanonicalOrderMatchesBuiltInAttributes(t *testing.T) {
 	expected := []string{"description", "type", "default", "sensitive", "nullable"}
-	if !reflect.DeepEqual(DefaultOrder, expected) {
-		t.Fatalf("expected DefaultOrder to be %v, got %v", expected, DefaultOrder)
+	if !reflect.DeepEqual(CanonicalOrder, expected) {
+		t.Fatalf("expected CanonicalOrder to be %v, got %v", expected, CanonicalOrder)
 	}
 }
 

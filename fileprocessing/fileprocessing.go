@@ -38,16 +38,22 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		return false, err
 	}
 	var files []string
-	var walk func(string) error
-	walk = func(dir string) error {
+	var walk func(context.Context, string) error
+	walk = func(ctx context.Context, dir string) error {
 		if !matcher.Matches(dir) {
 			return nil
+		}
+		if err := ctx.Err(); err != nil {
+			return err
 		}
 		entries, err := os.ReadDir(dir)
 		if err != nil {
 			return err
 		}
 		for _, entry := range entries {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			path := filepath.Join(dir, entry.Name())
 			if entry.Type()&os.ModeSymlink != 0 {
 				info, err := os.Stat(path)
@@ -56,7 +62,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 				}
 				if info.IsDir() {
 					if cfg.FollowSymlinks {
-						if err := walk(path); err != nil {
+						if err := walk(ctx, path); err != nil {
 							return err
 						}
 					}
@@ -64,7 +70,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 				}
 			}
 			if entry.IsDir() {
-				if err := walk(path); err != nil {
+				if err := walk(ctx, path); err != nil {
 					return err
 				}
 				continue
@@ -86,7 +92,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		}
 		if resolved.IsDir() {
 			if cfg.FollowSymlinks {
-				if err := walk(cfg.Target); err != nil {
+				if err := walk(ctx, cfg.Target); err != nil {
 					return false, err
 				}
 			}
@@ -94,7 +100,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 			files = append(files, cfg.Target)
 		}
 	} else if info.IsDir() {
-		if err := walk(cfg.Target); err != nil {
+		if err := walk(ctx, cfg.Target); err != nil {
 			return false, err
 		}
 	} else {
@@ -107,6 +113,11 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	sem := make(chan struct{}, cfg.Concurrency)
 	g, ctx := errgroup.WithContext(ctx)
 	var changed atomic.Bool
+	type result struct {
+		path string
+		data []byte
+	}
+	results := make(chan result, len(files))
 	for _, f := range files {
 		f := f
 		select {
@@ -116,7 +127,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		}
 		g.Go(func() error {
 			defer func() { <-sem }()
-			ch, err := processSingleFile(ctx, f, cfg)
+			ch, out, err := processSingleFile(ctx, f, cfg)
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {
 					log.Printf("error processing file %s: %v", f, err)
@@ -126,6 +137,9 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 			if ch {
 				changed.Store(true)
 			}
+			if len(out) > 0 {
+				results <- result{path: f, data: out}
+			}
 			if cfg.Verbose {
 				log.Printf("processed file: %s", f)
 			}
@@ -133,26 +147,44 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		})
 	}
 	if err := g.Wait(); err != nil {
+		close(results)
 		return changed.Load(), err
 	}
+	close(results)
+
+	outs := make(map[string][]byte, len(files))
+	for r := range results {
+		outs[r.path] = r.data
+	}
+	for _, f := range files {
+		if out, ok := outs[f]; ok && len(out) > 0 {
+			if _, err := os.Stdout.Write(out); err != nil {
+				return changed.Load(), err
+			}
+		}
+	}
+
 	return changed.Load(), nil
 }
 
-func processSingleFile(ctx context.Context, filePath string, cfg *config.Config) (bool, error) {
+// processSingleFile processes a single file and returns whether the file was
+// changed along with any output that should be written to stdout. The output is
+// either formatted file bytes or diff text depending on the mode and flags.
+func processSingleFile(ctx context.Context, filePath string, cfg *config.Config) (bool, []byte, error) {
 	if err := ctx.Err(); err != nil {
-		return false, err
+		return false, nil, err
 	}
-	data, perm, hints, err := internalfs.ReadFileWithHints(filePath)
+	data, perm, hints, err := internalfs.ReadFileWithHints(ctx, filePath)
 	if err != nil {
-		return false, fmt.Errorf("error reading file %s: %w", filePath, err)
+		return false, nil, fmt.Errorf("error reading file %s: %w", filePath, err)
 	}
 	if err := ctx.Err(); err != nil {
-		return false, err
+		return false, nil, err
 	}
 
 	file, diags := hclwrite.ParseConfig(data, filePath, hcl.InitialPos)
 	if diags.HasErrors() {
-		return false, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
+		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
 
 	hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder)
@@ -165,43 +197,37 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	}
 	changed := !bytes.Equal(original, styled)
 
+	var out []byte
+
 	switch cfg.Mode {
 	case config.ModeWrite:
 		if !changed {
 			if cfg.Stdout {
-				if _, err := os.Stdout.Write(styled); err != nil {
-					return false, err
-				}
+				out = styled
 			}
-			return false, nil
+			return false, out, nil
 		}
 		if err := internalfs.WriteFileAtomic(filePath, formatted, perm, hints); err != nil {
-			return false, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
+			return false, nil, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
 		}
 		if cfg.Stdout {
-			if _, err := os.Stdout.Write(styled); err != nil {
-				return changed, err
-			}
+			out = styled
 		}
 	case config.ModeCheck:
 		if cfg.Stdout {
-			if _, err := os.Stdout.Write(styled); err != nil {
-				return changed, err
-			}
+			out = styled
 		}
 	case config.ModeDiff:
 		if changed {
 			text, err := diff.Unified(filePath, filePath, original, styled, hints.Newline)
 			if err != nil {
-				return false, err
+				return false, nil, err
 			}
-			if _, err := fmt.Fprint(os.Stdout, text); err != nil {
-				return false, err
-			}
+			out = []byte(text)
 		}
 	}
 
-	return changed, nil
+	return changed, out, nil
 }
 
 func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, error) {

@@ -32,7 +32,7 @@ func TestProcessPreservesNewlineAndBOM(t *testing.T) {
 		Mode:        config.ModeWrite,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
-		Order:       config.DefaultOrder,
+		Order:       config.CanonicalOrder,
 		Concurrency: 1,
 	}
 	if err := cfg.Validate(); err != nil {
@@ -43,7 +43,7 @@ func TestProcessPreservesNewlineAndBOM(t *testing.T) {
 		t.Fatalf("process: %v", err)
 	}
 
-	_, _, hints, err := internalfs.ReadFileWithHints(path)
+	_, _, hints, err := internalfs.ReadFileWithHints(context.Background(), path)
 	if err != nil {
 		t.Fatalf("read file: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestProcessLogsFilesWhenVerbose(t *testing.T) {
 		Mode:        config.ModeCheck,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
-		Order:       config.DefaultOrder,
+		Order:       config.CanonicalOrder,
 		Concurrency: 2,
 		Verbose:     true,
 	}
@@ -95,6 +95,62 @@ func TestProcessLogsFilesWhenVerbose(t *testing.T) {
 	}
 }
 
+func TestProcessDiffDeterministicOrder(t *testing.T) {
+	dir := t.TempDir()
+
+	fileB := filepath.Join(dir, "b.tf")
+	if err := os.WriteFile(fileB, []byte("variable \"b\" {\n  type = number\n  default = 1\n}\n"), 0644); err != nil {
+		t.Fatalf("write b.tf: %v", err)
+	}
+	fileA := filepath.Join(dir, "a.tf")
+	if err := os.WriteFile(fileA, []byte("variable \"a\" {\n  type = number\n  default = 1\n}\n"), 0644); err != nil {
+		t.Fatalf("write a.tf: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:      dir,
+		Mode:        config.ModeDiff,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.DefaultOrder,
+		Concurrency: 2,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdout = w
+	defer func() { os.Stdout = oldStdout }()
+
+	changed, err := Process(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("process: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected changes")
+	}
+
+	_ = w.Close()
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read stdout: %v", err)
+	}
+	outStr := string(out)
+	idxA := strings.Index(outStr, "a.tf")
+	idxB := strings.Index(outStr, "b.tf")
+	if idxA == -1 || idxB == -1 {
+		t.Fatalf("diff output missing: %q", outStr)
+	}
+	if idxA > idxB {
+		t.Fatalf("expected a.tf diff before b.tf diff: %q", outStr)
+	}
+}
+
 func TestProcessContextCanceledNoLog(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "a.tf")
@@ -107,7 +163,7 @@ func TestProcessContextCanceledNoLog(t *testing.T) {
 		Mode:        config.ModeCheck,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
-		Order:       config.DefaultOrder,
+		Order:       config.CanonicalOrder,
 		Concurrency: 1,
 		Verbose:     true,
 	}
@@ -148,7 +204,7 @@ func TestProcessPropagatesFileError(t *testing.T) {
 		Mode:        config.ModeCheck,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
-		Order:       config.DefaultOrder,
+		Order:       config.CanonicalOrder,
 		Concurrency: 2,
 	}
 	if err := cfg.Validate(); err != nil {
@@ -180,7 +236,7 @@ func TestProcessSymlinkedDirTargetFollowSymlinks(t *testing.T) {
 		Mode:           config.ModeCheck,
 		Include:        config.DefaultInclude,
 		Exclude:        config.DefaultExclude,
-		Order:          config.DefaultOrder,
+		Order:          config.CanonicalOrder,
 		Concurrency:    1,
 		FollowSymlinks: true,
 	}
@@ -217,7 +273,7 @@ func TestProcessSymlinkedDirTargetNoFollow(t *testing.T) {
 		Mode:        config.ModeCheck,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
-		Order:       config.DefaultOrder,
+		Order:       config.CanonicalOrder,
 		Concurrency: 1,
 	}
 	if err := cfg.Validate(); err != nil {
@@ -237,7 +293,7 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 	bom := []byte{0xEF, 0xBB, 0xBF}
 	input := string(bom) + "variable \"a\" {\r\n  default = 1\r\n  type = number\r\n}\r\n"
 
-	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.DefaultOrder}
+	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.CanonicalOrder}
 
 	oldStdout := os.Stdout
 	rOut, wOut, err := os.Pipe()
@@ -268,7 +324,7 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 	if diags.HasErrors() {
 		t.Fatalf("parse expected: %v", diags)
 	}
-	hclprocessing.ReorderAttributes(expectedFile, config.DefaultOrder, false)
+	hclprocessing.ReorderAttributes(expectedFile, config.CanonicalOrder, false)
 	expected := internalfs.ApplyHints(expectedFile.Bytes(), internalfs.Hints{HasBOM: true, Newline: "\r\n"})
 	if string(out) != string(expected) {
 		t.Fatalf("unexpected output: got %q, want %q", out, expected)
@@ -279,7 +335,7 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 	bom := []byte{0xEF, 0xBB, 0xBF}
 	input := string(bom) + "variable \"a\" {\r\n  default = 1\r\n  type = number\r\n}\r\n"
 
-	cfg := &config.Config{Mode: config.ModeDiff, Order: config.DefaultOrder}
+	cfg := &config.Config{Mode: config.ModeDiff, Order: config.CanonicalOrder}
 
 	oldStdout := os.Stdout
 	rOut, wOut, err := os.Pipe()
@@ -307,7 +363,7 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 	}
 }
 
-func TestProcessContinuesAfterMalformedFile(t *testing.T) {
+func TestProcessStopsAfterMalformedFile(t *testing.T) {
 	dir := t.TempDir()
 
 	good := filepath.Join(dir, "good.tf")
@@ -324,7 +380,7 @@ func TestProcessContinuesAfterMalformedFile(t *testing.T) {
 		Mode:        config.ModeWrite,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
-		Order:       config.DefaultOrder,
+		Order:       config.CanonicalOrder,
 		Concurrency: 2,
 		Verbose:     true,
 	}
@@ -341,13 +397,13 @@ func TestProcessContinuesAfterMalformedFile(t *testing.T) {
 	if procErr == nil {
 		t.Fatalf("expected error")
 	}
-	if !changed {
-		t.Fatalf("expected changes")
+	if changed {
+		t.Fatalf("did not expect changes")
 	}
 
 	out := buf.String()
-	if !strings.Contains(out, "processed file: "+good) {
-		t.Fatalf("expected log for good file, got %q", out)
+	if strings.Contains(out, "processed file: "+good) {
+		t.Fatalf("did not expect log for good file, got %q", out)
 	}
 	if !strings.Contains(out, "error processing file "+bad) {
 		t.Fatalf("expected error log for bad file, got %q", out)
@@ -361,7 +417,7 @@ func TestProcessContinuesAfterMalformedFile(t *testing.T) {
 	if diags.HasErrors() {
 		t.Fatalf("parse expected: %v", diags)
 	}
-	hclprocessing.ReorderAttributes(expectedFile, config.DefaultOrder, false)
+	hclprocessing.ReorderAttributes(expectedFile, config.CanonicalOrder, false)
 	expected := expectedFile.Bytes()
 	if string(data) != string(expected) {
 		t.Fatalf("good file not processed: got %q, want %q", data, expected)
@@ -395,7 +451,7 @@ func TestProcessSkipsDefaultExcludedDirs(t *testing.T) {
 		Mode:        config.ModeCheck,
 		Include:     config.DefaultInclude,
 		Exclude:     config.DefaultExclude,
-		Order:       config.DefaultOrder,
+		Order:       config.CanonicalOrder,
 		Concurrency: 1,
 	}
 	if err := cfg.Validate(); err != nil {
@@ -407,13 +463,23 @@ func TestProcessSkipsDefaultExcludedDirs(t *testing.T) {
 	}
 }
 
-func TestProcessSingleFileStdoutError(t *testing.T) {
+func TestProcessStdoutError(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "a.tf")
 	if err := os.WriteFile(path, []byte("variable \"a\" {}\n"), 0644); err != nil {
 		t.Fatalf("write file: %v", err)
 	}
-	cfg := &config.Config{Mode: config.ModeCheck, Stdout: true, Order: config.DefaultOrder}
+	cfg := &config.Config{
+		Mode:        config.ModeCheck,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.DefaultOrder,
+		Stdout:      true,
+		Concurrency: 1,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
 
 	oldStdout := os.Stdout
 	r, w, err := os.Pipe()
@@ -424,14 +490,14 @@ func TestProcessSingleFileStdoutError(t *testing.T) {
 	os.Stdout = w
 	defer func() { os.Stdout = oldStdout }()
 
-	if _, err := processSingleFile(context.Background(), path, cfg); err == nil {
+	if _, err := Process(context.Background(), cfg); err == nil {
 		t.Fatalf("expected error")
 	}
 	_ = r.Close()
 }
 
 func TestProcessReaderStdoutError(t *testing.T) {
-	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.DefaultOrder}
+	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.CanonicalOrder}
 	oldStdout := os.Stdout
 	r, w, err := os.Pipe()
 	if err != nil {

@@ -6,13 +6,14 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/oferchen/hclalign/config"
 )
 
 var canonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 
 func ReorderAttributes(file *hclwrite.File, order []string, strict bool) {
 	if len(order) == 0 {
-		order = canonicalOrder
+		order = config.CanonicalOrder
 	}
 
 	canonicalSet := make(map[string]struct{}, len(canonicalOrder))

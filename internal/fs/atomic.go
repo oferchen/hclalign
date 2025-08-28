@@ -3,6 +3,7 @@ package fs
 
 import (
 	"bytes"
+	"context"
 	iofs "io/fs"
 	"os"
 	"path/filepath"
@@ -35,12 +36,18 @@ func DetectHintsFromBytes(b []byte) Hints {
 	return h
 }
 
-func ReadFileWithHints(path string) (data []byte, perm iofs.FileMode, hints Hints, err error) {
+func ReadFileWithHints(ctx context.Context, path string) (data []byte, perm iofs.FileMode, hints Hints, err error) {
+	if err := ctx.Err(); err != nil {
+		return nil, 0, hints, err
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		return nil, 0, hints, err
 	}
 	perm = info.Mode()
+	if err := ctx.Err(); err != nil {
+		return nil, 0, hints, err
+	}
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, 0, hints, err
@@ -63,7 +70,10 @@ func ApplyHints(data []byte, hints Hints) []byte {
 	return out
 }
 
-func WriteFileAtomic(path string, data []byte, perm iofs.FileMode, hints Hints) error {
+func WriteFileAtomic(ctx context.Context, path string, data []byte, perm iofs.FileMode, hints Hints) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	dir := filepath.Dir(path)
 	uid, gid := -1, -1
 	if info, err := os.Stat(path); err == nil {
@@ -71,6 +81,9 @@ func WriteFileAtomic(path string, data []byte, perm iofs.FileMode, hints Hints) 
 			uid = int(stat.Uid)
 			gid = int(stat.Gid)
 		}
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	tmp, err := os.CreateTemp(dir, "hclalign-*")
 	if err != nil {
@@ -88,8 +101,16 @@ func WriteFileAtomic(path string, data []byte, perm iofs.FileMode, hints Hints) 
 			return err
 		}
 	}
+	if err := ctx.Err(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
 	content := ApplyHints(data, hints)
 	if _, err := tmp.Write(content); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := ctx.Err(); err != nil {
 		_ = tmp.Close()
 		return err
 	}
@@ -100,7 +121,13 @@ func WriteFileAtomic(path string, data []byte, perm iofs.FileMode, hints Hints) 
 	if err := tmp.Close(); err != nil {
 		return err
 	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if err := os.Rename(tmpName, path); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
 		return err
 	}
 	dirf, err := os.Open(dir)

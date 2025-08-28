@@ -46,6 +46,12 @@ test-race:
 	@echo "Running tests with race detector..."
 	go test -race -shuffle=on -cover ./...
 
+cover:
+	@echo "Running tests with race detector and coverage..."
+	go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out ./...
+	@echo "Coverage report:"
+	go tool cover -func=coverage.out
+
 fuzz:
 	@echo "Running fuzz tests..."
 	go test ./... -run Fuzz
@@ -61,7 +67,7 @@ vulncheck:
 clean:
 	@echo "Cleaning up..."
 	go clean -modcache -fuzzcache
-	rm -f ${BINARY_NAME}
+	rm -f ${BINARY_NAME} coverage.out
 
 init:
 	@echo "Initializing Go module..."
@@ -83,10 +89,11 @@ help:
         @echo "comments  - Checks file header comments."
         @echo "test      - Runs all the tests."
 	@echo "test-race - Runs tests with the race detector."
+	@echo "cover     - Runs tests with the race detector and generates a coverage report."
 	@echo "fuzz      - Runs fuzz tests."
 	@echo "fuzz-short - Runs short fuzz tests."
 	@echo "vulncheck - Checks for vulnerabilities using govulncheck."
-	@echo "ci        - Runs formatting, vetting, linting, tests, fuzz, and build."
+	@echo "ci        - Runs formatting, vetting, linting, coverage tests, fuzz, and build."
 	@echo "clean     - Cleans up the project."
 	@echo "init      - Initializes a new Go module."
 	@echo "help      - Prints this help message."
