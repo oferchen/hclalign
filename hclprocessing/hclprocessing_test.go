@@ -82,3 +82,24 @@ func TestReorderAttributes_IgnoresNonVariable(t *testing.T) {
 
 	require.Equal(t, src, string(f.Bytes()))
 }
+
+func TestReorderAttributes_UnknownAttributesAfterKnown(t *testing.T) {
+	src := `variable "example" {
+  custom      = true
+  description = "d"
+  type        = string
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	// The provided order intentionally places the unknown attribute first to
+	// verify it is moved after known attributes.
+	hclprocessing.ReorderAttributes(f, []string{"custom", "description", "type"})
+
+	expected := `variable "example" {
+  description = "d"
+  type        = string
+  custom      = true
+}`
+	require.Equal(t, expected, string(f.Bytes()))
+}

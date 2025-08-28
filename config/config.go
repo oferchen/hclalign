@@ -79,14 +79,14 @@ func ValidateOrder(order []string, strict bool) error {
 			return fmt.Errorf("duplicate attribute '%s' found in order", item)
 		}
 		providedSet[item] = struct{}{}
-		if strict {
+	}
+
+	if strict {
+		for item := range providedSet {
 			if _, ok := canonicalSet[item]; !ok {
 				return fmt.Errorf("unknown attribute '%s' in order", item)
 			}
 		}
-	}
-
-	if strict {
 		if len(providedSet) != len(DefaultOrder) {
 			return fmt.Errorf("provided order length %d doesn't match expected %d", len(providedSet), len(DefaultOrder))
 		}

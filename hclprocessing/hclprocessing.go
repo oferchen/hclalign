@@ -10,23 +10,46 @@ import (
 
 var canonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 
-// ReorderAttributes reorders attributes of "variable" blocks into the provided order.
-// If order is nil or empty, a canonical order is used.
+// ReorderAttributes reorders attributes of "variable" blocks into the provided
+// order. Unknown attributes are always placed after known ones. If order is nil
+// or empty, a canonical order is used.
 func ReorderAttributes(file *hclwrite.File, order []string) {
 	if len(order) == 0 {
 		order = canonicalOrder
 	}
+
+	// knownSet contains the canonical attributes for quick lookups.
+	knownSet := make(map[string]struct{}, len(canonicalOrder))
+	for _, name := range canonicalOrder {
+		knownSet[name] = struct{}{}
+	}
+
+	// Filter the provided order to only known attributes so that unknown
+	// attributes are appended after all known attributes regardless of their
+	// position in the provided order.
+	filtered := make([]string, 0, len(order))
+	seen := make(map[string]struct{}, len(order))
+	for _, name := range order {
+		if _, ok := knownSet[name]; ok {
+			if _, dup := seen[name]; dup {
+				continue
+			}
+			filtered = append(filtered, name)
+			seen[name] = struct{}{}
+		}
+	}
+
 	body := file.Body()
 	for _, block := range body.Blocks() {
 		if block.Type() != "variable" {
 			continue
 		}
 
-		reorderVariableBlock(block, order)
+		reorderVariableBlock(block, filtered, knownSet)
 	}
 }
 
-func reorderVariableBlock(block *hclwrite.Block, order []string) {
+func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[string]struct{}) {
 	body := block.Body()
 
 	// Preserve nested blocks to re-append later.
@@ -64,8 +87,22 @@ func reorderVariableBlock(block *hclwrite.Block, order []string) {
 		}
 	}
 
+	// Append remaining known attributes not specified in order following the
+	// canonical order.
+	for _, name := range canonicalOrder {
+		if _, already := canonSet[name]; already {
+			continue
+		}
+		if tok, ok := tokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.lead)
+			body.SetAttributeRaw(name, tok.expr)
+		}
+	}
+
+	// Finally append attributes that are not part of the canonical list in
+	// their original order.
 	for _, name := range orderedNames {
-		if _, isCanonical := canonSet[name]; isCanonical {
+		if _, isKnown := knownSet[name]; isKnown {
 			continue
 		}
 		if tok, ok := tokensMap[name]; ok {
