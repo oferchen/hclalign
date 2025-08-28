@@ -1,7 +1,7 @@
 # Makefile for the HCL Align project.
 
 BINARY_NAME=hclalign
-MODULE_NAME=hclalign
+MODULE_NAME=github.com/oferchen/hclalign
 
 all: build
 
@@ -26,10 +26,9 @@ test:
 	go test ./...
 
 clean:
-	@echo "Cleaning up..."
-	go clean -modcache -fuzzcache
-	rm -f ${BINARY_NAME}
-	rm -f go.mod go.sum
+        @echo "Cleaning up..."
+        go clean -modcache -fuzzcache
+        rm -f ${BINARY_NAME}
 
 init:
 	@echo "Initializing Go module..."
