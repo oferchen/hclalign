@@ -4,6 +4,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"github.com/oferchen/hclalign/fileprocessing"
 	"github.com/oferchen/hclalign/patternmatching"
@@ -57,8 +58,7 @@ func IsValidOrder(order []string) (bool, error) {
 }
 
 // ProcessTargetDynamically processes files in the target directory based on criteria and order.
-func ProcessTargetDynamically(target string, criteria []string, order []string) error {
-	// Implementation assumes existence of fileprocessing and patternmatching packages
+func ProcessTargetDynamically(ctx context.Context, target string, criteria []string, order []string) error {
 	if !patternmatching.IsValidCriteria(criteria) {
 		return fmt.Errorf("invalid criteria: %v", criteria)
 	}
@@ -66,5 +66,6 @@ func ProcessTargetDynamically(target string, criteria []string, order []string) 
 		return fmt.Errorf("no target specified")
 	}
 
-	return fileprocessing.ProcessFiles(target, criteria, order)
+	ctx = context.WithValue(ctx, fileprocessing.TargetContextKey, target)
+	return fileprocessing.ProcessFiles(ctx, target, criteria, order)
 }

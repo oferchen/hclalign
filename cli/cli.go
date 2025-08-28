@@ -11,11 +11,6 @@ import (
 )
 
 func RunE(cmd *cobra.Command, args []string) error {
-	if len(args) < 1 {
-		cmd.Printf("Error: accepts 1 arg(s), received %d\n\n", len(args))
-		cmd.Usage()
-		return fmt.Errorf(config.MissingTarget)
-	}
 	target := args[0]
 	criteria, err := cmd.Flags().GetStringSlice("criteria")
 	if err != nil {
@@ -26,11 +21,9 @@ func RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Validate the order
-	orderValid, err := config.IsValidOrder(order)
-	if !orderValid {
-		return fmt.Errorf("invalid order provided: %v", err)
+	if _, err := config.IsValidOrder(order); err != nil {
+		return fmt.Errorf("invalid order: %w", err)
 	}
-	// Process target dynamically
-	return config.ProcessTargetDynamically(target, criteria, order)
+
+	return config.ProcessTargetDynamically(cmd.Context(), target, criteria, order)
 }

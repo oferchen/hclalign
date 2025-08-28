@@ -14,6 +14,7 @@ import (
 func setupTestCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "testcli",
+		Args: cobra.MinimumNArgs(1),
 		RunE: cli.RunE,
 	}
 	cmd.Flags().StringSlice("criteria", config.DefaultCriteria, "Set the criteria")
@@ -48,7 +49,7 @@ func TestRunE_Extended(t *testing.T) {
 				return hclFilePath, []string{hclFilePath, "--order=description,description"}
 			},
 			expectError:    true,
-			expectedErrMsg: "invalid order provided: duplicate attribute 'description' found in order",
+			expectedErrMsg: "invalid order: duplicate attribute 'description' found in order",
 		},
 		{
 			name: "Order has a missing entry",
@@ -58,7 +59,7 @@ func TestRunE_Extended(t *testing.T) {
 				return hclFilePath, []string{hclFilePath, "--order=type,default"}
 			},
 			expectError:    true,
-			expectedErrMsg: "invalid order provided: provided order length 2 doesn't match expected 6",
+			expectedErrMsg: "invalid order: provided order length 2 doesn't match expected 6",
 		},
 		{
 			name: "Order has an entry which is not allowed",
@@ -68,7 +69,7 @@ func TestRunE_Extended(t *testing.T) {
 				return hclFilePath, []string{hclFilePath, "--order=description,unicorn"}
 			},
 			expectError:    true,
-			expectedErrMsg: "invalid order provided: provided order length 2 doesn't match expected 6",
+			expectedErrMsg: "invalid order: provided order length 2 doesn't match expected 6",
 		},
 		{
 			name: "Order is reversed of the DefaultOrder",

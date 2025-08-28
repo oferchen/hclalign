@@ -19,6 +19,11 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+type contextKey string
+
+// TargetContextKey is the context key used to propagate the target path.
+const TargetContextKey contextKey = "target"
+
 // DefaultProcessFile provides the default processing logic for a file.
 func DefaultProcessFile(filePath string, order []string) error {
 	fileContent, err := os.ReadFile(filePath)
@@ -41,7 +46,7 @@ func DefaultProcessFile(filePath string, order []string) error {
 }
 
 // ProcessFiles processes files in the specified target directory according to criteria and order.
-func ProcessFiles(target string, criteria []string, order []string) error {
+func ProcessFiles(ctx context.Context, target string, criteria []string, order []string) error {
 	compiledPatterns, err := patternmatching.CompilePatterns(criteria)
 	if err != nil {
 		return err
@@ -51,8 +56,6 @@ func ProcessFiles(target string, criteria []string, order []string) error {
 	errChan := make(chan error, 1)
 	maxConcurrency := runtime.GOMAXPROCS(0)
 	sem := semaphore.NewWeighted(int64(maxConcurrency))
-
-	ctx := context.Background()
 
 	err = filepath.WalkDir(target, func(filePath string, d os.DirEntry, err error) error {
 		if err != nil {
