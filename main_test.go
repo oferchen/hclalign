@@ -9,6 +9,7 @@ import (
 	"github.com/oferchen/hclalign/cli"
 	"github.com/oferchen/hclalign/config"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/require"
 )
 
 // Helper function to create a temporary HCL file.
@@ -102,4 +103,70 @@ func TestMainFunctionality(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCLIOrderFlagInfluencesProcessing(t *testing.T) {
+	content := `variable "test" {
+  description = "d"
+  default     = "v"
+}`
+	filePath := createTempHCLFile(t, content)
+
+	rootCmd := &cobra.Command{
+		Use:          "hclalign [target file or directory]",
+		Short:        "Aligns HCL files based on given criteria",
+		Args:         cobra.ArbitraryArgs,
+		RunE:         cli.RunE,
+		SilenceUsage: true,
+	}
+	rootCmd.Flags().Bool("write", false, "write result to file(s)")
+	rootCmd.Flags().Bool("check", false, "check if files are formatted")
+	rootCmd.Flags().Bool("diff", false, "print the diff of required changes")
+	rootCmd.Flags().Bool("stdin", false, "read from STDIN")
+	rootCmd.Flags().Bool("stdout", false, "write result to STDOUT")
+	rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
+	rootCmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
+	rootCmd.Flags().StringSlice("order", config.DefaultOrder, "order of variable block fields")
+	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
+	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
+	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+
+	rootCmd.SetArgs([]string{filePath, "--write", "--order=default", "--order=description"})
+
+	_, err := rootCmd.ExecuteC()
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(filePath)
+	require.NoError(t, err)
+
+	expected := "variable \"test\" {\n  default     = \"v\"\n  description = \"d\"\n}"
+	require.Equal(t, expected, string(data))
+}
+
+func TestCLIStrictOrderUnknownAttribute(t *testing.T) {
+	filePath := createTempHCLFile(t, `variable "test" {}`)
+
+	rootCmd := &cobra.Command{
+		Use:          "hclalign [target file or directory]",
+		Short:        "Aligns HCL files based on given criteria",
+		Args:         cobra.ArbitraryArgs,
+		RunE:         cli.RunE,
+		SilenceUsage: true,
+	}
+	rootCmd.Flags().Bool("write", false, "write result to file(s)")
+	rootCmd.Flags().Bool("check", false, "check if files are formatted")
+	rootCmd.Flags().Bool("diff", false, "print the diff of required changes")
+	rootCmd.Flags().Bool("stdin", false, "read from STDIN")
+	rootCmd.Flags().Bool("stdout", false, "write result to STDOUT")
+	rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
+	rootCmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
+	rootCmd.Flags().StringSlice("order", config.DefaultOrder, "order of variable block fields")
+	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
+	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
+	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+
+	rootCmd.SetArgs([]string{filePath, "--write", "--order=description", "--order=unknown", "--strict-order"})
+
+	_, err := rootCmd.ExecuteC()
+	require.Error(t, err)
 }

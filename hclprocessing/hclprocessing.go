@@ -11,8 +11,12 @@ import (
 
 var canonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 
-// ReorderAttributes reorders attributes of "variable" blocks into canonical order.
-func ReorderAttributes(file *hclwrite.File, _ []string) {
+// ReorderAttributes reorders attributes of "variable" blocks into the provided order.
+// If order is nil or empty, a canonical order is used.
+func ReorderAttributes(file *hclwrite.File, order []string) {
+	if len(order) == 0 {
+		order = canonicalOrder
+	}
 	if _, diags := hclwrite.ParseConfig(file.Bytes(), "", hcl.InitialPos); diags.HasErrors() {
 		return
 	}
@@ -23,11 +27,11 @@ func ReorderAttributes(file *hclwrite.File, _ []string) {
 			continue
 		}
 
-		reorderVariableBlock(block)
+		reorderVariableBlock(block, order)
 	}
 }
 
-func reorderVariableBlock(block *hclwrite.Block) {
+func reorderVariableBlock(block *hclwrite.Block, order []string) {
 	body := block.Body()
 
 	// Preserve nested blocks to re-append later.
@@ -50,7 +54,7 @@ func reorderVariableBlock(block *hclwrite.Block) {
 	}
 
 	canonSet := map[string]struct{}{}
-	for _, name := range canonicalOrder {
+	for _, name := range order {
 		canonSet[name] = struct{}{}
 		if tokens, ok := tokensMap[name]; ok {
 			body.SetAttributeRaw(name, tokens)
