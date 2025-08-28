@@ -4,6 +4,8 @@
 package hclprocessing
 
 import (
+	"bytes"
+
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
@@ -53,13 +55,91 @@ func ReorderAttributes(file *hclwrite.File, order []string, strict bool) {
 func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[string]struct{}, strict bool) {
 	body := block.Body()
 
-	// Preserve nested blocks to re-append later.
+	attrs := body.Attributes()
 	nested := body.Blocks()
+
+	// Capture prefix tokens before any attributes or blocks, the tail tokens after
+	// the last element, and any leading tokens for nested blocks so that we can
+	// restore them later.
+	allTokens := body.BuildTokens(nil)
+	prefix := hclwrite.Tokens{}
+	tail := hclwrite.Tokens{}
+	blockLeads := make(map[*hclwrite.Block]hclwrite.Tokens)
+	cur := hclwrite.Tokens{}
+	seen := false
+	bi := 0
+	for i := 0; i < len(allTokens); {
+		tok := allTokens[i]
+		if tok.Type == hclsyntax.TokenIdent {
+			name := string(tok.Bytes)
+			if attr, ok := attrs[name]; ok && i+1 < len(allTokens) && allTokens[i+1].Type == hclsyntax.TokenEqual {
+				attrToks := attr.BuildTokens(nil)
+				leadCount := 0
+				for leadCount < len(attrToks) && attrToks[leadCount].Type == hclsyntax.TokenComment {
+					leadCount++
+				}
+				if !seen {
+					if len(cur) >= leadCount {
+						prefix = append(hclwrite.Tokens{}, cur[:len(cur)-leadCount]...)
+					}
+					seen = true
+				}
+				cur = nil
+				i += len(attrToks) - leadCount
+				continue
+			}
+			if bi < len(nested) {
+				blockToks := nested[bi].BuildTokens(nil)
+				leadCount := 0
+				for leadCount < len(blockToks) && blockToks[leadCount].Type == hclsyntax.TokenComment {
+					leadCount++
+				}
+				if !seen {
+					if len(cur) >= leadCount {
+						prefix = append(hclwrite.Tokens{}, cur[:len(cur)-leadCount]...)
+					}
+					seen = true
+				} else {
+					if len(cur) >= leadCount {
+						blockLeads[nested[bi]] = append(hclwrite.Tokens{}, cur[:len(cur)-leadCount]...)
+					}
+				}
+				cur = nil
+				i += len(blockToks) - leadCount
+				bi++
+				continue
+			}
+		}
+		cur = append(cur, tok)
+		i++
+	}
+	if !seen {
+		prefix = cur
+		cur = nil
+	}
+	tail = cur
+
+	normalizeTokens := func(toks hclwrite.Tokens) {
+		for _, t := range toks {
+			b := t.Bytes
+			if bytes.Contains(b, []byte{'\r'}) {
+				b = bytes.ReplaceAll(b, []byte{'\r', '\n'}, []byte{'\n'})
+				b = bytes.ReplaceAll(b, []byte{'\r'}, nil)
+				t.Bytes = b
+			}
+		}
+	}
+	normalizeTokens(prefix)
+	for _, lead := range blockLeads {
+		normalizeTokens(lead)
+	}
+	normalizeTokens(tail)
+
+	// Preserve nested blocks to re-append later.
 	for _, nb := range nested {
 		body.RemoveBlock(nb)
 	}
 
-	attrs := body.Attributes()
 	tokensMap := make(map[string]attrTokens)
 	for name, attr := range attrs {
 		tokensMap[name] = extractAttrTokens(attr)
@@ -72,15 +152,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[st
 		body.RemoveAttribute(name)
 	}
 
-	tail := body.BuildTokens(nil)
-	hasNewline := len(tail) > 0 && tail[0].Type == hclsyntax.TokenNewline
-	if hasNewline {
-		tail = tail[1:]
-	}
 	body.Clear()
-	if hasNewline {
-		body.AppendNewline()
-	}
+	body.AppendUnstructuredTokens(prefix)
 
 	canonSet := map[string]struct{}{}
 	finalKnown := make([]string, 0, len(canonicalOrder))
@@ -142,18 +215,28 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[st
 		}
 	}
 
-	if !hasNewline {
+	hasLeadingNewline := false
+	for _, t := range prefix {
+		if t.Type == hclsyntax.TokenNewline {
+			hasLeadingNewline = true
+			break
+		}
+	}
+	if !hasLeadingNewline && len(nested) == 0 && (len(tail) == 0 || tail[0].Type != hclsyntax.TokenNewline) {
 		toks := body.BuildTokens(nil)
 		if n := len(toks); n > 0 && toks[n-1].Type == hclsyntax.TokenNewline {
 			body.Clear()
 			body.AppendUnstructuredTokens(toks[:n-1])
 		}
 	}
-	body.AppendUnstructuredTokens(tail)
 
 	for _, nb := range nested {
+		if lead, ok := blockLeads[nb]; ok {
+			body.AppendUnstructuredTokens(lead)
+		}
 		body.AppendBlock(nb)
 	}
+	body.AppendUnstructuredTokens(tail)
 }
 
 type attrTokens struct {

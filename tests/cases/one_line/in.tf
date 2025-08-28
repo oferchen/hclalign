@@ -1,0 +1,1 @@
+variable "one" { default = 1 }
