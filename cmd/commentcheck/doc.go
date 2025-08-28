@@ -1,5 +1,4 @@
 // cmd/commentcheck/doc.go
-
 // Package main provides the commentcheck command. It verifies that each Go
 // source file starts with a comment containing its repository-relative path.
 //
@@ -12,7 +11,7 @@
 //	$ commentcheck
 //	(no output)
 //
-// If the comment is missing:
+// If the comment is missing or incorrect:
 //
 //	$ cat bad.go
 //	package hello
