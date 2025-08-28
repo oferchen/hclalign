@@ -4,6 +4,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -12,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+var execCommand = exec.Command
 
 func main() {
 	dirs, err := packageDirs()
@@ -84,8 +87,12 @@ func checkFile(path string) error {
 }
 
 func packageDirs() ([]string, error) {
-	out, err := exec.Command("go", "list", "-f", "{{.Dir}}", "./...").Output()
+	cmd := execCommand("go", "list", "-f", "{{.Dir}}", "./...")
+	out, err := cmd.Output()
 	if err != nil {
+		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
+			return nil, errors.New("commentcheck requires a Go toolchain")
+		}
 		return nil, err
 	}
 	var dirs []string
