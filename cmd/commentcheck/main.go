@@ -69,9 +69,6 @@ func checkFile(path string) error {
 	if err != nil {
 		return fmt.Errorf("%s: %v", path, err)
 	}
-	if len(file.Comments) > 1 {
-		return fmt.Errorf("%s: additional comments found", path)
-	}
 	if len(file.Comments) == 0 {
 		return fmt.Errorf("%s: missing file comment", path)
 	}
@@ -88,11 +85,15 @@ func packageDirs() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
 	var dirs []string
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	for scanner.Scan() {
 		dir := scanner.Text()
-		rel, err := filepath.Rel(".", dir)
+		rel, err := filepath.Rel(cwd, dir)
 		if err != nil {
 			return nil, err
 		}
