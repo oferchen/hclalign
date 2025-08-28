@@ -4,6 +4,7 @@ package engine
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -186,6 +187,22 @@ func TestProcessContextCanceledNoLog(t *testing.T) {
 	if buf.Len() != 0 {
 		t.Fatalf("expected no logs, got %q", buf.String())
 	}
+}
+
+func TestProcessMissingTarget(t *testing.T) {
+	dir := t.TempDir()
+	missing := filepath.Join(dir, "missing.tf")
+	cfg := &config.Config{
+		Target:      missing,
+		Mode:        config.ModeCheck,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.CanonicalOrder,
+		Concurrency: 1,
+	}
+	require.NoError(t, cfg.Validate())
+	_, err := Process(context.Background(), cfg)
+	require.EqualError(t, err, fmt.Sprintf("target %q does not exist", missing))
 }
 
 func TestProcessPropagatesFileError(t *testing.T) {
