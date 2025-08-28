@@ -13,7 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"sync"
 	"sync/atomic"
 
 	"golang.org/x/sync/errgroup"
@@ -112,8 +111,6 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	sem := make(chan struct{}, cfg.Concurrency)
 	g, ctx := errgroup.WithContext(ctx)
 	var changed atomic.Bool
-	var mu sync.Mutex
-	var errs []error
 	for _, f := range files {
 		f := f
 		select {
@@ -125,13 +122,10 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 			defer func() { <-sem }()
 			ch, err := processSingleFile(ctx, f, cfg)
 			if err != nil {
-				mu.Lock()
-				errs = append(errs, fmt.Errorf("%s: %w", f, err))
-				mu.Unlock()
 				if !errors.Is(err, context.Canceled) {
 					log.Printf("error processing file %s: %v", f, err)
 				}
-				return nil
+				return fmt.Errorf("%s: %w", f, err)
 			}
 			if ch {
 				changed.Store(true)
@@ -143,12 +137,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		})
 	}
 	if err := g.Wait(); err != nil {
-		mu.Lock()
-		errs = append(errs, err)
-		mu.Unlock()
-	}
-	if len(errs) > 0 {
-		return changed.Load(), errors.Join(errs...)
+		return changed.Load(), err
 	}
 	return changed.Load(), nil
 }
