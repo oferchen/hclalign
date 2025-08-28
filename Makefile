@@ -49,6 +49,11 @@ test-race:
 cover:
 	@echo "Running tests with race detector and coverage..."
 	go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out ./...
+	go test -race -shuffle=on -covermode=atomic -coverprofile=cmd_commentcheck.out ./cmd/commentcheck
+	tail -n +2 cmd_commentcheck.out >> coverage.out
+	go test -race -shuffle=on -covermode=atomic -coverprofile=ci_covercheck.out ./internal/ci/covercheck
+	tail -n +2 ci_covercheck.out >> coverage.out
+	rm cmd_commentcheck.out ci_covercheck.out
 	@echo "Coverage report:"
 	go tool cover -func=coverage.out
 
