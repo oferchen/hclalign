@@ -130,6 +130,79 @@ func TestProcessContextCanceledNoLog(t *testing.T) {
 	}
 }
 
+func TestProcessSymlinkedDirTargetFollowSymlinks(t *testing.T) {
+	dir := t.TempDir()
+	realDir := filepath.Join(dir, "real")
+	if err := os.Mkdir(realDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	path := filepath.Join(realDir, "a.tf")
+	if err := os.WriteFile(path, []byte("variable \"a\" {\n  default = 1\n  type = number\n}\n"), 0644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	link := filepath.Join(dir, "link")
+	if err := os.Symlink(realDir, link); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:         link,
+		Mode:           config.ModeCheck,
+		Include:        config.DefaultInclude,
+		Exclude:        config.DefaultExclude,
+		Order:          config.DefaultOrder,
+		Concurrency:    1,
+		FollowSymlinks: true,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	changed, err := Process(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("process: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected changes when following symlinked directory")
+	}
+}
+
+func TestProcessSymlinkedDirTargetNoFollow(t *testing.T) {
+	dir := t.TempDir()
+	realDir := filepath.Join(dir, "real")
+	if err := os.Mkdir(realDir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	path := filepath.Join(realDir, "a.tf")
+	if err := os.WriteFile(path, []byte("variable \"a\" {\n  default = 1\n  type = number\n}\n"), 0644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	link := filepath.Join(dir, "link")
+	if err := os.Symlink(realDir, link); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:      link,
+		Mode:        config.ModeCheck,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.DefaultOrder,
+		Concurrency: 1,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	changed, err := Process(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("process: %v", err)
+	}
+	if changed {
+		t.Fatalf("did not expect changes when not following symlinked directory")
+	}
+}
+
 func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 	bom := []byte{0xEF, 0xBB, 0xBF}
 	input := string(bom) + "variable \"a\" {\r\n  default = 1\r\n  type = number\r\n}\r\n"
