@@ -30,3 +30,10 @@ func TestDefaultOrderMatchesBuiltInAttributes(t *testing.T) {
 		t.Fatalf("expected DefaultOrder to be %v, got %v", expected, DefaultOrder)
 	}
 }
+
+func TestDefaultExcludeMatchesExpected(t *testing.T) {
+	expected := []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
+	if !reflect.DeepEqual(DefaultExclude, expected) {
+		t.Fatalf("expected DefaultExclude to be %v, got %v", expected, DefaultExclude)
+	}
+}

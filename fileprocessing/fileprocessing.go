@@ -41,23 +41,55 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		return false, err
 	}
 	var files []string
-	err = filepath.WalkDir(cfg.Target, func(path string, d os.DirEntry, err error) error {
+	var walk func(string) error
+	walk = func(dir string) error {
+		if !matcher.Matches(dir) {
+			return nil
+		}
+		entries, err := os.ReadDir(dir)
 		if err != nil {
 			return err
 		}
-		if d.IsDir() {
-			if !matcher.Matches(path) {
-				return filepath.SkipDir
+		for _, entry := range entries {
+			path := filepath.Join(dir, entry.Name())
+			if entry.Type()&os.ModeSymlink != 0 {
+				info, err := os.Stat(path)
+				if err != nil {
+					return err
+				}
+				if info.IsDir() {
+					if cfg.FollowSymlinks {
+						if err := walk(path); err != nil {
+							return err
+						}
+					}
+					continue
+				}
 			}
-			return nil
-		}
-		if matcher.Matches(path) {
-			files = append(files, path)
+			if entry.IsDir() {
+				if err := walk(path); err != nil {
+					return err
+				}
+				continue
+			}
+			if matcher.Matches(path) {
+				files = append(files, path)
+			}
 		}
 		return nil
-	})
+	}
+	info, err := os.Lstat(cfg.Target)
 	if err != nil {
 		return false, err
+	}
+	if info.IsDir() {
+		if err := walk(cfg.Target); err != nil {
+			return false, err
+		}
+	} else {
+		if matcher.Matches(cfg.Target) {
+			files = append(files, cfg.Target)
+		}
 	}
 	sort.Strings(files)
 

@@ -29,6 +29,7 @@ func newRootCmd() *cobra.Command {
 	cmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 	cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 	return cmd
 }
