@@ -65,3 +65,28 @@ func TestValidate_InvalidExcludePattern(t *testing.T) {
 		t.Fatalf("expected error for invalid exclude pattern")
 	}
 }
+
+func TestValidate_ValidConfig(t *testing.T) {
+	c := Config{
+		Concurrency: 1,
+		Include:     DefaultInclude,
+		Exclude:     DefaultExclude,
+		Order:       CanonicalOrder,
+		StrictOrder: true,
+	}
+	if err := c.Validate(); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestValidate_DuplicateOrderAttribute(t *testing.T) {
+	c := Config{
+		Concurrency: 1,
+		Include:     DefaultInclude,
+		Exclude:     DefaultExclude,
+		Order:       []string{"description", "description"},
+	}
+	if err := c.Validate(); err == nil {
+		t.Fatalf("expected error for duplicate order attribute")
+	}
+}
