@@ -10,15 +10,24 @@ Thank you for considering a contribution to `hclalign`!
 
 ## Required Checks
 
-Before submitting a pull request, ensure all of the following commands succeed:
+Before submitting a pull request, ensure the continuous integration pipeline passes:
 
 ```sh
-golangci-lint run
-go test -race ./...
-go test -run Fuzz ./...
+make ci
 ```
 
-These commands must be run from the repository root. Additional tests are welcome.
+This command formats the code, vets, lints, runs the tests with the race detector,
+performs a short fuzz run, and builds the project. If you prefer to run steps
+individually, execute the following from the repository root:
+
+```sh
+make fmt
+make vet
+make lint
+make test-race
+make fuzz-short
+make build
+```
 
 ## Commit Guidelines
 
