@@ -149,3 +149,44 @@ func TestWriteFileAtomic(t *testing.T) {
 		})
 	}
 }
+
+func TestApplyHints(t *testing.T) {
+	data := []byte("one\ntwo\n")
+
+	got := ApplyHints(data, Hints{})
+	if !bytes.Equal(got, data) {
+		t.Fatalf("no-op mismatch: %q != %q", got, data)
+	}
+
+	got = ApplyHints(data, Hints{Newline: "\r\n"})
+	want := []byte("one\r\ntwo\r\n")
+	if !bytes.Equal(got, want) {
+		t.Fatalf("newline mismatch: %q != %q", got, want)
+	}
+
+	got = ApplyHints(data, Hints{HasBOM: true})
+	want = append([]byte{}, utf8BOM...)
+	want = append(want, data...)
+	if !bytes.Equal(got, want) {
+		t.Fatalf("bom mismatch: %q != %q", got, want)
+	}
+}
+
+func TestApplyHintsAlloc(t *testing.T) {
+	data := []byte("one\ntwo\n")
+	allocs := testing.AllocsPerRun(1000, func() {
+		ApplyHints(data, Hints{})
+	})
+	if allocs != 0 {
+		t.Fatalf("unexpected allocations: got %f want 0", allocs)
+	}
+}
+
+func BenchmarkApplyHints(b *testing.B) {
+	data := []byte("one\ntwo\n")
+	hints := Hints{Newline: "\r\n"}
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		ApplyHints(data, hints)
+	}
+}
