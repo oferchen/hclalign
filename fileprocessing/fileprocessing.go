@@ -18,6 +18,7 @@ import (
 
 	"github.com/oferchen/hclalign/config"
 	"github.com/oferchen/hclalign/hclprocessing"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/oferchen/hclalign/patternmatching"
 )
 
@@ -106,37 +107,32 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	hclprocessing.ReorderAttributes(file, cfg.Order)
 
 	formatted := file.Bytes()
-	if bytes.Equal(newline, []byte("\r\n")) {
-		formatted = bytes.ReplaceAll(formatted, []byte("\n"), []byte("\r\n"))
-	}
-	if len(bom) > 0 {
-		formatted = append(bom, formatted...)
-	}
-	changed := !bytes.Equal(original, formatted)
+	styled := internalfs.ApplyHints(formatted, newline, bom)
+	changed := !bytes.Equal(original, styled)
 
 	switch cfg.Mode {
 	case config.ModeWrite:
 		if !changed {
 			if cfg.Stdout {
-				_, _ = os.Stdout.Write(formatted)
+				_, _ = os.Stdout.Write(styled)
 			}
 			return false, nil
 		}
-		if err := writeFileAtomically(filePath, formatted, fileInfo.Mode()); err != nil {
+		if err := internalfs.WriteFile(ctx, filePath, formatted, fileInfo.Mode(), newline, bom); err != nil {
 			return false, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
 		}
 		if cfg.Stdout {
-			_, _ = os.Stdout.Write(formatted)
+			_, _ = os.Stdout.Write(styled)
 		}
 	case config.ModeCheck:
 		if cfg.Stdout {
-			_, _ = os.Stdout.Write(formatted)
+			_, _ = os.Stdout.Write(styled)
 		}
 	case config.ModeDiff:
 		if changed {
 			ud := difflib.UnifiedDiff{
 				A:        difflib.SplitLines(string(original)),
-				B:        difflib.SplitLines(string(formatted)),
+				B:        difflib.SplitLines(string(styled)),
 				FromFile: filePath,
 				ToFile:   filePath,
 				Context:  3,
@@ -181,38 +177,4 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 		}
 	}
 	return changed, nil
-}
-
-func writeFileAtomically(filename string, data []byte, perm os.FileMode) error {
-	dir := filepath.Dir(filename)
-	tmp, err := os.CreateTemp(dir, "hclalign-*")
-	if err != nil {
-		return err
-	}
-	tmpName := tmp.Name()
-	defer os.Remove(tmpName)
-	if err := tmp.Chmod(perm); err != nil {
-		tmp.Close()
-		return err
-	}
-	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(tmpName, filename); err != nil {
-		return err
-	}
-	dirf, err := os.Open(dir)
-	if err != nil {
-		return err
-	}
-	defer dirf.Close()
-	return dirf.Sync()
 }
