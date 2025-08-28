@@ -33,6 +33,12 @@ func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 }
 
 func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
+	if _, err := os.Stat(cfg.Target); err != nil {
+		if os.IsNotExist(err) {
+			return false, fmt.Errorf("target %q does not exist", cfg.Target)
+		}
+		return false, err
+	}
 	matcher, err := patternmatching.NewMatcher(cfg.Include, cfg.Exclude)
 	if err != nil {
 		return false, err
