@@ -1,6 +1,4 @@
-// fileprocessing.go
-// Handles processing of HCL files based on configuration and operation mode.
-
+// fileprocessing/fileprocessing.go
 package fileprocessing
 
 import (
@@ -27,8 +25,6 @@ import (
 	"github.com/oferchen/hclalign/patternmatching"
 )
 
-// Process processes files or stdin based on the provided configuration. It
-// returns a boolean indicating whether any changes were required.
 func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 	if cfg.Stdin {
 		return processReader(ctx, os.Stdin, cfg)

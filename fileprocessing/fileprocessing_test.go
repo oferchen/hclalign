@@ -1,3 +1,4 @@
+// fileprocessing/fileprocessing_test.go
 package fileprocessing
 
 import (
@@ -428,9 +429,9 @@ func TestProcessStopsAfterMalformedFile(t *testing.T) {
 
 func TestProcessSkipsDefaultExcludedDirs(t *testing.T) {
 	dir := t.TempDir()
-	// valid file to ensure processing succeeds
-	valid := filepath.Join(dir, "main.tf")
-	if err := os.WriteFile(valid, []byte("variable \"a\" {}\n"), 0644); err != nil {
+
+	validFile := filepath.Join(dir, "main.tf")
+	if err := os.WriteFile(validFile, []byte("variable \"a\" {}\n"), 0644); err != nil {
 		t.Fatalf("write valid: %v", err)
 	}
 	excluded := []string{".git", ".terraform", "vendor", "node_modules"}

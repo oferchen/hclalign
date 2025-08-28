@@ -1,3 +1,4 @@
+// main_test.go
 package main
 
 import (
@@ -12,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Helper function to create a temporary HCL file.
 func createTempHCLFile(t *testing.T, content string) string {
 	t.Helper()
 	tempFile, err := os.CreateTemp("", "*.tf")
@@ -38,15 +38,15 @@ func TestMainFunctionality(t *testing.T) {
 		{
 			name: "Missing Target Argument",
 			setup: func(t *testing.T) []string {
-				return []string{} // No target provided
+				return []string{}
 			},
 			wantErr: true,
-			errMsg:  config.MissingTarget,
+			errMsg:  config.ErrMissingTarget,
 		},
 		{
 			name: "Valid Single File",
 			setup: func(t *testing.T) []string {
-				// Create a temp file with valid HCL content
+
 				filePath := createTempHCLFile(t, `variable "test" {}`)
 				return []string{filePath}
 			},
@@ -55,7 +55,7 @@ func TestMainFunctionality(t *testing.T) {
 		{
 			name: "Multiple Files",
 			setup: func(t *testing.T) []string {
-				// Create two temp files, but since the command only accepts one, this should cause an error
+
 				filePath1 := createTempHCLFile(t, `variable "test1" {}`)
 				filePath2 := createTempHCLFile(t, `variable "test2" {}`)
 				return []string{filePath1, filePath2}
@@ -74,10 +74,9 @@ func TestMainFunctionality(t *testing.T) {
 		},
 	}
 
-	// Iterate over test cases
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Setup
+
 			args := tc.setup(t)
 
 			rootCmd := &cobra.Command{

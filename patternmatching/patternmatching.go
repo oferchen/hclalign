@@ -1,3 +1,4 @@
+// patternmatching/patternmatching.go
 package patternmatching
 
 import (
@@ -8,15 +9,12 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 )
 
-// Matcher evaluates include and exclude glob patterns against file paths.
 type Matcher struct {
 	include []string
 	exclude []string
 	root    string
 }
 
-// NewMatcher creates a Matcher using include and exclude patterns relative to the
-// current working directory.
 func NewMatcher(include, exclude []string) (*Matcher, error) {
 	if err := validatePatterns(include); err != nil {
 		return nil, fmt.Errorf("invalid include: %w", err)
@@ -31,7 +29,6 @@ func NewMatcher(include, exclude []string) (*Matcher, error) {
 	return &Matcher{include: include, exclude: exclude, root: root}, nil
 }
 
-// validatePatterns ensures each glob pattern is syntactically valid.
 func validatePatterns(patterns []string) error {
 	for _, p := range patterns {
 		if p == "" {
@@ -44,19 +41,16 @@ func validatePatterns(patterns []string) error {
 	return nil
 }
 
-// Matches reports whether the given path should be processed. It returns false
-// for files that do not match the include patterns or that match the exclude
-// patterns. Directories are always matched unless they are excluded.
 func (m *Matcher) Matches(path string) bool {
-	rel, err := filepath.Rel(m.root, path)
+	relPath, err := filepath.Rel(m.root, path)
 	if err != nil {
-		rel = path
+		relPath = path
 	}
-	// Normalize path separators for consistent glob matching across platforms.
-	rel = filepath.ToSlash(rel)
-	// Check excludes first.
+
+	relPath = filepath.ToSlash(relPath)
+
 	for _, ex := range m.exclude {
-		if ok, _ := doublestar.PathMatch(ex, rel); ok {
+		if ok, _ := doublestar.PathMatch(ex, relPath); ok {
 			return false
 		}
 	}
@@ -66,12 +60,11 @@ func (m *Matcher) Matches(path string) bool {
 		return true
 	}
 	for _, in := range m.include {
-		if ok, _ := doublestar.PathMatch(in, rel); ok {
+		if ok, _ := doublestar.PathMatch(in, relPath); ok {
 			return true
 		}
 	}
 	return false
 }
 
-// ValidatePatterns is exported for configuration validation.
 func ValidatePatterns(patterns []string) error { return validatePatterns(patterns) }

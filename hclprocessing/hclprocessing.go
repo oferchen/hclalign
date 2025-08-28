@@ -1,6 +1,4 @@
-// hclprocessing.go
-// Manages parsing and reordering of attributes within HCL files.
-
+// hclprocessing/hclprocessing.go
 package hclprocessing
 
 import (
@@ -11,32 +9,26 @@ import (
 	"github.com/oferchen/hclalign/config"
 )
 
-// ReorderAttributes reorders attributes of "variable" blocks into the provided
-// order. When strict is true, unknown attributes are placed after known ones.
-// Otherwise, unknown attributes remain in their original positions. If order is
-// nil or empty, a canonical order is used.
+var canonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
+
 func ReorderAttributes(file *hclwrite.File, order []string, strict bool) {
 	if len(order) == 0 {
 		order = config.CanonicalOrder
 	}
 
-	// knownSet contains the canonical attributes for quick lookups.
-	knownSet := make(map[string]struct{}, len(config.CanonicalOrder))
-	for _, name := range config.CanonicalOrder {
-		knownSet[name] = struct{}{}
+	canonicalSet := make(map[string]struct{}, len(canonicalOrder))
+	for _, name := range canonicalOrder {
+		canonicalSet[name] = struct{}{}
 	}
 
-	// Filter the provided order to only known attributes so that unknown
-	// attributes are appended after all known attributes regardless of their
-	// position in the provided order.
-	filtered := make([]string, 0, len(order))
+	knownOrder := make([]string, 0, len(order))
 	seen := make(map[string]struct{}, len(order))
 	for _, name := range order {
-		if _, ok := knownSet[name]; ok {
+		if _, ok := canonicalSet[name]; ok {
 			if _, dup := seen[name]; dup {
 				continue
 			}
-			filtered = append(filtered, name)
+			knownOrder = append(knownOrder, name)
 			seen[name] = struct{}{}
 		}
 	}
@@ -47,26 +39,23 @@ func ReorderAttributes(file *hclwrite.File, order []string, strict bool) {
 			continue
 		}
 
-		reorderVariableBlock(block, filtered, knownSet, strict)
+		reorderVariableBlock(block, knownOrder, canonicalSet, strict)
 	}
 }
 
-func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[string]struct{}, strict bool) {
+func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}, strict bool) {
 	body := block.Body()
 
 	attrs := body.Attributes()
-	nested := body.Blocks()
+	nestedBlocks := body.Blocks()
 
-	// Capture prefix tokens before any attributes or blocks, the tail tokens after
-	// the last element, and any leading tokens for nested blocks so that we can
-	// restore them later.
 	allTokens := body.BuildTokens(nil)
-	prefix := hclwrite.Tokens{}
-	tail := hclwrite.Tokens{}
-	blockLeads := make(map[*hclwrite.Block]hclwrite.Tokens)
-	cur := hclwrite.Tokens{}
-	seen := false
-	bi := 0
+	prefixTokens := hclwrite.Tokens{}
+	tailTokens := hclwrite.Tokens{}
+	blockLeadTokens := make(map[*hclwrite.Block]hclwrite.Tokens)
+	currentTokens := hclwrite.Tokens{}
+	prefixCaptured := false
+	blockIndex := 0
 	for i := 0; i < len(allTokens); {
 		tok := allTokens[i]
 		if tok.Type == hclsyntax.TokenIdent {
@@ -77,46 +66,46 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[st
 				for leadCount < len(attrToks) && attrToks[leadCount].Type == hclsyntax.TokenComment {
 					leadCount++
 				}
-				if !seen {
-					if len(cur) >= leadCount {
-						prefix = append(hclwrite.Tokens{}, cur[:len(cur)-leadCount]...)
+				if !prefixCaptured {
+					if len(currentTokens) >= leadCount {
+						prefixTokens = append(hclwrite.Tokens{}, currentTokens[:len(currentTokens)-leadCount]...)
 					}
-					seen = true
+					prefixCaptured = true
 				}
-				cur = nil
+				currentTokens = nil
 				i += len(attrToks) - leadCount
 				continue
 			}
-			if bi < len(nested) {
-				blockToks := nested[bi].BuildTokens(nil)
+			if blockIndex < len(nestedBlocks) {
+				blockToks := nestedBlocks[blockIndex].BuildTokens(nil)
 				leadCount := 0
 				for leadCount < len(blockToks) && blockToks[leadCount].Type == hclsyntax.TokenComment {
 					leadCount++
 				}
-				if !seen {
-					if len(cur) >= leadCount {
-						prefix = append(hclwrite.Tokens{}, cur[:len(cur)-leadCount]...)
+				if !prefixCaptured {
+					if len(currentTokens) >= leadCount {
+						prefixTokens = append(hclwrite.Tokens{}, currentTokens[:len(currentTokens)-leadCount]...)
 					}
-					seen = true
+					prefixCaptured = true
 				} else {
-					if len(cur) >= leadCount {
-						blockLeads[nested[bi]] = append(hclwrite.Tokens{}, cur[:len(cur)-leadCount]...)
+					if len(currentTokens) >= leadCount {
+						blockLeadTokens[nestedBlocks[blockIndex]] = append(hclwrite.Tokens{}, currentTokens[:len(currentTokens)-leadCount]...)
 					}
 				}
-				cur = nil
+				currentTokens = nil
 				i += len(blockToks) - leadCount
-				bi++
+				blockIndex++
 				continue
 			}
 		}
-		cur = append(cur, tok)
+		currentTokens = append(currentTokens, tok)
 		i++
 	}
-	if !seen {
-		prefix = cur
-		cur = nil
+	if !prefixCaptured {
+		prefixTokens = currentTokens
+		currentTokens = nil
 	}
-	tail = cur
+	tailTokens = currentTokens
 
 	normalizeTokens := func(toks hclwrite.Tokens) {
 		for _, t := range toks {
@@ -128,100 +117,95 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[st
 			}
 		}
 	}
-	normalizeTokens(prefix)
-	for _, lead := range blockLeads {
+	normalizeTokens(prefixTokens)
+	for _, lead := range blockLeadTokens {
 		normalizeTokens(lead)
 	}
-	normalizeTokens(tail)
+	normalizeTokens(tailTokens)
 
-	// Preserve nested blocks to re-append later.
-	for _, nb := range nested {
+	for _, nb := range nestedBlocks {
 		body.RemoveBlock(nb)
 	}
 
-	tokensMap := make(map[string]attrTokens)
+	attrTokensMap := make(map[string]attrTokens)
 	for name, attr := range attrs {
-		tokensMap[name] = extractAttrTokens(attr)
+		attrTokensMap[name] = extractAttrTokens(attr)
 	}
 
-	// Capture original attribute ordering.
-	orderedNames := attributeOrder(body, attrs)
+	originalOrder := attributeOrder(body, attrs)
 
 	for name := range attrs {
 		body.RemoveAttribute(name)
 	}
 
 	body.Clear()
-	body.AppendUnstructuredTokens(prefix)
+	body.AppendUnstructuredTokens(prefixTokens)
 
-	canonSet := map[string]struct{}{}
-	finalKnown := make([]string, 0, len(config.CanonicalOrder))
+	canonicalOrderSet := map[string]struct{}{}
+	orderedKnown := make([]string, 0, len(canonicalOrder))
 	for _, name := range order {
-		canonSet[name] = struct{}{}
-		if _, ok := tokensMap[name]; ok {
-			finalKnown = append(finalKnown, name)
+		canonicalOrderSet[name] = struct{}{}
+		if _, ok := attrTokensMap[name]; ok {
+			orderedKnown = append(orderedKnown, name)
 		}
 	}
 
-	// Append remaining known attributes not specified in order following the
-	// canonical order.
-	for _, name := range config.CanonicalOrder {
-		if _, already := canonSet[name]; already {
+	for _, name := range canonicalOrder {
+		if _, already := canonicalOrderSet[name]; already {
 			continue
 		}
-		if _, ok := tokensMap[name]; ok {
-			finalKnown = append(finalKnown, name)
+		if _, ok := attrTokensMap[name]; ok {
+			orderedKnown = append(orderedKnown, name)
 		}
 	}
 
 	if strict {
-		// Place known attributes first followed by unknown attributes.
-		for _, name := range finalKnown {
-			if tok, ok := tokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.lead)
-				body.SetAttributeRaw(name, tok.expr)
+
+		for _, name := range orderedKnown {
+			if tok, ok := attrTokensMap[name]; ok {
+				body.AppendUnstructuredTokens(tok.leadTokens)
+				body.SetAttributeRaw(name, tok.exprTokens)
 			}
 		}
-		for _, name := range orderedNames {
-			if _, isKnown := knownSet[name]; isKnown {
+		for _, name := range originalOrder {
+			if _, isKnown := canonicalSet[name]; isKnown {
 				continue
 			}
-			if tok, ok := tokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.lead)
-				body.SetAttributeRaw(name, tok.expr)
+			if tok, ok := attrTokensMap[name]; ok {
+				body.AppendUnstructuredTokens(tok.leadTokens)
+				body.SetAttributeRaw(name, tok.exprTokens)
 			}
 		}
 	} else {
-		// Merge known attributes in canonical order with unknown
-		// attributes at their original positions.
+
 		idx := 0
-		for _, name := range orderedNames {
-			if _, isKnown := knownSet[name]; isKnown {
-				if idx < len(finalKnown) {
-					k := finalKnown[idx]
+		for _, name := range originalOrder {
+			if _, isKnown := canonicalSet[name]; isKnown {
+				if idx < len(orderedKnown) {
+					k := orderedKnown[idx]
 					idx++
-					if tok, ok := tokensMap[k]; ok {
-						body.AppendUnstructuredTokens(tok.lead)
-						body.SetAttributeRaw(k, tok.expr)
+					if tok, ok := attrTokensMap[k]; ok {
+						body.AppendUnstructuredTokens(tok.leadTokens)
+						body.SetAttributeRaw(k, tok.exprTokens)
 					}
 				}
 				continue
 			}
-			if tok, ok := tokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.lead)
-				body.SetAttributeRaw(name, tok.expr)
+			if tok, ok := attrTokensMap[name]; ok {
+				body.AppendUnstructuredTokens(tok.leadTokens)
+				body.SetAttributeRaw(name, tok.exprTokens)
 			}
 		}
 	}
 
 	hasLeadingNewline := false
-	for _, t := range prefix {
+	for _, t := range prefixTokens {
 		if t.Type == hclsyntax.TokenNewline {
 			hasLeadingNewline = true
 			break
 		}
 	}
-	if !hasLeadingNewline && len(nested) == 0 && (len(tail) == 0 || tail[0].Type != hclsyntax.TokenNewline) {
+	if !hasLeadingNewline && len(nestedBlocks) == 0 && (len(tailTokens) == 0 || tailTokens[0].Type != hclsyntax.TokenNewline) {
 		toks := body.BuildTokens(nil)
 		if n := len(toks); n > 0 && toks[n-1].Type == hclsyntax.TokenNewline {
 			body.Clear()
@@ -229,18 +213,18 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[st
 		}
 	}
 
-	for _, nb := range nested {
-		if lead, ok := blockLeads[nb]; ok {
+	for _, nb := range nestedBlocks {
+		if lead, ok := blockLeadTokens[nb]; ok {
 			body.AppendUnstructuredTokens(lead)
 		}
 		body.AppendBlock(nb)
 	}
-	body.AppendUnstructuredTokens(tail)
+	body.AppendUnstructuredTokens(tailTokens)
 }
 
 type attrTokens struct {
-	lead hclwrite.Tokens
-	expr hclwrite.Tokens
+	leadTokens hclwrite.Tokens
+	exprTokens hclwrite.Tokens
 }
 
 func extractAttrTokens(attr *hclwrite.Attribute) attrTokens {
@@ -262,7 +246,7 @@ func extractAttrTokens(attr *hclwrite.Attribute) attrTokens {
 			}
 		}
 	}
-	return attrTokens{lead: lead, expr: expr}
+	return attrTokens{leadTokens: lead, exprTokens: expr}
 }
 
 func attributeOrder(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) []string {
