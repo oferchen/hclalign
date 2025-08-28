@@ -507,24 +507,13 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 
 	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.CanonicalOrder}
 
-	oldStdout := os.Stdout
-	rOut, wOut, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("pipe: %v", err)
-	}
-	os.Stdout = wOut
-	defer func() { os.Stdout = oldStdout }()
-
-	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg); err != nil {
+	var out bytes.Buffer
+	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), &out, cfg); err != nil {
 		t.Fatalf("processReader: %v", err)
 	}
-	_ = wOut.Close()
-	out, err := io.ReadAll(rOut)
-	if err != nil {
-		t.Fatalf("read stdout: %v", err)
-	}
+	data := out.Bytes()
 
-	hints := internalfs.DetectHintsFromBytes(out)
+	hints := internalfs.DetectHintsFromBytes(data)
 	if !hints.HasBOM {
 		t.Fatalf("bom not preserved")
 	}
@@ -538,8 +527,8 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 	}
 	require.NoError(t, hclalign.ReorderAttributes(expectedFile, config.CanonicalOrder, false))
 	expected := internalfs.ApplyHints(expectedFile.Bytes(), internalfs.Hints{HasBOM: true, Newline: "\r\n"})
-	if string(out) != string(expected) {
-		t.Fatalf("unexpected output: got %q, want %q", out, expected)
+	if string(data) != string(expected) {
+		t.Fatalf("unexpected output: got %q, want %q", data, expected)
 	}
 }
 
@@ -549,27 +538,15 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 
 	cfg := &config.Config{Mode: config.ModeDiff, Order: config.CanonicalOrder}
 
-	oldStdout := os.Stdout
-	rOut, wOut, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("pipe: %v", err)
-	}
-	os.Stdout = wOut
-	defer func() { os.Stdout = oldStdout }()
-
-	changed, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg)
+	var out bytes.Buffer
+	changed, err := processReader(context.Background(), bytes.NewReader([]byte(input)), &out, cfg)
 	if err != nil {
 		t.Fatalf("processReader: %v", err)
 	}
 	if !changed {
 		t.Fatalf("expected changes")
 	}
-	_ = wOut.Close()
-	out, err := io.ReadAll(rOut)
-	if err != nil {
-		t.Fatalf("read stdout: %v", err)
-	}
-	hints := internalfs.DetectHintsFromBytes(out)
+	hints := internalfs.DetectHintsFromBytes(out.Bytes())
 	if hints.Newline != "\r\n" {
 		t.Fatalf("expected CRLF in diff output")
 	}
@@ -705,17 +682,14 @@ func TestProcessStdoutError(t *testing.T) {
 
 func TestProcessReaderStdoutError(t *testing.T) {
 	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.CanonicalOrder}
-	oldStdout := os.Stdout
+
+	input := "variable \"a\" {}\n"
 	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatalf("pipe: %v", err)
 	}
 	_ = w.Close()
-	os.Stdout = w
-	defer func() { os.Stdout = oldStdout }()
-
-	input := "variable \"a\" {}\n"
-	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg); err == nil {
+	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), w, cfg); err == nil {
 		t.Fatalf("expected error")
 	}
 	_ = r.Close()
