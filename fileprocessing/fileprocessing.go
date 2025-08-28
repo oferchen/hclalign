@@ -179,6 +179,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 				FromFile: filePath,
 				ToFile:   filePath,
 				Context:  3,
+				Eol:      hints.Newline,
 			}
 			text, err := difflib.GetUnifiedDiffString(ud)
 			if err != nil {
@@ -218,11 +219,12 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 	case config.ModeDiff:
 		if changed {
 			ud := difflib.UnifiedDiff{
-				A:        difflib.SplitLines(string(data)),
+				A:        difflib.SplitLines(string(original)),
 				B:        difflib.SplitLines(string(styled)),
 				FromFile: "stdin",
 				ToFile:   "stdin",
 				Context:  3,
+				Eol:      hints.Newline,
 			}
 			text, err := difflib.GetUnifiedDiffString(ud)
 			if err != nil {
