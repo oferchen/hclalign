@@ -130,6 +130,35 @@ func TestProcessContextCanceledNoLog(t *testing.T) {
 	}
 }
 
+func TestProcessPropagatesFileError(t *testing.T) {
+	dir := t.TempDir()
+
+	good := filepath.Join(dir, "good.tf")
+	if err := os.WriteFile(good, []byte("variable \"a\" {\n type = string\n}\n"), 0644); err != nil {
+		t.Fatalf("write good file: %v", err)
+	}
+	bad := filepath.Join(dir, "bad.tf")
+	if err := os.WriteFile(bad, []byte("variable \"b\" {\n"), 0644); err != nil {
+		t.Fatalf("write bad file: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:      dir,
+		Mode:        config.ModeCheck,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.DefaultOrder,
+		Concurrency: 2,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	if _, err := Process(context.Background(), cfg); err == nil {
+		t.Fatalf("expected error due to invalid file")
+	}
+}
+
 func TestProcessSymlinkedDirTargetFollowSymlinks(t *testing.T) {
 	dir := t.TempDir()
 	realDir := filepath.Join(dir, "real")
