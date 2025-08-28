@@ -4,68 +4,86 @@
 package config
 
 import (
-	"context"
 	"fmt"
-	"github.com/oferchen/hclalign/fileprocessing"
+
 	"github.com/oferchen/hclalign/patternmatching"
-	"strings"
+)
+
+// Mode represents the operation mode of the application.
+type Mode int
+
+const (
+	// ModeWrite writes the formatted content back to the files.
+	ModeWrite Mode = iota
+	// ModeCheck only checks if formatting changes are required.
+	ModeCheck
+	// ModeDiff prints the diff of required changes.
+	ModeDiff
 )
 
 // Config stores configuration for processing HCL files.
 type Config struct {
-	Target   string
-	Criteria []string
-	Order    []string
+	Target      string
+	Mode        Mode
+	Stdin       bool
+	Stdout      bool
+	Include     []string
+	Exclude     []string
+	Order       []string
+	StrictOrder bool
+	Concurrency int
+	Verbose     bool
 }
 
-// DefaultCriteria and DefaultOrder define the default behavior of the CLI.
+// DefaultInclude, DefaultExclude and DefaultOrder define the default behaviour of the CLI.
 var (
-	DefaultCriteria = []string{"*.hcl"}
-	DefaultOrder    = []string{"description", "type", "default", "sensitive", "nullable", "validation"}
+	DefaultInclude = []string{"*.hcl"}
+	DefaultExclude = []string{}
+	DefaultOrder   = []string{"description", "type", "default", "sensitive", "nullable", "validation"}
 )
 
 const (
+	// MissingTarget is returned when no target is specified and --stdin is not used.
 	MissingTarget = "missing target file or directory. Please provide a valid target as an argument"
 )
 
-// IsValidOrder checks if the provided order is valid, returning an error with specific feedback if not.
-func IsValidOrder(order []string) (bool, error) {
-	defaultOrder := DefaultOrder
-	providedSet := make(map[string]struct{})
+// Validate ensures that the configuration is valid.
+func (c *Config) Validate() error {
+	if c.Concurrency < 1 {
+		return fmt.Errorf("concurrency must be at least 1")
+	}
+	if err := patternmatching.IsValidCriteria(c.Include); err != nil {
+		return fmt.Errorf("invalid include: %w", err)
+	}
+	if err := patternmatching.IsValidCriteria(c.Exclude); err != nil {
+		return fmt.Errorf("invalid exclude: %w", err)
+	}
+	if err := ValidateOrder(c.Order, c.StrictOrder); err != nil {
+		return fmt.Errorf("invalid order: %w", err)
+	}
+	return nil
+}
 
+// ValidateOrder checks whether the provided order is valid. When strict is true
+// the provided order must include all attributes in DefaultOrder exactly once.
+// Otherwise it only checks for duplicate attributes.
+func ValidateOrder(order []string, strict bool) error {
+	providedSet := make(map[string]struct{})
 	for _, item := range order {
 		if _, exists := providedSet[item]; exists {
-			// Duplicate item found, invalid order
-			return false, fmt.Errorf("duplicate attribute '%s' found in order", item)
+			return fmt.Errorf("duplicate attribute '%s' found in order", item)
 		}
 		providedSet[item] = struct{}{}
 	}
-
-	if len(providedSet) != len(defaultOrder) {
-		// Provided order doesn't match the default order's length
-		return false, fmt.Errorf("provided order length %d doesn't match expected %d", len(providedSet), len(defaultOrder))
-	}
-
-	for _, item := range defaultOrder {
-		if _, exists := providedSet[item]; !exists {
-			// An item from the defaultOrder is not in the provided order
-			return false, fmt.Errorf("missing expected attribute '%s' in provided order", item)
+	if strict {
+		if len(providedSet) != len(DefaultOrder) {
+			return fmt.Errorf("provided order length %d doesn't match expected %d", len(providedSet), len(DefaultOrder))
+		}
+		for _, item := range DefaultOrder {
+			if _, exists := providedSet[item]; !exists {
+				return fmt.Errorf("missing expected attribute '%s' in provided order", item)
+			}
 		}
 	}
-
-	// All checks passed, valid order
-	return true, nil
-}
-
-// ProcessTargetDynamically processes files in the target directory based on criteria and order.
-func ProcessTargetDynamically(ctx context.Context, target string, criteria []string, order []string) error {
-	if err := patternmatching.IsValidCriteria(criteria); err != nil {
-		return fmt.Errorf("invalid criteria: %w", err)
-	}
-	if strings.TrimSpace(target) == "" {
-		return fmt.Errorf("no target specified")
-	}
-
-	ctx = context.WithValue(ctx, fileprocessing.TargetContextKey, target)
-	return fileprocessing.ProcessFiles(ctx, target, criteria, order)
+	return nil
 }

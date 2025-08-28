@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -36,17 +37,17 @@ func TestMainFunctionality(t *testing.T) {
 		{
 			name: "Missing Target Argument",
 			setup: func(t *testing.T) []string {
-				return []string{} // No args means the target is missing
+				return []string{"--write"} // No target provided
 			},
 			wantErr: true,
-			errMsg:  "accepts 1 arg(s), received 0",
+			errMsg:  config.MissingTarget,
 		},
 		{
 			name: "Valid Single File",
 			setup: func(t *testing.T) []string {
 				// Create a temp file with valid HCL content
 				filePath := createTempHCLFile(t, `variable "test" {}`)
-				return []string{filePath}
+				return []string{filePath, "--write"}
 			},
 			wantErr: false,
 		},
@@ -56,10 +57,10 @@ func TestMainFunctionality(t *testing.T) {
 				// Create two temp files, but since the command only accepts one, this should cause an error
 				filePath1 := createTempHCLFile(t, `variable "test1" {}`)
 				filePath2 := createTempHCLFile(t, `variable "test2" {}`)
-				return []string{filePath1, filePath2}
+				return []string{filePath1, filePath2, "--write"}
 			},
 			wantErr: true,
-			errMsg:  "accepts 1 arg(s), received 2",
+			errMsg:  "accepts at most 1 arg(s)",
 		},
 	}
 
@@ -70,13 +71,23 @@ func TestMainFunctionality(t *testing.T) {
 			args := tc.setup(t)
 
 			rootCmd := &cobra.Command{
-				Use:   "hclalign [target file or directory]",
-				Short: "Aligns HCL files based on given criteria",
-				Args:  cobra.ExactArgs(1),
-				RunE:  cli.RunE,
+				Use:          "hclalign [target file or directory]",
+				Short:        "Aligns HCL files based on given criteria",
+				Args:         cobra.ArbitraryArgs,
+				RunE:         cli.RunE,
+				SilenceUsage: true,
 			}
-			rootCmd.Flags().StringSliceP("criteria", "c", config.DefaultCriteria, "List of file criteria to align")
-			rootCmd.Flags().StringSliceP("order", "o", config.DefaultOrder, "Comma-separated list of the order of variable block fields")
+			rootCmd.Flags().Bool("write", false, "write result to file(s)")
+			rootCmd.Flags().Bool("check", false, "check if files are formatted")
+			rootCmd.Flags().Bool("diff", false, "print the diff of required changes")
+			rootCmd.Flags().Bool("stdin", false, "read from STDIN")
+			rootCmd.Flags().Bool("stdout", false, "write result to STDOUT")
+			rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
+			rootCmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
+			rootCmd.Flags().StringSlice("order", config.DefaultOrder, "order of variable block fields")
+			rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
+			rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
+			rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 
 			rootCmd.SetArgs(args)
 
