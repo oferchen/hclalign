@@ -1,6 +1,6 @@
 variable "unicode" {
-  κ           = 1
   description = "d"
-  デフォルト       = 2
   type        = number
+  κ           = 1
+  デフォルト       = 2
 }

@@ -18,7 +18,7 @@ func TestReorderAttributes_VariableBlock(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	hclprocessing.ReorderAttributes(f, nil)
+	hclprocessing.ReorderAttributes(f, nil, false)
 
 	expected := `variable "example" {
   description = "d"
@@ -37,7 +37,7 @@ func TestReorderAttributes_CustomOrder(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	hclprocessing.ReorderAttributes(f, []string{"default", "description"})
+	hclprocessing.ReorderAttributes(f, []string{"default", "description"}, false)
 
 	expected := `variable "example" {
   default     = "v"
@@ -58,7 +58,7 @@ func TestReorderAttributes_NestedBlocks(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	hclprocessing.ReorderAttributes(f, nil)
+	hclprocessing.ReorderAttributes(f, nil, false)
 
 	expected := `variable "example" {
   default = "v"
@@ -78,12 +78,12 @@ func TestReorderAttributes_IgnoresNonVariable(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	hclprocessing.ReorderAttributes(f, nil)
+	hclprocessing.ReorderAttributes(f, nil, false)
 
 	require.Equal(t, src, string(f.Bytes()))
 }
 
-func TestReorderAttributes_UnknownAttributesAfterKnown(t *testing.T) {
+func TestReorderAttributes_StrictUnknownAttributesAfterKnown(t *testing.T) {
 	src := `variable "example" {
   custom      = true
   description = "d"
@@ -93,13 +93,33 @@ func TestReorderAttributes_UnknownAttributesAfterKnown(t *testing.T) {
 	require.False(t, diags.HasErrors())
 
 	// The provided order intentionally places the unknown attribute first to
-	// verify it is moved after known attributes.
-	hclprocessing.ReorderAttributes(f, []string{"custom", "description", "type"})
+	// verify it is moved after known attributes when strict is enabled.
+	hclprocessing.ReorderAttributes(f, []string{"custom", "description", "type"}, true)
 
 	expected := `variable "example" {
   description = "d"
   type        = string
   custom      = true
+}`
+	require.Equal(t, expected, string(f.Bytes()))
+}
+
+func TestReorderAttributes_LoosePreservesUnknownPositions(t *testing.T) {
+	src := `variable "example" {
+  custom      = true
+  description = "d"
+  type        = string
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	// In loose mode the unknown attribute remains at the top.
+	hclprocessing.ReorderAttributes(f, []string{"description", "type"}, false)
+
+	expected := `variable "example" {
+  custom      = true
+  description = "d"
+  type        = string
 }`
 	require.Equal(t, expected, string(f.Bytes()))
 }

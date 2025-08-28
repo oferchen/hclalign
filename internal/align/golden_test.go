@@ -27,36 +27,49 @@ func TestGolden(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			inPath := filepath.Join(casesDir, name, "in.tf")
 			outPath := filepath.Join(casesDir, name, "out.tf")
+			strictPath := filepath.Join(casesDir, name, "out_strict.tf")
 
 			inBytes, err := os.ReadFile(inPath)
 			if err != nil {
 				t.Fatalf("read input: %v", err)
 			}
-			expBytes, err := os.ReadFile(outPath)
-			if err != nil {
-				t.Fatalf("read expected: %v", err)
-			}
 
-			file, diags := hclwrite.ParseConfig(inBytes, inPath, hcl.InitialPos)
-			if diags.HasErrors() {
-				t.Fatalf("parse input: %v", diags)
-			}
-			hclprocessing.ReorderAttributes(file, nil)
-			got := file.Bytes()
-			if !bytes.Equal(got, expBytes) {
-				t.Fatalf("output mismatch for %s:\n-- got --\n%s\n-- want --\n%s", name, got, expBytes)
-			}
+			run := func(t *testing.T, strict bool, expPath string) {
+				expBytes, err := os.ReadFile(expPath)
+				if err != nil {
+					t.Fatalf("read expected: %v", err)
+				}
 
-			// Idempotency check is required for the stress case.
-			if name == "stress" {
-				file2, diags := hclwrite.ParseConfig(expBytes, outPath, hcl.InitialPos)
+				file, diags := hclwrite.ParseConfig(inBytes, inPath, hcl.InitialPos)
 				if diags.HasErrors() {
-					t.Fatalf("parse expected: %v", diags)
+					t.Fatalf("parse input: %v", diags)
 				}
-				hclprocessing.ReorderAttributes(file2, nil)
-				if !bytes.Equal(expBytes, file2.Bytes()) {
-					t.Fatalf("non-idempotent on expected for %s", name)
+				hclprocessing.ReorderAttributes(file, nil, strict)
+				got := file.Bytes()
+				if !bytes.Equal(got, expBytes) {
+					t.Fatalf("output mismatch for %s (strict=%v):\n-- got --\n%s\n-- want --\n%s", name, strict, got, expBytes)
 				}
+
+				if name == "stress" {
+					file2, diags := hclwrite.ParseConfig(expBytes, expPath, hcl.InitialPos)
+					if diags.HasErrors() {
+						t.Fatalf("parse expected: %v", diags)
+					}
+					hclprocessing.ReorderAttributes(file2, nil, strict)
+					if !bytes.Equal(expBytes, file2.Bytes()) {
+						t.Fatalf("non-idempotent on expected for %s (strict=%v)", name, strict)
+					}
+				}
+			}
+
+			t.Run("loose", func(t *testing.T) { run(t, false, outPath) })
+
+			if _, err := os.Stat(strictPath); err == nil {
+				t.Run("strict", func(t *testing.T) { run(t, true, strictPath) })
+			} else if os.IsNotExist(err) {
+				t.Run("strict", func(t *testing.T) { run(t, true, outPath) })
+			} else if err != nil {
+				t.Fatalf("stat strict: %v", err)
 			}
 		})
 	}

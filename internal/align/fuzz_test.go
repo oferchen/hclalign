@@ -30,14 +30,14 @@ func FuzzReorder(f *testing.F) {
 		if diags.HasErrors() {
 			t.Fatalf("parse: %v", diags)
 		}
-		hclprocessing.ReorderAttributes(file, nil)
+		hclprocessing.ReorderAttributes(file, nil, false)
 		out := file.Bytes()
 
 		file2, diags := hclwrite.ParseConfig(out, "fuzz.hcl", hcl.InitialPos)
 		if diags.HasErrors() {
 			t.Fatalf("parse reordered: %v", diags)
 		}
-		hclprocessing.ReorderAttributes(file2, nil)
+		hclprocessing.ReorderAttributes(file2, nil, false)
 		if !bytes.Equal(out, file2.Bytes()) {
 			t.Fatalf("round-trip mismatch")
 		}
