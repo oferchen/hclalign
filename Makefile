@@ -22,8 +22,8 @@ tidy:
 	go mod tidy
 
 test:
-	@echo "Running tests..."
-	go test ./...
+        @echo "Running tests..."
+        go test -race ./...
 
 clean:
         @echo "Cleaning up..."
