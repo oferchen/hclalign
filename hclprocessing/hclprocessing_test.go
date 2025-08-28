@@ -28,6 +28,25 @@ func TestReorderAttributes_VariableBlock(t *testing.T) {
 	require.Equal(t, expected, string(f.Bytes()))
 }
 
+func TestReorderAttributes_CustomOrder(t *testing.T) {
+	src := `variable "example" {
+  description = "d"
+  default     = "v"
+  custom      = true
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	hclprocessing.ReorderAttributes(f, []string{"default", "description"})
+
+	expected := `variable "example" {
+  default     = "v"
+  description = "d"
+  custom      = true
+}`
+	require.Equal(t, expected, string(f.Bytes()))
+}
+
 func TestReorderAttributes_NestedBlocks(t *testing.T) {
 	src := `variable "example" {
   default = "v"

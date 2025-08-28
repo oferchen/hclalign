@@ -64,17 +64,28 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// ValidateOrder checks whether the provided order is valid. When strict is true
-// the provided order must include all attributes in DefaultOrder exactly once.
-// Otherwise it only checks for duplicate attributes.
+// ValidateOrder checks whether the provided order is valid. Duplicate
+// attributes always cause an error. When strict is true, all attributes must be
+// from the canonical DefaultOrder list and each must appear exactly once.
 func ValidateOrder(order []string, strict bool) error {
 	providedSet := make(map[string]struct{})
+	canonicalSet := make(map[string]struct{}, len(DefaultOrder))
+	for _, item := range DefaultOrder {
+		canonicalSet[item] = struct{}{}
+	}
+
 	for _, item := range order {
 		if _, exists := providedSet[item]; exists {
 			return fmt.Errorf("duplicate attribute '%s' found in order", item)
 		}
 		providedSet[item] = struct{}{}
+		if strict {
+			if _, ok := canonicalSet[item]; !ok {
+				return fmt.Errorf("unknown attribute '%s' in order", item)
+			}
+		}
 	}
+
 	if strict {
 		if len(providedSet) != len(DefaultOrder) {
 			return fmt.Errorf("provided order length %d doesn't match expected %d", len(providedSet), len(DefaultOrder))
