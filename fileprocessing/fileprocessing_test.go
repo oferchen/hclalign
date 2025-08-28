@@ -42,14 +42,14 @@ func TestProcessPreservesNewlineAndBOM(t *testing.T) {
 		t.Fatalf("process: %v", err)
 	}
 
-	data, err := os.ReadFile(path)
+	_, _, hints, err := internalfs.ReadFileWithHints(path)
 	if err != nil {
 		t.Fatalf("read file: %v", err)
 	}
-	if !bytes.HasPrefix(data, bom) {
+	if !hints.HasBOM {
 		t.Fatalf("bom not preserved")
 	}
-	if bytes.Contains(bytes.ReplaceAll(data, []byte("\r\n"), []byte{}), []byte("\n")) {
+	if hints.Newline != "\r\n" {
 		t.Fatalf("LF line ending found")
 	}
 }
@@ -153,10 +153,11 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 		t.Fatalf("read stdout: %v", err)
 	}
 
-	if !bytes.HasPrefix(out, bom) {
+	hints := internalfs.DetectHintsFromBytes(out)
+	if !hints.HasBOM {
 		t.Fatalf("bom not preserved")
 	}
-	if bytes.Contains(bytes.ReplaceAll(out, []byte("\r\n"), []byte{}), []byte("\n")) {
+	if hints.Newline != "\r\n" {
 		t.Fatalf("LF line ending found")
 	}
 
@@ -197,7 +198,8 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read stdout: %v", err)
 	}
-	if !bytes.Contains(out, []byte("\r\n")) {
+	hints := internalfs.DetectHintsFromBytes(out)
+	if hints.Newline != "\r\n" {
 		t.Fatalf("expected CRLF in diff output")
 	}
 }
