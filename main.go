@@ -29,7 +29,7 @@ func main() {
 	rootCmd.Flags().Bool("stdout", false, "write result to STDOUT")
 	rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	rootCmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
-	rootCmd.Flags().StringSlice("order", config.DefaultOrder, "order of variable block fields")
+	rootCmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
 	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
