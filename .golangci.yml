@@ -12,7 +12,6 @@ run:
   #   - integration
 
 output:
-  # Use the new 'formats' list (single or multiple outputs). 'format' (singular) is not allowed.
   formats:
     - format: colored-line-number
   print-issued-lines: true
@@ -42,8 +41,7 @@ linters:
     - unconvert
     - gosec
     - exportloopref
-    # - sloglint        # Optional: enable if you use log/slog and have this linter available
-  disable: []           # must be an array, not null
+  disable: []  # must be an array, not null
 
 linters-settings:
   revive:
@@ -72,9 +70,10 @@ linters-settings:
   gofmt:
     simplify: true
 
+  # IMPORTANT: keep this an object (not null). Empty string is acceptable.
   goimports:
-    # Optional: set your module path for grouping
-    # local-prefixes: github.com/your/module
+    # Set your module path here to group local imports; leave "" to use defaults.
+    local-prefixes: ""
 
   misspell:
     locale: US
@@ -95,17 +94,16 @@ linters-settings:
     # Optional:
     # go: "1.22"
 
-  # NOTE: Removed invalid/unsupported settings:
-  # - unconvert.fast (not allowed)
-  # - unused.check-exported (not allowed)
-  # - typecheck.* (no per-linter settings supported)
+  # NOTE: intentionally no settings for:
+  # - unconvert (no supported keys)
+  # - unused (no supported keys)
+  # - typecheck (no supported keys)
 
 issues:
   exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
 
-  # Optional focus
   exclude-dirs:
     - vendor
     - testdata
@@ -117,7 +115,3 @@ issues:
       linters: [ gocyclo, funlen, gosec ]
     - linters: [ errcheck ]
       text: "Close.*error"   # allow ignored Close() errors selectively
-
-# Optional:
-# service:
-#   golangci-lint-version: 1.60.3
