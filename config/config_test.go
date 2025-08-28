@@ -44,3 +44,24 @@ func TestDefaultExcludeMatchesExpected(t *testing.T) {
 		t.Fatalf("expected DefaultExclude to be %v, got %v", expected, DefaultExclude)
 	}
 }
+
+func TestValidate_ConcurrencyLessThanOne(t *testing.T) {
+	c := Config{Concurrency: 0}
+	if err := c.Validate(); err == nil {
+		t.Fatalf("expected error for concurrency <1")
+	}
+}
+
+func TestValidate_InvalidIncludePattern(t *testing.T) {
+	c := Config{Concurrency: 1, Include: []string{"["}}
+	if err := c.Validate(); err == nil {
+		t.Fatalf("expected error for invalid include pattern")
+	}
+}
+
+func TestValidate_InvalidExcludePattern(t *testing.T) {
+	c := Config{Concurrency: 1, Exclude: []string{"["}}
+	if err := c.Validate(); err == nil {
+		t.Fatalf("expected error for invalid exclude pattern")
+	}
+}
