@@ -2,6 +2,8 @@
 package cli
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -86,4 +88,115 @@ func TestRunERuntimeError(t *testing.T) {
 	var exitErr *ExitCodeError
 	require.ErrorAs(t, err, &exitErr)
 	require.Equal(t, 3, exitErr.Code)
+}
+
+func TestRunEModes(t *testing.T) {
+	unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
+	formatted := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
+
+	tests := []struct {
+		name       string
+		flags      []string
+		stdin      string
+		wantCode   int
+		wantStdout string
+		contains   string
+		withFile   bool
+		wantFile   string
+	}{
+		{
+			name:     "diff",
+			flags:    []string{"--diff"},
+			wantCode: 1,
+			contains: "@@",
+			withFile: true,
+			wantFile: unformatted,
+		},
+		{
+			name:       "stdin",
+			flags:      []string{"--stdin", "--stdout"},
+			stdin:      unformatted,
+			wantCode:   0,
+			wantStdout: formatted,
+		},
+		{
+			name:       "stdout",
+			flags:      []string{"--stdout"},
+			wantCode:   0,
+			wantStdout: formatted,
+			withFile:   true,
+			wantFile:   formatted,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var args []string
+			var filePath string
+			if tt.withFile {
+				dir := t.TempDir()
+				filePath = filepath.Join(dir, "test.tf")
+				require.NoError(t, os.WriteFile(filePath, []byte(unformatted), 0o644))
+				args = append([]string{filePath}, tt.flags...)
+			} else {
+				args = tt.flags
+			}
+
+			// capture stdout
+			oldStdout := os.Stdout
+			rOut, wOut, err := os.Pipe()
+			require.NoError(t, err)
+			os.Stdout = wOut
+			t.Cleanup(func() { os.Stdout = oldStdout })
+			outChan := make(chan string)
+			go func() {
+				var buf bytes.Buffer
+				_, _ = io.Copy(&buf, rOut)
+				outChan <- buf.String()
+			}()
+
+			// set stdin if needed
+			if tt.stdin != "" {
+				oldStdin := os.Stdin
+				rIn, wIn, err := os.Pipe()
+				require.NoError(t, err)
+				os.Stdin = rIn
+				t.Cleanup(func() { os.Stdin = oldStdin })
+				_, err = wIn.Write([]byte(tt.stdin))
+				require.NoError(t, err)
+				wIn.Close()
+			}
+
+			cmd := newRootCmd()
+			cmd.SetArgs(args)
+			_, err = cmd.ExecuteC()
+
+			if tt.wantCode == 0 {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				var exitErr *ExitCodeError
+				require.ErrorAs(t, err, &exitErr)
+				require.Equal(t, tt.wantCode, exitErr.Code)
+			}
+
+			wOut.Close()
+			stdout := <-outChan
+
+			if tt.wantStdout != "" {
+				require.Equal(t, tt.wantStdout, stdout)
+			}
+			if tt.contains != "" {
+				require.Contains(t, stdout, tt.contains)
+			}
+
+			if tt.withFile {
+				data, err := os.ReadFile(filePath)
+				require.NoError(t, err)
+				if tt.wantFile != "" {
+					require.Equal(t, tt.wantFile, string(data))
+				}
+			}
+		})
+	}
 }
