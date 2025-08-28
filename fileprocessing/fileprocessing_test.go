@@ -413,14 +413,11 @@ func TestProcessStopsAfterMalformedFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read good file: %v", err)
 	}
-	expectedFile, diags := hclwrite.ParseConfig([]byte("variable \"a\" {\n  default = 1\n  type = number\n}\n"), good, hcl.InitialPos)
-	if diags.HasErrors() {
-		t.Fatalf("parse expected: %v", diags)
-	}
-	hclprocessing.ReorderAttributes(expectedFile, config.CanonicalOrder, false)
-	expected := expectedFile.Bytes()
+	// The good file should remain unmodified since processing stops after
+	// encountering the malformed file and the write operation is canceled.
+	expected := []byte("variable \"a\" {\n  default = 1\n  type = number\n}\n")
 	if string(data) != string(expected) {
-		t.Fatalf("good file not processed: got %q, want %q", data, expected)
+		t.Fatalf("good file unexpectedly processed: got %q, want %q", data, expected)
 	}
 	if !strings.Contains(procErr.Error(), "bad.tf") {
 		t.Fatalf("error does not mention bad file: %v", procErr)
