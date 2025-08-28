@@ -83,7 +83,7 @@ func TestProcessTargetDynamically(t *testing.T) {
 			setupFunc: func(t *testing.T) string {
 				return t.TempDir() // Use the testing framework to create a temp directory
 			},
-			criteria:  []string{"*.tf"},
+			criteria:  []string{"*.hcl"},
 			order:     []string{"description", "type", "default"},
 			expectErr: false,
 		},
@@ -95,7 +95,7 @@ func TestProcessTargetDynamically(t *testing.T) {
 				require.NoError(t, os.RemoveAll(dir))
 				return dir
 			},
-			criteria:  []string{"*.tf"},
+			criteria:  []string{"*.hcl"},
 			order:     []string{"description", "type", "default"},
 			expectErr: true,
 		},
@@ -114,7 +114,7 @@ func TestProcessTargetDynamically(t *testing.T) {
 				// Directly return an empty string for the target
 				return ""
 			},
-			criteria:  []string{"*.tf"},
+			criteria:  []string{"*.hcl"},
 			order:     []string{"description", "type", "default"},
 			expectErr: true,
 		},

@@ -25,7 +25,7 @@ func setupTestCommand() *cobra.Command {
 func createTempHCLFile(t *testing.T, tempDir, content string) string {
 	t.Helper()
 
-	hclFilePath := filepath.Join(tempDir, "test.tf")
+	hclFilePath := filepath.Join(tempDir, "test.hcl")
 	err := os.WriteFile(hclFilePath, []byte(content), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write temp HCL file: %v", err)

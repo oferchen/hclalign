@@ -120,3 +120,31 @@ func TestProcessSingleFile_NonHCLContent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, nonHCLContent, string(resultContent))
 }
+
+func TestProcessFiles_Idempotent(t *testing.T) {
+	tmpDir := t.TempDir()
+	inputPath := filepath.Join("testdata", "idempotent_input.hcl")
+	goldenPath := filepath.Join("testdata", "idempotent_golden.hcl")
+
+	inputBytes, err := os.ReadFile(inputPath)
+	require.NoError(t, err)
+	testFile := filepath.Join(tmpDir, "test.hcl")
+	require.NoError(t, os.WriteFile(testFile, inputBytes, 0644))
+
+	criteria := []string{"*.hcl"}
+	order := []string{"a", "b"}
+
+	// First run
+	require.NoError(t, fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, order))
+	expected, err := os.ReadFile(goldenPath)
+	require.NoError(t, err)
+	result1, err := os.ReadFile(testFile)
+	require.NoError(t, err)
+	require.Equal(t, string(expected), string(result1))
+
+	// Second run should be idempotent
+	require.NoError(t, fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, order))
+	result2, err := os.ReadFile(testFile)
+	require.NoError(t, err)
+	require.Equal(t, string(expected), string(result2))
+}

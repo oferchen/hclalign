@@ -20,7 +20,7 @@ type Config struct {
 
 // DefaultCriteria and DefaultOrder define the default behavior of the CLI.
 var (
-	DefaultCriteria = []string{"*.tf"}
+	DefaultCriteria = []string{"*.hcl"}
 	DefaultOrder    = []string{"description", "type", "default", "sensitive", "nullable", "validation"}
 )
 
