@@ -90,8 +90,12 @@ func packageDirs() ([]string, error) {
 	if _, err := lookPath("go"); err != nil {
 		return nil, fmt.Errorf("commentcheck requires a Go toolchain: %w", err)
 	}
-	out, err := execCommand("go", "list", "-f", "{{.Dir}}", "./...").Output()
+	cmd := execCommand("go", "list", "-f", "{{.Dir}}", "./...")
+	out, err := cmd.Output()
 	if err != nil {
+		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
+			return nil, errors.New("commentcheck requires a Go toolchain")
+		}
 		return nil, err
 	}
 	wd, err := os.Getwd()
