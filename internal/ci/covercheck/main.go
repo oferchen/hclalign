@@ -1,4 +1,5 @@
 // internal/ci/covercheck/main.go
+// Command covercheck ensures test coverage meets the minimum threshold.
 package main
 
 import (
