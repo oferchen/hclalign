@@ -290,6 +290,71 @@ func TestProcessSymlinkedDirTargetNoFollow(t *testing.T) {
 	}
 }
 
+func TestProcessSymlinkedFileTargetFollowSymlinks(t *testing.T) {
+	dir := t.TempDir()
+	realFile := filepath.Join(dir, "a.tf")
+	if err := os.WriteFile(realFile, []byte("variable \"a\" {\n  default = 1\n  type = number\n}\n"), 0644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	link := filepath.Join(dir, "link.tf")
+	if err := os.Symlink(realFile, link); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:         link,
+		Mode:           config.ModeCheck,
+		Include:        config.DefaultInclude,
+		Exclude:        config.DefaultExclude,
+		Order:          config.CanonicalOrder,
+		Concurrency:    1,
+		FollowSymlinks: true,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	changed, err := Process(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("process: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected changes when processing symlinked file with FollowSymlinks")
+	}
+}
+
+func TestProcessSymlinkedFileTargetNoFollow(t *testing.T) {
+	dir := t.TempDir()
+	realFile := filepath.Join(dir, "a.tf")
+	if err := os.WriteFile(realFile, []byte("variable \"a\" {\n  default = 1\n  type = number\n}\n"), 0644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	link := filepath.Join(dir, "link.tf")
+	if err := os.Symlink(realFile, link); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:      link,
+		Mode:        config.ModeCheck,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.CanonicalOrder,
+		Concurrency: 1,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	changed, err := Process(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("process: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected changes when processing symlinked file without FollowSymlinks")
+	}
+}
+
 func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 	bom := []byte{0xEF, 0xBB, 0xBF}
 	input := string(bom) + "variable \"a\" {\r\n  default = 1\r\n  type = number\r\n}\r\n"
