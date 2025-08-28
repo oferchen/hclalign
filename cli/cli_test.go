@@ -45,6 +45,19 @@ func TestRunEUsageError(t *testing.T) {
 	require.Equal(t, 2, exitErr.Code)
 }
 
+func TestRunETargetWithStdin(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.tf")
+
+	cmd := newRootCmd()
+	cmd.SetArgs([]string{path, "--stdin"})
+	_, err := cmd.ExecuteC()
+	require.Error(t, err)
+	var exitErr *ExitCodeError
+	require.ErrorAs(t, err, &exitErr)
+	require.Equal(t, 2, exitErr.Code)
+}
+
 func TestRunEFormattingNeeded(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.tf")
