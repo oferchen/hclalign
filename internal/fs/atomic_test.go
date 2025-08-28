@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 )
 
@@ -99,6 +100,42 @@ func TestWriteFileAtomic(t *testing.T) {
 				}
 				if !bytes.Equal(got, []byte("secret")) {
 					t.Fatalf("content mismatch: %q != %q", got, "secret")
+				}
+			},
+		},
+		{
+			name: "ownership retained",
+			data: []byte("new"),
+			perm: 0o600,
+			setup: func(t *testing.T, dir, path string) any {
+				if err := os.WriteFile(path, []byte("old"), 0o600); err != nil {
+					t.Fatalf("prewrite: %v", err)
+				}
+				if err := os.Chown(path, 1, 1); err != nil {
+					t.Skipf("chown: %v", err)
+				}
+				info, err := os.Stat(path)
+				if err != nil {
+					t.Fatalf("stat: %v", err)
+				}
+				st, ok := info.Sys().(*syscall.Stat_t)
+				if !ok {
+					t.Skip("stat_t not available")
+				}
+				return [2]uint32{st.Uid, st.Gid}
+			},
+			validate: func(t *testing.T, dir, path string, ctx any) {
+				want := ctx.([2]uint32)
+				info, err := os.Stat(path)
+				if err != nil {
+					t.Fatalf("stat: %v", err)
+				}
+				st, ok := info.Sys().(*syscall.Stat_t)
+				if !ok {
+					t.Skip("stat_t not available")
+				}
+				if st.Uid != want[0] || st.Gid != want[1] {
+					t.Fatalf("ownership mismatch: got (%d,%d) want (%d,%d)", st.Uid, st.Gid, want[0], want[1])
 				}
 			},
 		},

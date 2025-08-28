@@ -5,6 +5,7 @@ import (
 	iofs "io/fs"
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
 var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
@@ -78,6 +79,13 @@ func ApplyHints(data []byte, hints Hints) []byte {
 // data is adjusted using the provided hints before writing.
 func WriteFileAtomic(path string, data []byte, perm iofs.FileMode, hints Hints) error {
 	dir := filepath.Dir(path)
+	uid, gid := -1, -1
+	if info, err := os.Stat(path); err == nil {
+		if stat, ok := info.Sys().(*syscall.Stat_t); ok {
+			uid = int(stat.Uid)
+			gid = int(stat.Gid)
+		}
+	}
 	tmp, err := os.CreateTemp(dir, "hclalign-*")
 	if err != nil {
 		return err
@@ -87,6 +95,12 @@ func WriteFileAtomic(path string, data []byte, perm iofs.FileMode, hints Hints) 
 	if err := tmp.Chmod(perm); err != nil {
 		_ = tmp.Close()
 		return err
+	}
+	if uid != -1 || gid != -1 {
+		if err := os.Chown(tmpName, uid, gid); err != nil {
+			_ = tmp.Close()
+			return err
+		}
 	}
 	content := ApplyHints(data, hints)
 	if _, err := tmp.Write(content); err != nil {
