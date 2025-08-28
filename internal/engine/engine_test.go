@@ -223,6 +223,68 @@ func TestProcessSingleFileContextCanceled(t *testing.T) {
 	if err := <-done; !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context canceled error, got %v", err)
 	}
+=======
+func TestProcessMissingTarget(t *testing.T) {
+	dir := t.TempDir()
+	missing := filepath.Join(dir, "missing.tf")
+	cfg := &config.Config{
+		Target:      missing,
+		Mode:        config.ModeCheck,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.CanonicalOrder,
+		Concurrency: 1,
+	}
+	require.NoError(t, cfg.Validate())
+	_, err := Process(context.Background(), cfg)
+	require.EqualError(t, err, fmt.Sprintf("target %q does not exist", missing))
+=======
+func TestProcessSingleFileCanceledAfterParse(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a.tf")
+	require.NoError(t, os.WriteFile(path, []byte("variable \"a\" {\n type = string\n}\n"), 0644))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	testHookAfterParse = func() { cancel() }
+	defer func() { testHookAfterParse = nil }()
+
+	called := false
+	reorderAttributes = func(f *hclwrite.File, order []string, strict bool) error {
+		called = true
+		return nil
+	}
+	defer func() { reorderAttributes = hclalign.ReorderAttributes }()
+
+	changed, out, err := processSingleFile(ctx, path, &config.Config{Mode: config.ModeCheck, Order: config.CanonicalOrder})
+	require.ErrorIs(t, err, context.Canceled)
+	require.False(t, changed)
+	require.Nil(t, out)
+	require.False(t, called, "reorderAttributes should not be called on canceled context")
+}
+
+func TestProcessSingleFileCanceledAfterReorder(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a.tf")
+	require.NoError(t, os.WriteFile(path, []byte("variable \"a\" {\n type = string\n}\n"), 0644))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	testHookAfterReorder = func() { cancel() }
+	defer func() { testHookAfterReorder = nil }()
+
+	called := false
+	reorderAttributes = func(f *hclwrite.File, order []string, strict bool) error {
+		called = true
+		return nil
+	}
+	defer func() { reorderAttributes = hclalign.ReorderAttributes }()
+
+	changed, out, err := processSingleFile(ctx, path, &config.Config{Mode: config.ModeCheck, Order: config.CanonicalOrder})
+	require.ErrorIs(t, err, context.Canceled)
+	require.False(t, changed)
+	require.Nil(t, out)
+	require.True(t, called, "reorderAttributes should be called before cancellation")
+
+
 }
 
 func TestProcessPropagatesFileError(t *testing.T) {
@@ -252,6 +314,105 @@ func TestProcessPropagatesFileError(t *testing.T) {
 	if _, err := Process(context.Background(), cfg); err == nil {
 		t.Fatalf("expected error due to invalid file")
 	}
+}
+
+
+func TestProcessHaltsAfterMalformedFile(t *testing.T) {
+	dir := t.TempDir()
+
+	fileA := filepath.Join(dir, "a.tf")
+	contentA := "variable \"a\" {\n  default = 1\n  type = number\n}\n"
+	if err := os.WriteFile(fileA, []byte(contentA), 0644); err != nil {
+		t.Fatalf("write a.tf: %v", err)
+	}
+	fileB := filepath.Join(dir, "b.tf")
+	if err := os.WriteFile(fileB, []byte("variable \"b\" {\n"), 0644); err != nil {
+		t.Fatalf("write b.tf: %v", err)
+	}
+	fileC := filepath.Join(dir, "c.tf")
+	contentC := "variable \"c\" {\n  type = number\n  default = 1\n}\n"
+	if err := os.WriteFile(fileC, []byte(contentC), 0644); err != nil {
+		t.Fatalf("write c.tf: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:      dir,
+		Mode:        config.ModeWrite,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.CanonicalOrder,
+		Concurrency: 2,
+		Verbose:     true,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	var buf bytes.Buffer
+	old := log.Writer()
+	log.SetOutput(&buf)
+	defer log.SetOutput(old)
+
+	if _, err := Process(context.Background(), cfg); err == nil {
+		t.Fatalf("expected error due to invalid file")
+	}
+
+	logs := buf.String()
+	if !strings.Contains(logs, "processed file: "+fileA) {
+		t.Fatalf("expected log for a.tf, got %q", logs)
+	}
+	if strings.Contains(logs, "processed file: "+fileC) {
+		t.Fatalf("did not expect log for c.tf, got %q", logs)
+	}
+
+	data, err := os.ReadFile(fileC)
+	if err != nil {
+		t.Fatalf("read c.tf: %v", err)
+	}
+	if string(data) != contentC {
+		t.Fatalf("expected c.tf to remain unchanged, got %q", string(data))
+	}
+=======
+func TestProcessMissingTarget(t *testing.T) {
+	t.Run("nonexistent path", func(t *testing.T) {
+		dir := t.TempDir()
+		target := filepath.Join(dir, "missing.tf")
+
+		cfg := &config.Config{
+			Target:      target,
+			Mode:        config.ModeCheck,
+			Include:     config.DefaultInclude,
+			Exclude:     config.DefaultExclude,
+			Order:       config.CanonicalOrder,
+			Concurrency: 1,
+		}
+		require.NoError(t, cfg.Validate())
+		_, err := Process(context.Background(), cfg)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("target %q does not exist", target))
+	})
+
+	t.Run("broken symlink", func(t *testing.T) {
+		dir := t.TempDir()
+		link := filepath.Join(dir, "broken.tf")
+		if err := os.Symlink(filepath.Join(dir, "missing.tf"), link); err != nil {
+			t.Fatalf("symlink: %v", err)
+		}
+
+		cfg := &config.Config{
+			Target:      link,
+			Mode:        config.ModeCheck,
+			Include:     config.DefaultInclude,
+			Exclude:     config.DefaultExclude,
+			Order:       config.CanonicalOrder,
+			Concurrency: 1,
+		}
+		require.NoError(t, cfg.Validate())
+		_, err := Process(context.Background(), cfg)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("target %q does not exist", link))
+	})
+
 }
 
 func TestProcessSymlinkedDirTargetFollowSymlinks(t *testing.T) {
@@ -398,24 +559,21 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 
 	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.CanonicalOrder}
 
-	oldStdout := os.Stdout
-	rOut, wOut, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("pipe: %v", err)
-	}
-	os.Stdout = wOut
-	defer func() { os.Stdout = oldStdout }()
 
-	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg); err != nil {
+	var buf bytes.Buffer
+	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), &buf, cfg); err != nil {
 		t.Fatalf("processReader: %v", err)
 	}
-	_ = wOut.Close()
-	out, err := io.ReadAll(rOut)
-	if err != nil {
-		t.Fatalf("read stdout: %v", err)
+	out := buf.Bytes()
+=======
+	var out bytes.Buffer
+	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), &out, cfg); err != nil {
+		t.Fatalf("processReader: %v", err)
 	}
+	data := out.Bytes()
 
-	hints := internalfs.DetectHintsFromBytes(out)
+
+	hints := internalfs.DetectHintsFromBytes(data)
 	if !hints.HasBOM {
 		t.Fatalf("bom not preserved")
 	}
@@ -429,8 +587,8 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 	}
 	require.NoError(t, hclalign.ReorderAttributes(expectedFile, config.CanonicalOrder, false))
 	expected := internalfs.ApplyHints(expectedFile.Bytes(), internalfs.Hints{HasBOM: true, Newline: "\r\n"})
-	if string(out) != string(expected) {
-		t.Fatalf("unexpected output: got %q, want %q", out, expected)
+	if string(data) != string(expected) {
+		t.Fatalf("unexpected output: got %q, want %q", data, expected)
 	}
 }
 
@@ -440,27 +598,25 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 
 	cfg := &config.Config{Mode: config.ModeDiff, Order: config.CanonicalOrder}
 
-	oldStdout := os.Stdout
-	rOut, wOut, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("pipe: %v", err)
-	}
-	os.Stdout = wOut
-	defer func() { os.Stdout = oldStdout }()
 
-	changed, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg)
+	var buf bytes.Buffer
+	changed, err := processReader(context.Background(), bytes.NewReader([]byte(input)), &buf, cfg)
+=======
+	var out bytes.Buffer
+	changed, err := processReader(context.Background(), bytes.NewReader([]byte(input)), &out, cfg)
+
 	if err != nil {
 		t.Fatalf("processReader: %v", err)
 	}
 	if !changed {
 		t.Fatalf("expected changes")
 	}
-	_ = wOut.Close()
-	out, err := io.ReadAll(rOut)
-	if err != nil {
-		t.Fatalf("read stdout: %v", err)
-	}
+
+	out := buf.Bytes()
 	hints := internalfs.DetectHintsFromBytes(out)
+=======
+	hints := internalfs.DetectHintsFromBytes(out.Bytes())
+
 	if hints.Newline != "\r\n" {
 		t.Fatalf("expected CRLF in diff output")
 	}
@@ -596,17 +752,21 @@ func TestProcessStdoutError(t *testing.T) {
 
 func TestProcessReaderStdoutError(t *testing.T) {
 	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.CanonicalOrder}
-	oldStdout := os.Stdout
+
+	r, w := io.Pipe()
+	_ = w.Close()
+
+	input := "variable \"a\" {}\n"
+=======
+
+	input := "variable \"a\" {}\n"
 	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatalf("pipe: %v", err)
 	}
 	_ = w.Close()
-	os.Stdout = w
-	defer func() { os.Stdout = oldStdout }()
 
-	input := "variable \"a\" {}\n"
-	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg); err == nil {
+	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), w, cfg); err == nil {
 		t.Fatalf("expected error")
 	}
 	_ = r.Close()
