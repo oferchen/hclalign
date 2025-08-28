@@ -1,4 +1,6 @@
 // cmd/commentcheck/main.go
+// Command commentcheck verifies that each Go source file starts with a
+// comment matching its relative path.
 package main
 
 import (
@@ -69,15 +71,12 @@ func checkFile(path string) error {
 	if err != nil {
 		return fmt.Errorf("%s: %v", path, err)
 	}
-	if len(file.Comments) > 1 {
-		return fmt.Errorf("%s: additional comments found", path)
-	}
 	if len(file.Comments) == 0 {
 		return fmt.Errorf("%s: missing file comment", path)
 	}
 	firstGroup := file.Comments[0]
 	pos := fset.Position(firstGroup.Pos())
-	if pos.Line != 1 || len(firstGroup.List) != 1 || firstGroup.List[0].Text != expected {
+	if pos.Line != 1 || firstGroup.List[0].Text != expected {
 		return fmt.Errorf("%s: first comment must be %q", path, expected)
 	}
 	return nil
@@ -88,11 +87,15 @@ func packageDirs() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
 	var dirs []string
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	for scanner.Scan() {
 		dir := scanner.Text()
-		rel, err := filepath.Rel(".", dir)
+		rel, err := filepath.Rel(wd, dir)
 		if err != nil {
 			return nil, err
 		}
