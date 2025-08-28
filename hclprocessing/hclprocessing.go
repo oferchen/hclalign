@@ -73,11 +73,14 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[st
 	}
 
 	tail := body.BuildTokens(nil)
-	if len(tail) > 0 && tail[0].Type == hclsyntax.TokenNewline {
+	hasNewline := len(tail) > 0 && tail[0].Type == hclsyntax.TokenNewline
+	if hasNewline {
 		tail = tail[1:]
 	}
 	body.Clear()
-	body.AppendNewline()
+	if hasNewline {
+		body.AppendNewline()
+	}
 
 	canonSet := map[string]struct{}{}
 	finalKnown := make([]string, 0, len(canonicalOrder))
@@ -139,6 +142,13 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[st
 		}
 	}
 
+	if !hasNewline {
+		toks := body.BuildTokens(nil)
+		if n := len(toks); n > 0 && toks[n-1].Type == hclsyntax.TokenNewline {
+			body.Clear()
+			body.AppendUnstructuredTokens(toks[:n-1])
+		}
+	}
 	body.AppendUnstructuredTokens(tail)
 
 	for _, nb := range nested {
