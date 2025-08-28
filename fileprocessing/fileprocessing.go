@@ -172,9 +172,14 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 
 	hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder)
 
-	formatted := file.Bytes()
+	formatted := bytes.ReplaceAll(file.Bytes(), []byte("\r\n"), []byte("\n"))
+	fmt.Printf("formatted bytes: %v\n", formatted)
 	styled := internalfs.ApplyHints(formatted, hints)
-	original := internalfs.ApplyHints(data, hints)
+	fmt.Printf("styled bytes: %v\n", styled)
+	original := data
+	if bom := hints.BOM(); len(bom) > 0 {
+		original = append(append([]byte{}, bom...), original...)
+	}
 	changed := !bytes.Equal(original, styled)
 
 	switch cfg.Mode {
@@ -232,9 +237,12 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 		return false, fmt.Errorf("parsing error: %v", diags.Errs())
 	}
 	hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder)
-	formatted := file.Bytes()
+	formatted := bytes.ReplaceAll(file.Bytes(), []byte("\r\n"), []byte("\n"))
 	styled := internalfs.ApplyHints(formatted, hints)
-	original := internalfs.ApplyHints(data, hints)
+	original := data
+	if bom := hints.BOM(); len(bom) > 0 {
+		original = append(append([]byte{}, bom...), original...)
+	}
 	changed := !bytes.Equal(original, styled)
 
 	switch cfg.Mode {

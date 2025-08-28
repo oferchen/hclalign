@@ -62,11 +62,9 @@ func ReadFileWithHints(path string) (data []byte, perm iofs.FileMode, hints Hint
 // input data is assumed to use \n newlines and contain no BOM. If Newline is
 // empty, \n is used. If HasBOM is true, a UTF-8 BOM is prepended to the result.
 func ApplyHints(data []byte, hints Hints) []byte {
-	out := make([]byte, len(data))
-	copy(out, data)
-	out = bytes.ReplaceAll(out, []byte("\r\n"), []byte("\n"))
-	if hints.Newline != "" && hints.Newline != "\n" {
-		out = bytes.ReplaceAll(out, []byte("\n"), []byte(hints.Newline))
+	out := data
+	if hints.Newline == "\r\n" {
+		out = bytes.ReplaceAll(out, []byte("\n"), []byte("\r\n"))
 	}
 	if hints.HasBOM {
 		out = append(append([]byte{}, utf8BOM...), out...)
