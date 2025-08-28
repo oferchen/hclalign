@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-var dirs = []string{"cli", "config", "fileprocessing", "hclprocessing", "internal", "patternmatching"}
+var dirs = []string{"cli", "config", "internal", "patternmatching"}
 
 func main() {
 	var files []string

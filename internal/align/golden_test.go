@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/hclprocessing"
+	"github.com/oferchen/hclalign/internal/hclalign"
 )
 
 func TestGolden(t *testing.T) {
@@ -52,7 +52,7 @@ func TestGolden(t *testing.T) {
 				if diags.HasErrors() {
 					t.Fatalf("parse input: %v", diags)
 				}
-				hclprocessing.ReorderAttributes(file, nil, strict)
+				hclalign.ReorderAttributes(file, nil, strict)
 				got := file.Bytes()
 				if !bytes.Equal(got, expBytes) {
 					t.Fatalf("output mismatch for %s (strict=%v):\n-- got --\n%s\n-- want --\n%s", name, strict, got, expBytes)
@@ -62,7 +62,7 @@ func TestGolden(t *testing.T) {
 				if diags.HasErrors() {
 					t.Fatalf("parse expected: %v", diags)
 				}
-				hclprocessing.ReorderAttributes(file2, nil, strict)
+				hclalign.ReorderAttributes(file2, nil, strict)
 				if !bytes.Equal(expBytes, file2.Bytes()) {
 					t.Fatalf("non-idempotent on expected for %s (strict=%v)", name, strict)
 				}

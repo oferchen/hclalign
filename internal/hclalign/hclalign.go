@@ -1,5 +1,5 @@
-// hclprocessing/hclprocessing.go
-package hclprocessing
+// internal/hclalign/hclalign.go
+package hclalign
 
 import (
 	"bytes"
