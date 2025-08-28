@@ -14,7 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newRootCmd() *cobra.Command {
+func newRootCmd() *cobra.Command { return newTestRootCmd(true) }
+
+func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "hclalign [target file or directory]",
 		Args:         cobra.ArbitraryArgs,
@@ -33,7 +35,9 @@ func newRootCmd() *cobra.Command {
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
-	cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
+	if exclusive {
+		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
+	}
 	return cmd
 }
 
@@ -199,4 +203,26 @@ func TestRunEModes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRunEMultipleModeFlags(t *testing.T) {
+	cmd := newTestRootCmd(false)
+	cmd.SetArgs([]string{"--write", "--check"})
+	_, err := cmd.ExecuteC()
+	require.Error(t, err)
+	var exitErr *ExitCodeError
+	require.ErrorAs(t, err, &exitErr)
+	require.Equal(t, 2, exitErr.Code)
+	require.Contains(t, exitErr.Error(), "cannot specify more than one")
+}
+
+func TestRunEInvalidConcurrency(t *testing.T) {
+	cmd := newRootCmd()
+	cmd.SetArgs([]string{"--concurrency", "0", "target.tf"})
+	_, err := cmd.ExecuteC()
+	require.Error(t, err)
+	var exitErr *ExitCodeError
+	require.ErrorAs(t, err, &exitErr)
+	require.Equal(t, 2, exitErr.Code)
+	require.Contains(t, exitErr.Error(), "concurrency must be at least 1")
 }
