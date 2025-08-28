@@ -1,4 +1,4 @@
 variable "test" {
-  a = "valueA"
-  b = "valueB"
+  description = "value description"
+  default     = "valueA"
 }

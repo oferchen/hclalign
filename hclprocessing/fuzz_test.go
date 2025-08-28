@@ -15,18 +15,12 @@ func FuzzParseHCL(f *testing.F) {
 }
 
 func FuzzAttributeOrdering(f *testing.F) {
-	f.Add([]byte("resource \"r\" \"t\" { a = 1 b = 2 }"))
+	f.Add([]byte("variable \"r\" { default = 1 description = \"d\" }"))
 	f.Fuzz(func(t *testing.T, data []byte) {
 		file, diags := hclwrite.ParseConfig(data, "fuzz.hcl", hcl.InitialPos)
 		if diags.HasErrors() {
 			return
 		}
-		body := file.Body()
-		attrs := body.Attributes()
-		var order []string
-		for name := range attrs {
-			order = append(order, name)
-		}
-		ReorderAttributes(file, order)
+		ReorderAttributes(file, nil)
 	})
 }
