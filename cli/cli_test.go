@@ -14,9 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+
+func newRootCmd(exclusive bool) *cobra.Command {
+=======
 func newRootCmd() *cobra.Command { return newTestRootCmd(true) }
 
 func newTestRootCmd(exclusive bool) *cobra.Command {
+
 	cmd := &cobra.Command{
 		Use:          "hclalign [target file or directory]",
 		Args:         cobra.ArbitraryArgs,
@@ -42,7 +46,7 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 }
 
 func TestRunEUsageError(t *testing.T) {
-	cmd := newRootCmd()
+	cmd := newRootCmd(true)
 	cmd.SetArgs([]string{})
 	_, err := cmd.ExecuteC()
 	require.Error(t, err)
@@ -55,8 +59,18 @@ func TestRunETargetWithStdin(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.tf")
 
-	cmd := newRootCmd()
+	cmd := newRootCmd(true)
 	cmd.SetArgs([]string{path, "--stdin"})
+	_, err := cmd.ExecuteC()
+	require.Error(t, err)
+	var exitErr *ExitCodeError
+	require.ErrorAs(t, err, &exitErr)
+	require.Equal(t, 2, exitErr.Code)
+}
+
+func TestRunEMultipleModeFlags(t *testing.T) {
+	cmd := newRootCmd(false)
+	cmd.SetArgs([]string{"--check", "--diff"})
 	_, err := cmd.ExecuteC()
 	require.Error(t, err)
 	var exitErr *ExitCodeError
@@ -70,7 +84,7 @@ func TestRunEFormattingNeeded(t *testing.T) {
 	content := "variable \"a\" {\n  type = string\n  description = \"d\"\n}"
 	require.NoError(t, os.WriteFile(path, []byte(content), 0o644))
 
-	cmd := newRootCmd()
+	cmd := newRootCmd(true)
 	cmd.SetArgs([]string{path, "--check"})
 	_, err := cmd.ExecuteC()
 	require.Error(t, err)
@@ -85,13 +99,23 @@ func TestRunERuntimeError(t *testing.T) {
 	invalidHCL := []byte("variable \"a\" {")
 	require.NoError(t, os.WriteFile(path, invalidHCL, 0o644))
 
-	cmd := newRootCmd()
+	cmd := newRootCmd(true)
 	cmd.SetArgs([]string{path})
 	_, err := cmd.ExecuteC()
 	require.Error(t, err)
 	var exitErr *ExitCodeError
 	require.ErrorAs(t, err, &exitErr)
 	require.Equal(t, 3, exitErr.Code)
+}
+
+func TestRunEInvalidConcurrency(t *testing.T) {
+	cmd := newRootCmd(true)
+	cmd.SetArgs([]string{"--stdin", "--concurrency", "0"})
+	_, err := cmd.ExecuteC()
+	require.Error(t, err)
+	var exitErr *ExitCodeError
+	require.ErrorAs(t, err, &exitErr)
+	require.Equal(t, 2, exitErr.Code)
 }
 
 func TestRunEModes(t *testing.T) {
@@ -171,7 +195,7 @@ func TestRunEModes(t *testing.T) {
 				wIn.Close()
 			}
 
-			cmd := newRootCmd()
+			cmd := newRootCmd(true)
 			cmd.SetArgs(args)
 			_, err = cmd.ExecuteC()
 
