@@ -95,7 +95,7 @@ func TestProcessSingleFile_ValidHCL(t *testing.T) {
 	require.NoError(t, os.WriteFile(filePath, []byte(initialContent), 0644))
 
 	order := []string{"attribute2", "attribute1"}
-	require.NoError(t, fileprocessing.ProcessSingleFile(filePath, order))
+	require.NoError(t, fileprocessing.ProcessSingleFile(context.Background(), filePath, order))
 
 	resultContent, err := os.ReadFile(filePath)
 	require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestProcessSingleFile_NonHCLContent(t *testing.T) {
 	require.NoError(t, os.WriteFile(filePath, []byte(nonHCLContent), 0644))
 
 	// Process the file; expect an error because the content is not valid HCL
-	err := fileprocessing.ProcessSingleFile(filePath, []string{})
+	err := fileprocessing.ProcessSingleFile(context.Background(), filePath, []string{})
 	require.Error(t, err, "Processing non-HCL content should result in an error")
 	require.Contains(t, err.Error(), "parsing error", "The error message should indicate a parsing error")
 
