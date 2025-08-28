@@ -94,6 +94,62 @@ func TestProcessLogsFilesWhenVerbose(t *testing.T) {
 	}
 }
 
+func TestProcessDiffDeterministicOrder(t *testing.T) {
+	dir := t.TempDir()
+
+	fileB := filepath.Join(dir, "b.tf")
+	if err := os.WriteFile(fileB, []byte("variable \"b\" {\n  type = number\n  default = 1\n}\n"), 0644); err != nil {
+		t.Fatalf("write b.tf: %v", err)
+	}
+	fileA := filepath.Join(dir, "a.tf")
+	if err := os.WriteFile(fileA, []byte("variable \"a\" {\n  type = number\n  default = 1\n}\n"), 0644); err != nil {
+		t.Fatalf("write a.tf: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:      dir,
+		Mode:        config.ModeDiff,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.DefaultOrder,
+		Concurrency: 2,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdout = w
+	defer func() { os.Stdout = oldStdout }()
+
+	changed, err := Process(context.Background(), cfg)
+	if err != nil {
+		t.Fatalf("process: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected changes")
+	}
+
+	_ = w.Close()
+	out, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read stdout: %v", err)
+	}
+	outStr := string(out)
+	idxA := strings.Index(outStr, "a.tf")
+	idxB := strings.Index(outStr, "b.tf")
+	if idxA == -1 || idxB == -1 {
+		t.Fatalf("diff output missing: %q", outStr)
+	}
+	if idxA > idxB {
+		t.Fatalf("expected a.tf diff before b.tf diff: %q", outStr)
+	}
+}
+
 func TestProcessContextCanceledNoLog(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "a.tf")
@@ -406,13 +462,23 @@ func TestProcessSkipsDefaultExcludedDirs(t *testing.T) {
 	}
 }
 
-func TestProcessSingleFileStdoutError(t *testing.T) {
+func TestProcessStdoutError(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "a.tf")
 	if err := os.WriteFile(path, []byte("variable \"a\" {}\n"), 0644); err != nil {
 		t.Fatalf("write file: %v", err)
 	}
-	cfg := &config.Config{Mode: config.ModeCheck, Stdout: true, Order: config.CanonicalOrder}
+	cfg := &config.Config{
+		Mode:        config.ModeCheck,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.DefaultOrder,
+		Stdout:      true,
+		Concurrency: 1,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
 
 	oldStdout := os.Stdout
 	r, w, err := os.Pipe()
@@ -423,7 +489,7 @@ func TestProcessSingleFileStdoutError(t *testing.T) {
 	os.Stdout = w
 	defer func() { os.Stdout = oldStdout }()
 
-	if _, err := processSingleFile(context.Background(), path, cfg); err == nil {
+	if _, err := Process(context.Background(), cfg); err == nil {
 		t.Fatalf("expected error")
 	}
 	_ = r.Close()
