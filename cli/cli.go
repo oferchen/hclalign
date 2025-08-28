@@ -86,8 +86,8 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if diffMode {
 		modeCount++
 	}
-	if modeCount != 1 {
-		return &ExitCodeError{Err: fmt.Errorf("must specify exactly one of --write, --check, or --diff"), Code: 2}
+	if modeCount > 1 {
+		return &ExitCodeError{Err: fmt.Errorf("cannot specify more than one of --write, --check, or --diff"), Code: 2}
 	}
 
 	if !stdin && target == "" {
@@ -99,12 +99,12 @@ func RunE(cmd *cobra.Command, args []string) error {
 
 	var mode config.Mode
 	switch {
-	case writeMode:
-		mode = config.ModeWrite
 	case checkMode:
 		mode = config.ModeCheck
 	case diffMode:
 		mode = config.ModeDiff
+	default:
+		mode = config.ModeWrite
 	}
 
 	cfg := &config.Config{

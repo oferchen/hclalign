@@ -41,7 +41,7 @@ This compiles the project and creates an executable named `hclalign` in the curr
 
 ### Common Flags
 
-- `--write`: Write changes back to files (disabled by default).
+- `--write`: Write changes back to files (default behavior).
 - `--check`: Exit with a non-zero status if formatting changes are needed.
 - `--diff`: Print a unified diff of required changes instead of modifying files.
 - `--stdin`, `--stdout`: Read from STDIN and/or write results to STDOUT.
@@ -57,13 +57,19 @@ This compiles the project and creates an executable named `hclalign` in the curr
 Format all `.tf` files under the current directory and write the result back to disk:
 
 ```sh
-./hclalign . --include "**/*.tf" --write
+./hclalign . --include "**/*.tf"
 ```
 
-Check whether files are already formatted and view the diff of any changes:
+Check whether files are already formatted:
 
 ```sh
-./hclalign . --check --diff
+./hclalign . --check
+```
+
+Preview the diff of required changes:
+
+```sh
+./hclalign . --diff
 ```
 
 Process a single file from STDIN and write the result to STDOUT:
