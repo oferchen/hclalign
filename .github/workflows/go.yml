@@ -9,30 +9,36 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        go: [stable, prev-minor]
+        go: [stable, oldstable]
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
+          cache: true
 
       - name: Download modules
         run: go mod download
 
-      - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-      - name: Lint
-        run: golangci-lint run
+      - name: Lint (golangci-lint)
+        uses: golangci/golangci-lint-action@v6
+        with:
+          # Pin a known-good version for reproducibility; update as needed.
+          version: v1.60.3
+          args: --timeout=5m
 
       - name: Vet
         run: go vet ./...
 
-      - name: Vulnerability check
+      - name: Vulnerability check (non-blocking)
         continue-on-error: true
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
@@ -42,10 +48,12 @@ jobs:
         run: go test -race -shuffle=on -cover ./...
 
       - name: Build
-        run: go build -o hclalign
+        run: go build -o hclalign ./...
 
       - name: Idempotency check
-        run: find tests/cases -name out.tf -print0 | xargs -0 -n1 ./hclalign --check
+        run: |
+          find tests/cases -name out.tf -print0 \
+            | xargs -0 -n1 ./hclalign --check
 
       - name: Upload release artifacts
         if: startsWith(github.ref, 'refs/tags/')
@@ -53,4 +61,3 @@ jobs:
         with:
           name: hclalign-${{ matrix.os }}-${{ matrix.go }}
           path: hclalign
-
