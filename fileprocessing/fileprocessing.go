@@ -167,9 +167,6 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	return changed.Load(), nil
 }
 
-// processSingleFile processes a single file and returns whether the file was
-// changed along with any output that should be written to stdout. The output is
-// either formatted file bytes or diff text depending on the mode and flags.
 func processSingleFile(ctx context.Context, filePath string, cfg *config.Config) (bool, []byte, error) {
 	if err := ctx.Err(); err != nil {
 		return false, nil, err
