@@ -148,7 +148,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	}
 	if err := g.Wait(); err != nil {
 		close(results)
-		return changed.Load(), err
+		return false, err
 	}
 	close(results)
 
