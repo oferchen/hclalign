@@ -47,12 +47,12 @@ To get started with `hclalign`, here are some Makefile commands you might find u
 Execute `hclalign` with your target directory or file and optional flags for criteria and order:
 
 ```sh
-./hclalign [target file or directory] --criteria "*.tf,*.hcl" --order "description,type,default,sensitive,nullable,validation"
+./hclalign [target file or directory] --criteria "*.hcl" --order "description,type,default,sensitive,nullable,validation"
 ```
 
 ### Command Line Flags
 
-- `--criteria, -c`: Glob patterns for selecting files (default: `*.tf`).
+- `--criteria, -c`: Glob patterns for selecting files (default: `*.hcl`).
 - `--order, -o`: Specify the order of variable block fields (default: `description,type,default,sensitive,nullable,validation`).
 
 ## Examples

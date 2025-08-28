@@ -47,12 +47,12 @@ func TestIsValidCriteria(t *testing.T) {
 	}{
 		{
 			name:      "valid single wildcard",
-			criteria:  []string{"*.tf"},
+			criteria:  []string{"*.hcl"},
 			expectErr: false,
 		},
 		{
 			name:      "valid multiple criteria",
-			criteria:  []string{"main.tf", "*.jpg", "directory/"},
+			criteria:  []string{"main.hcl", "*.jpg", "directory/"},
 			expectErr: false,
 		},
 		{
