@@ -1,6 +1,7 @@
 package fileprocessing_test
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,7 +44,7 @@ attribute4 = "value4"`,
 		criteria := []string{`.*\.hcl$`}
 		order := []string{"attribute2", "attribute1", "attribute4", "attribute3"}
 
-		err := fileprocessing.ProcessFiles(tmpDir, criteria, order)
+		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, criteria, order)
 		require.NoError(t, err)
 
 		// Verify contents of the files after processing
@@ -71,7 +72,7 @@ attribute4 = "value4"`,
 		tmpDir := setupTestDir(t, map[string]string{})
 		defer os.RemoveAll(tmpDir)
 
-		err := fileprocessing.ProcessFiles(tmpDir, []string{`.*\.hcl$`}, []string{"attribute1", "attribute2"})
+		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, []string{`.*\.hcl$`}, []string{"attribute1", "attribute2"})
 		assert.NoError(t, err)
 	})
 
@@ -79,7 +80,7 @@ attribute4 = "value4"`,
 		tmpDir := setupTestDir(t, map[string]string{"test.hcl": `attribute = "value"`})
 		defer os.RemoveAll(tmpDir)
 
-		err := fileprocessing.ProcessFiles(tmpDir, []string{"[\\"}, []string{"attribute"})
+		err := fileprocessing.ProcessFiles(context.Background(), tmpDir, []string{"[\\"}, []string{"attribute"})
 		assert.Error(t, err)
 	})
 }

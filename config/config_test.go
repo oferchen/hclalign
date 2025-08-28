@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -122,7 +123,7 @@ func TestProcessTargetDynamically(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			target := tc.setupFunc(t) // Setup the target using the provided setup function
-			err := config.ProcessTargetDynamically(target, tc.criteria, tc.order)
+			err := config.ProcessTargetDynamically(context.Background(), target, tc.criteria, tc.order)
 			if tc.expectErr {
 				assert.Error(t, err)
 			} else {
