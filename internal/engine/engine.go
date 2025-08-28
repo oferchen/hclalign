@@ -110,54 +110,52 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	}
 	sort.Strings(files)
 
-	sem := make(chan struct{}, cfg.Concurrency)
-	g, ctx := errgroup.WithContext(ctx)
 	var changed atomic.Bool
-	type result struct {
-		path string
-		data []byte
-	}
-	results := make(chan result, len(files))
-	for _, f := range files {
-		f := f
-		select {
-		case sem <- struct{}{}:
-		case <-ctx.Done():
-			return changed.Load(), ctx.Err()
-		}
-		g.Go(func() error {
-			defer func() { <-sem }()
-			ch, out, err := processSingleFile(ctx, f, cfg)
-			if err != nil {
-				if !errors.Is(err, context.Canceled) {
-					log.Printf("error processing file %s: %v", f, err)
-				}
-				return fmt.Errorf("%s: %w", f, err)
-			}
-			if ch {
-				changed.Store(true)
-			}
-			if len(out) > 0 {
-				results <- result{path: f, data: out}
-			}
-			if cfg.Verbose {
-				log.Printf("processed file: %s", f)
-			}
-			return nil
-		})
-	}
-	if err := g.Wait(); err != nil {
-		close(results)
-		return false, err
-	}
-	close(results)
-
 	outs := make(map[string][]byte, len(files))
-	for r := range results {
-		outs[r.path] = r.data
+	for _, f := range files {
+		if err := ctx.Err(); err != nil {
+			return changed.Load(), err
+		}
+
+		var (
+			ch  bool
+			out []byte
+		)
+		g, gctx := errgroup.WithContext(ctx)
+		file := f
+		g.Go(func() error {
+			var err error
+			ch, out, err = processSingleFile(gctx, file, cfg)
+			return err
+		})
+		if err := g.Wait(); err != nil {
+			if !errors.Is(err, context.Canceled) {
+				log.Printf("error processing file %s: %v", f, err)
+			}
+			return changed.Load(), fmt.Errorf("%s: %w", f, err)
+		}
+		if ch {
+			changed.Store(true)
+		}
+		if len(out) > 0 {
+			if err := ctx.Err(); err != nil {
+				return changed.Load(), err
+			}
+			outs[f] = out
+		}
+		if cfg.Verbose {
+			if err := ctx.Err(); err != nil {
+				return changed.Load(), err
+			}
+			log.Printf("processed file: %s", f)
+		}
 	}
+
 	for _, f := range files {
 		if out, ok := outs[f]; ok && len(out) > 0 {
+			if err := ctx.Err(); err != nil {
+				return changed.Load(), err
+			}
 			if _, err := os.Stdout.Write(out); err != nil {
 				return changed.Load(), err
 			}

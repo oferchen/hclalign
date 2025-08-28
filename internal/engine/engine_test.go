@@ -217,6 +217,63 @@ func TestProcessPropagatesFileError(t *testing.T) {
 	}
 }
 
+func TestProcessHaltsAfterMalformedFile(t *testing.T) {
+	dir := t.TempDir()
+
+	fileA := filepath.Join(dir, "a.tf")
+	contentA := "variable \"a\" {\n  default = 1\n  type = number\n}\n"
+	if err := os.WriteFile(fileA, []byte(contentA), 0644); err != nil {
+		t.Fatalf("write a.tf: %v", err)
+	}
+	fileB := filepath.Join(dir, "b.tf")
+	if err := os.WriteFile(fileB, []byte("variable \"b\" {\n"), 0644); err != nil {
+		t.Fatalf("write b.tf: %v", err)
+	}
+	fileC := filepath.Join(dir, "c.tf")
+	contentC := "variable \"c\" {\n  type = number\n  default = 1\n}\n"
+	if err := os.WriteFile(fileC, []byte(contentC), 0644); err != nil {
+		t.Fatalf("write c.tf: %v", err)
+	}
+
+	cfg := &config.Config{
+		Target:      dir,
+		Mode:        config.ModeWrite,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.CanonicalOrder,
+		Concurrency: 2,
+		Verbose:     true,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	var buf bytes.Buffer
+	old := log.Writer()
+	log.SetOutput(&buf)
+	defer log.SetOutput(old)
+
+	if _, err := Process(context.Background(), cfg); err == nil {
+		t.Fatalf("expected error due to invalid file")
+	}
+
+	logs := buf.String()
+	if !strings.Contains(logs, "processed file: "+fileA) {
+		t.Fatalf("expected log for a.tf, got %q", logs)
+	}
+	if strings.Contains(logs, "processed file: "+fileC) {
+		t.Fatalf("did not expect log for c.tf, got %q", logs)
+	}
+
+	data, err := os.ReadFile(fileC)
+	if err != nil {
+		t.Fatalf("read c.tf: %v", err)
+	}
+	if string(data) != contentC {
+		t.Fatalf("expected c.tf to remain unchanged, got %q", string(data))
+	}
+}
+
 func TestProcessSymlinkedDirTargetFollowSymlinks(t *testing.T) {
 	dir := t.TempDir()
 	realDir := filepath.Join(dir, "real")
