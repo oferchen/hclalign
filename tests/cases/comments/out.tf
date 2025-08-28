@@ -1,5 +1,6 @@
 variable "c" {
+  type = number
+  # lead
+  default = 1 // inline
   # trail
-  type    = number
-  default = 1
 }
