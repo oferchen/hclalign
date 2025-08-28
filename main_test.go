@@ -38,7 +38,7 @@ func TestMainFunctionality(t *testing.T) {
 		{
 			name: "Missing Target Argument",
 			setup: func(t *testing.T) []string {
-				return []string{"--write"} // No target provided
+				return []string{} // No target provided
 			},
 			wantErr: true,
 			errMsg:  config.MissingTarget,
@@ -48,7 +48,7 @@ func TestMainFunctionality(t *testing.T) {
 			setup: func(t *testing.T) []string {
 				// Create a temp file with valid HCL content
 				filePath := createTempHCLFile(t, `variable "test" {}`)
-				return []string{filePath, "--write"}
+				return []string{filePath}
 			},
 			wantErr: false,
 		},
@@ -58,10 +58,19 @@ func TestMainFunctionality(t *testing.T) {
 				// Create two temp files, but since the command only accepts one, this should cause an error
 				filePath1 := createTempHCLFile(t, `variable "test1" {}`)
 				filePath2 := createTempHCLFile(t, `variable "test2" {}`)
-				return []string{filePath1, filePath2, "--write"}
+				return []string{filePath1, filePath2}
 			},
 			wantErr: true,
 			errMsg:  "accepts at most 1 arg(s)",
+		},
+		{
+			name: "Mutually Exclusive Flags",
+			setup: func(t *testing.T) []string {
+				filePath := createTempHCLFile(t, `variable "test" {}`)
+				return []string{filePath, "--check", "--diff"}
+			},
+			wantErr: true,
+			errMsg:  "if any flags in the group [write check diff] are set none of the others can be",
 		},
 	}
 
@@ -89,6 +98,7 @@ func TestMainFunctionality(t *testing.T) {
 			rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 			rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 			rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+			rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 			rootCmd.SetArgs(args)
 
@@ -130,8 +140,9 @@ func TestCLIOrderFlagInfluencesProcessing(t *testing.T) {
 	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
-	rootCmd.SetArgs([]string{filePath, "--write", "--order=default", "--order=description"})
+	rootCmd.SetArgs([]string{filePath, "--order=default", "--order=description"})
 
 	_, err := rootCmd.ExecuteC()
 	require.NoError(t, err)
@@ -164,8 +175,9 @@ func TestCLIStrictOrderUnknownAttribute(t *testing.T) {
 	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
-	rootCmd.SetArgs([]string{filePath, "--write", "--order=description", "--order=unknown", "--strict-order"})
+	rootCmd.SetArgs([]string{filePath, "--order=description", "--order=unknown", "--strict-order"})
 
 	_, err := rootCmd.ExecuteC()
 	require.Error(t, err)
