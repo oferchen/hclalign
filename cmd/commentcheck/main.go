@@ -1,3 +1,4 @@
+// cmd/commentcheck/main.go
 package main
 
 import (
@@ -11,7 +12,7 @@ import (
 	"strings"
 )
 
-var dirs = []string{"cli", "config", "fileprocessing", "hclprocessing", "internal", "patternmatching"}
+var dirs = []string{"cli", "cmd/commentcheck", "config", "fileprocessing", "hclprocessing", "internal", "patternmatching"}
 
 func main() {
 	var files []string
