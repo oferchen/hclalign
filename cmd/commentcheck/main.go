@@ -3,45 +3,36 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"go/parser"
 	"go/token"
-	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-var dirs = []string{"cli", "cmd/commentcheck", "config", "internal", "patternmatching"}
-
 func main() {
-	var files []string
-	entries, err := os.ReadDir(".")
+	dirs, err := packageDirs()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".go") {
-			files = append(files, e.Name())
-		}
-	}
+	var files []string
 	for _, d := range dirs {
-		err := filepath.WalkDir(d, func(path string, de fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if de.IsDir() {
-				return nil
-			}
-			if filepath.Ext(path) == ".go" {
-				files = append(files, path)
-			}
-			return nil
-		})
+		entries, err := os.ReadDir(d)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
+		}
+		for _, e := range entries {
+			if e.IsDir() {
+				continue
+			}
+			if strings.HasSuffix(e.Name(), ".go") {
+				files = append(files, filepath.Join(d, e.Name()))
+			}
 		}
 	}
 	var failed bool
@@ -90,4 +81,25 @@ func checkFile(path string) error {
 		return fmt.Errorf("%s: first comment must be %q", path, expected)
 	}
 	return nil
+}
+
+func packageDirs() ([]string, error) {
+	out, err := exec.Command("go", "list", "-f", "{{.Dir}}", "./...").Output()
+	if err != nil {
+		return nil, err
+	}
+	var dirs []string
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	for scanner.Scan() {
+		dir := scanner.Text()
+		rel, err := filepath.Rel(".", dir)
+		if err != nil {
+			return nil, err
+		}
+		dirs = append(dirs, rel)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return dirs, nil
 }
