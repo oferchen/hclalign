@@ -4,7 +4,6 @@
 package hclprocessing
 
 import (
-	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
@@ -17,10 +16,6 @@ func ReorderAttributes(file *hclwrite.File, order []string) {
 	if len(order) == 0 {
 		order = canonicalOrder
 	}
-	if _, diags := hclwrite.ParseConfig(file.Bytes(), "", hcl.InitialPos); diags.HasErrors() {
-		return
-	}
-
 	body := file.Body()
 	for _, block := range body.Blocks() {
 		if block.Type() != "variable" {
