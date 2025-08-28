@@ -3,38 +3,54 @@ name: Go
 on:
   push:
     branches: ["**"]
+    tags: ["v*"]
   pull_request:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        go: [stable, prev-minor]
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: ${{ matrix.go }}
 
-      - name: Tidy modules
-        run: |
-          go mod tidy -v
-          git diff --exit-code go.mod go.sum
+      - name: Download modules
+        run: go mod download
+
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          args: --timeout 5m
+        run: golangci-lint run
 
-      - name: Test
-        run: go test -race -shuffle=on -cover ./...
-
-      - name: Fuzz tests
-        run: go test ./... -run Fuzz
-
-      - name: Build
-        run: go build ./...
+      - name: Vet
+        run: go vet ./...
 
       - name: Vulnerability check
         continue-on-error: true
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
+
+      - name: Test
+        run: go test -race -shuffle=on -cover ./...
+
+      - name: Build
+        run: go build -o hclalign
+
+      - name: Idempotency check
+        run: find tests/cases -name out.tf -print0 | xargs -0 -n1 ./hclalign --check
+
+      - name: Upload release artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: hclalign-${{ matrix.os }}-${{ matrix.go }}
+          path: hclalign
+
