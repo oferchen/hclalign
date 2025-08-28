@@ -25,7 +25,7 @@ func newRootCmd() *cobra.Command {
 	cmd.Flags().Bool("stdout", false, "write result to STDOUT")
 	cmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	cmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
-	cmd.Flags().StringSlice("order", config.DefaultOrder, "order of variable block fields")
+	cmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
 	cmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")

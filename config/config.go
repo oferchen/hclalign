@@ -36,14 +36,14 @@ type Config struct {
 	FollowSymlinks bool
 }
 
-// DefaultInclude, DefaultExclude and DefaultOrder define the default behaviour of the CLI.
+// DefaultInclude, DefaultExclude and CanonicalOrder define the default behaviour of the CLI.
 var (
 	DefaultInclude = []string{"**/*.tf"}
 	DefaultExclude = []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
-	// DefaultOrder defines the canonical ordering of variable block attributes.
+	// CanonicalOrder defines the canonical ordering of variable block attributes.
 	// Nested blocks such as "validation" are always appended after attributes
 	// and therefore are not part of this list.
-	DefaultOrder = []string{"description", "type", "default", "sensitive", "nullable"}
+	CanonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 )
 
 const (
@@ -70,13 +70,13 @@ func (c *Config) Validate() error {
 
 // ValidateOrder checks whether the provided order is valid. Duplicate
 // attributes always cause an error. When strict is true, all attributes must be
-// from the canonical DefaultOrder list and each must appear exactly once. The
+// from the canonical CanonicalOrder list and each must appear exactly once. The
 // canonical list only contains attribute names; nested blocks like "validation"
 // are not considered part of the order.
 func ValidateOrder(order []string, strict bool) error {
 	providedSet := make(map[string]struct{})
-	canonicalSet := make(map[string]struct{}, len(DefaultOrder))
-	for _, item := range DefaultOrder {
+	canonicalSet := make(map[string]struct{}, len(CanonicalOrder))
+	for _, item := range CanonicalOrder {
 		canonicalSet[item] = struct{}{}
 	}
 
@@ -93,10 +93,10 @@ func ValidateOrder(order []string, strict bool) error {
 				return fmt.Errorf("unknown attribute '%s' in order", item)
 			}
 		}
-		if len(providedSet) != len(DefaultOrder) {
-			return fmt.Errorf("provided order length %d doesn't match expected %d", len(providedSet), len(DefaultOrder))
+		if len(providedSet) != len(CanonicalOrder) {
+			return fmt.Errorf("provided order length %d doesn't match expected %d", len(providedSet), len(CanonicalOrder))
 		}
-		for _, item := range DefaultOrder {
+		for _, item := range CanonicalOrder {
 			if _, exists := providedSet[item]; !exists {
 				return fmt.Errorf("missing expected attribute '%s' in provided order", item)
 			}

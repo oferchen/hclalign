@@ -8,9 +8,8 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/oferchen/hclalign/config"
 )
-
-var canonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 
 // ReorderAttributes reorders attributes of "variable" blocks into the provided
 // order. When strict is true, unknown attributes are placed after known ones.
@@ -18,12 +17,12 @@ var canonicalOrder = []string{"description", "type", "default", "sensitive", "nu
 // nil or empty, a canonical order is used.
 func ReorderAttributes(file *hclwrite.File, order []string, strict bool) {
 	if len(order) == 0 {
-		order = canonicalOrder
+		order = config.CanonicalOrder
 	}
 
 	// knownSet contains the canonical attributes for quick lookups.
-	knownSet := make(map[string]struct{}, len(canonicalOrder))
-	for _, name := range canonicalOrder {
+	knownSet := make(map[string]struct{}, len(config.CanonicalOrder))
+	for _, name := range config.CanonicalOrder {
 		knownSet[name] = struct{}{}
 	}
 
@@ -156,7 +155,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[st
 	body.AppendUnstructuredTokens(prefix)
 
 	canonSet := map[string]struct{}{}
-	finalKnown := make([]string, 0, len(canonicalOrder))
+	finalKnown := make([]string, 0, len(config.CanonicalOrder))
 	for _, name := range order {
 		canonSet[name] = struct{}{}
 		if _, ok := tokensMap[name]; ok {
@@ -166,7 +165,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, knownSet map[st
 
 	// Append remaining known attributes not specified in order following the
 	// canonical order.
-	for _, name := range canonicalOrder {
+	for _, name := range config.CanonicalOrder {
 		if _, already := canonSet[name]; already {
 			continue
 		}
