@@ -303,3 +303,44 @@ func TestProcessSkipsDefaultExcludedDirs(t *testing.T) {
 		t.Fatalf("process: %v", err)
 	}
 }
+
+func TestProcessSingleFileStdoutError(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a.tf")
+	if err := os.WriteFile(path, []byte("variable \"a\" {}\n"), 0644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	cfg := &config.Config{Mode: config.ModeCheck, Stdout: true, Order: config.DefaultOrder}
+
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	_ = w.Close()
+	os.Stdout = w
+	defer func() { os.Stdout = oldStdout }()
+
+	if _, err := processSingleFile(context.Background(), path, cfg); err == nil {
+		t.Fatalf("expected error")
+	}
+	_ = r.Close()
+}
+
+func TestProcessReaderStdoutError(t *testing.T) {
+	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.DefaultOrder}
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	_ = w.Close()
+	os.Stdout = w
+	defer func() { os.Stdout = oldStdout }()
+
+	input := "variable \"a\" {}\n"
+	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg); err == nil {
+		t.Fatalf("expected error")
+	}
+	_ = r.Close()
+}

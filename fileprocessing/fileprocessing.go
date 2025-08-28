@@ -167,7 +167,9 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	case config.ModeWrite:
 		if !changed {
 			if cfg.Stdout {
-				_, _ = os.Stdout.Write(styled)
+				if _, err := os.Stdout.Write(styled); err != nil {
+					return false, err
+				}
 			}
 			return false, nil
 		}
@@ -175,11 +177,15 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 			return false, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
 		}
 		if cfg.Stdout {
-			_, _ = os.Stdout.Write(styled)
+			if _, err := os.Stdout.Write(styled); err != nil {
+				return changed, err
+			}
 		}
 	case config.ModeCheck:
 		if cfg.Stdout {
-			_, _ = os.Stdout.Write(styled)
+			if _, err := os.Stdout.Write(styled); err != nil {
+				return changed, err
+			}
 		}
 	case config.ModeDiff:
 		if changed {
@@ -230,7 +236,9 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 		}
 	default:
 		if cfg.Stdout {
-			_, _ = os.Stdout.Write(styled)
+			if _, err := os.Stdout.Write(styled); err != nil {
+				return changed, err
+			}
 		}
 	}
 	return changed, nil
