@@ -18,10 +18,10 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/pmezard/go-difflib/difflib"
 
 	"github.com/oferchen/hclalign/config"
 	"github.com/oferchen/hclalign/hclprocessing"
+	"github.com/oferchen/hclalign/internal/diff"
 	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/oferchen/hclalign/patternmatching"
 )
@@ -173,15 +173,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 		}
 	case config.ModeDiff:
 		if changed {
-			ud := difflib.UnifiedDiff{
-				A:        difflib.SplitLines(string(original)),
-				B:        difflib.SplitLines(string(styled)),
-				FromFile: filePath,
-				ToFile:   filePath,
-				Context:  3,
-				Eol:      hints.Newline,
-			}
-			text, err := difflib.GetUnifiedDiffString(ud)
+			text, err := diff.Unified(filePath, filePath, original, styled, hints.Newline)
 			if err != nil {
 				return false, err
 			}
@@ -218,15 +210,7 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 	switch cfg.Mode {
 	case config.ModeDiff:
 		if changed {
-			ud := difflib.UnifiedDiff{
-				A:        difflib.SplitLines(string(original)),
-				B:        difflib.SplitLines(string(styled)),
-				FromFile: "stdin",
-				ToFile:   "stdin",
-				Context:  3,
-				Eol:      hints.Newline,
-			}
-			text, err := difflib.GetUnifiedDiffString(ud)
+			text, err := diff.Unified("stdin", "stdin", original, styled, hints.Newline)
 			if err != nil {
 				return false, err
 			}
