@@ -27,7 +27,7 @@ import (
 
 func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 	if cfg.Stdin {
-		return processReader(ctx, os.Stdin, cfg)
+		return processReader(ctx, os.Stdin, os.Stdout, cfg)
 	}
 	return processFiles(ctx, cfg)
 }
@@ -229,7 +229,10 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	return changed, out, nil
 }
 
-func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, error) {
+func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Config) (bool, error) {
+	if w == nil {
+		w = os.Stdout
+	}
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return false, err
@@ -262,13 +265,13 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 			if err != nil {
 				return false, err
 			}
-			if _, err := fmt.Fprint(os.Stdout, text); err != nil {
+			if _, err := fmt.Fprint(w, text); err != nil {
 				return false, err
 			}
 		}
 	default:
 		if cfg.Stdout {
-			if _, err := os.Stdout.Write(styled); err != nil {
+			if _, err := w.Write(styled); err != nil {
 				return changed, err
 			}
 		}

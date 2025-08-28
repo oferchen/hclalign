@@ -361,22 +361,11 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 
 	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.CanonicalOrder}
 
-	oldStdout := os.Stdout
-	rOut, wOut, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("pipe: %v", err)
-	}
-	os.Stdout = wOut
-	defer func() { os.Stdout = oldStdout }()
-
-	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg); err != nil {
+	var buf bytes.Buffer
+	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), &buf, cfg); err != nil {
 		t.Fatalf("processReader: %v", err)
 	}
-	_ = wOut.Close()
-	out, err := io.ReadAll(rOut)
-	if err != nil {
-		t.Fatalf("read stdout: %v", err)
-	}
+	out := buf.Bytes()
 
 	hints := internalfs.DetectHintsFromBytes(out)
 	if !hints.HasBOM {
@@ -403,26 +392,15 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 
 	cfg := &config.Config{Mode: config.ModeDiff, Order: config.CanonicalOrder}
 
-	oldStdout := os.Stdout
-	rOut, wOut, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("pipe: %v", err)
-	}
-	os.Stdout = wOut
-	defer func() { os.Stdout = oldStdout }()
-
-	changed, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg)
+	var buf bytes.Buffer
+	changed, err := processReader(context.Background(), bytes.NewReader([]byte(input)), &buf, cfg)
 	if err != nil {
 		t.Fatalf("processReader: %v", err)
 	}
 	if !changed {
 		t.Fatalf("expected changes")
 	}
-	_ = wOut.Close()
-	out, err := io.ReadAll(rOut)
-	if err != nil {
-		t.Fatalf("read stdout: %v", err)
-	}
+	out := buf.Bytes()
 	hints := internalfs.DetectHintsFromBytes(out)
 	if hints.Newline != "\r\n" {
 		t.Fatalf("expected CRLF in diff output")
@@ -559,17 +537,11 @@ func TestProcessStdoutError(t *testing.T) {
 
 func TestProcessReaderStdoutError(t *testing.T) {
 	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.CanonicalOrder}
-	oldStdout := os.Stdout
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("pipe: %v", err)
-	}
+	r, w := io.Pipe()
 	_ = w.Close()
-	os.Stdout = w
-	defer func() { os.Stdout = oldStdout }()
 
 	input := "variable \"a\" {}\n"
-	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg); err == nil {
+	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), w, cfg); err == nil {
 		t.Fatalf("expected error")
 	}
 	_ = r.Close()
