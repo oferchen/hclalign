@@ -14,7 +14,10 @@ import (
 	"strings"
 )
 
-var execCommand = exec.Command
+var (
+	execCommand = exec.Command
+	lookPath    = exec.LookPath
+)
 
 func main() {
 	dirs, err := packageDirs()
@@ -84,6 +87,12 @@ func checkFile(path string) error {
 }
 
 func packageDirs() ([]string, error) {
+
+	if _, err := lookPath("go"); err != nil {
+		return nil, fmt.Errorf("commentcheck requires a Go toolchain: %w", err)
+	}
+	out, err := execCommand("go", "list", "-f", "{{.Dir}}", "./...").Output()
+=======
 	cmd := execCommand("go", "list", "-f", "{{.Dir}}", "./...")
 	out, err := cmd.Output()
 	if err != nil {
@@ -93,6 +102,7 @@ func packageDirs() ([]string, error) {
 		return nil, err
 	}
 	cwd, err := os.Getwd()
+
 	if err != nil {
 		return nil, err
 	}
