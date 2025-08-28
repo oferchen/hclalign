@@ -6,17 +6,15 @@ package fileprocessing
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
+	"sort"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/pmezard/go-difflib/difflib"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/oferchen/hclalign/config"
 	"github.com/oferchen/hclalign/hclprocessing"
@@ -33,81 +31,39 @@ func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 }
 
 func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	var wg sync.WaitGroup
-	sem := semaphore.NewWeighted(int64(cfg.Concurrency))
-	errChan := make(chan error, cfg.Concurrency)
-	changedChan := make(chan bool, cfg.Concurrency)
-	var firstErr error
-	var once sync.Once
-
-	walkErr := filepath.WalkDir(cfg.Target, func(filePath string, d os.DirEntry, err error) error {
+	matcher, err := patternmatching.NewMatcher(cfg.Include, cfg.Exclude)
+	if err != nil {
+		return false, err
+	}
+	var files []string
+	err = filepath.WalkDir(cfg.Target, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			once.Do(func() { firstErr = err })
-			errChan <- err
-			cancel()
 			return err
-		}
-		if ctx.Err() != nil {
-			return ctx.Err()
 		}
 		if d.IsDir() {
+			if !matcher.Matches(path) {
+				return filepath.SkipDir
+			}
 			return nil
 		}
-		if !patternmatching.MatchesFileCriteria(filePath, cfg.Include) || patternmatching.MatchesFileCriteria(filePath, cfg.Exclude) {
-			return nil
+		if matcher.Matches(path) {
+			files = append(files, path)
 		}
-		if err := sem.Acquire(ctx, 1); err != nil {
-			once.Do(func() { firstErr = err })
-			errChan <- err
-			cancel()
-			return err
-		}
-		wg.Add(1)
-		go func(path string) {
-			defer wg.Done()
-			defer sem.Release(1)
-			ch, err := processSingleFile(ctx, path, cfg)
-			if err != nil {
-				once.Do(func() { firstErr = err })
-				errChan <- err
-				cancel()
-				return
-			}
-			if ch {
-				changedChan <- true
-			}
-		}(filePath)
 		return nil
 	})
-
-	wg.Wait()
-	cancel()
-	close(errChan)
-	close(changedChan)
-
+	if err != nil {
+		return false, err
+	}
+	sort.Strings(files)
 	changed := false
-	for range changedChan {
-		changed = true
-	}
-
-	var errs []error
-	if walkErr != nil {
-		errs = append(errs, walkErr)
-	}
-	for e := range errChan {
-		errs = append(errs, e)
-	}
-	if firstErr != nil {
-		if len(errs) > 1 {
-			return changed, errors.Join(errs...)
+	for _, f := range files {
+		ch, err := processSingleFile(ctx, f, cfg)
+		if err != nil {
+			return changed, err
 		}
-		return changed, firstErr
-	}
-	if len(errs) > 0 {
-		return changed, errors.Join(errs...)
+		if ch {
+			changed = true
+		}
 	}
 	return changed, nil
 }
@@ -131,7 +87,18 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 		return false, err
 	}
 
-	file, diags := hclwrite.ParseConfig(original, filePath, hcl.InitialPos)
+	bom := []byte{}
+	content := original
+	if bytes.HasPrefix(content, []byte{0xEF, 0xBB, 0xBF}) {
+		bom = []byte{0xEF, 0xBB, 0xBF}
+		content = content[len(bom):]
+	}
+	newline := []byte("\n")
+	if bytes.Contains(content, []byte("\r\n")) {
+		newline = []byte("\r\n")
+	}
+
+	file, diags := hclwrite.ParseConfig(content, filePath, hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
@@ -139,6 +106,12 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	hclprocessing.ReorderAttributes(file, cfg.Order)
 
 	formatted := file.Bytes()
+	if bytes.Equal(newline, []byte("\r\n")) {
+		formatted = bytes.ReplaceAll(formatted, []byte("\n"), []byte("\r\n"))
+	}
+	if len(bom) > 0 {
+		formatted = append(bom, formatted...)
+	}
 	changed := !bytes.Equal(original, formatted)
 
 	switch cfg.Mode {
