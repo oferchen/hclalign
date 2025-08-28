@@ -39,6 +39,31 @@ func TestMatcherMatches(t *testing.T) {
 	assert.False(t, m.Matches(filepath.Join(wd, "nested", "excluded", "out.tf")))
 }
 
+func TestMatcherMatchesOutsideWorkingDir(t *testing.T) {
+	wd := t.TempDir()
+
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0644))
+	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "v.tf"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "note.txt"), []byte(""), 0644))
+	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "included"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "included", "in.tf"), []byte(""), 0644))
+	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "excluded"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "excluded", "out.tf"), []byte(""), 0644))
+
+	m, err := NewMatcher([]string{"**/*.tf"}, []string{"**/vendor/**", "nested/excluded/**"})
+	require.NoError(t, err)
+
+	assert.True(t, m.Matches(filepath.Join(wd, "main.tf")))
+	assert.True(t, m.Matches(filepath.Join(wd, "nested", "included")))
+	assert.True(t, m.Matches(filepath.Join(wd, "nested", "included", "in.tf")))
+	assert.False(t, m.Matches(filepath.Join(wd, "note.txt")))
+	assert.False(t, m.Matches(filepath.Join(wd, "vendor")))
+	assert.False(t, m.Matches(filepath.Join(wd, "vendor", "v.tf")))
+	assert.False(t, m.Matches(filepath.Join(wd, "nested", "excluded")))
+	assert.False(t, m.Matches(filepath.Join(wd, "nested", "excluded", "out.tf")))
+}
+
 func TestValidatePatterns(t *testing.T) {
 	err := ValidatePatterns([]string{"**/*.tf", "*.hcl"})
 	assert.NoError(t, err)
