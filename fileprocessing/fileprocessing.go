@@ -69,7 +69,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		select {
 		case sem <- struct{}{}:
 		case <-ctx.Done():
-			break
+			return changed.Load(), ctx.Err()
 		}
 		g.Go(func() error {
 			defer func() { <-sem }()
@@ -183,20 +183,33 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 	if err != nil {
 		return false, err
 	}
-	file, diags := hclwrite.ParseConfig(data, "stdin", hcl.InitialPos)
+
+	bom := []byte{}
+	content := data
+	if bytes.HasPrefix(content, []byte{0xEF, 0xBB, 0xBF}) {
+		bom = []byte{0xEF, 0xBB, 0xBF}
+		content = content[len(bom):]
+	}
+	newline := []byte("\n")
+	if bytes.Contains(content, []byte("\r\n")) {
+		newline = []byte("\r\n")
+	}
+
+	file, diags := hclwrite.ParseConfig(content, "stdin", hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, fmt.Errorf("parsing error: %v", diags.Errs())
 	}
 	hclprocessing.ReorderAttributes(file, cfg.Order)
 	formatted := file.Bytes()
-	changed := !bytes.Equal(data, formatted)
+	styled := internalfs.ApplyHints(formatted, newline, bom)
+	changed := !bytes.Equal(data, styled)
 
 	switch cfg.Mode {
 	case config.ModeDiff:
 		if changed {
 			ud := difflib.UnifiedDiff{
 				A:        difflib.SplitLines(string(data)),
-				B:        difflib.SplitLines(string(formatted)),
+				B:        difflib.SplitLines(string(styled)),
 				FromFile: "stdin",
 				ToFile:   "stdin",
 				Context:  3,
@@ -211,7 +224,7 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 		}
 	default:
 		if cfg.Stdout {
-			_, _ = os.Stdout.Write(formatted)
+			_, _ = os.Stdout.Write(styled)
 		}
 	}
 	return changed, nil

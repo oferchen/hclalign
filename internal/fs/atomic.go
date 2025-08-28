@@ -15,6 +15,7 @@ import (
 func ApplyHints(data, newline, bom []byte) []byte {
 	out := make([]byte, len(data))
 	copy(out, data)
+	out = bytes.ReplaceAll(out, []byte("\r\n"), []byte("\n"))
 	if len(newline) > 0 && !bytes.Equal(newline, []byte("\n")) {
 		out = bytes.ReplaceAll(out, []byte("\n"), newline)
 	}

@@ -3,13 +3,18 @@ package fileprocessing
 import (
 	"bytes"
 	"context"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/oferchen/hclalign/config"
+	"github.com/oferchen/hclalign/hclprocessing"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 )
 
 func TestProcessPreservesNewlineAndBOM(t *testing.T) {
@@ -122,5 +127,77 @@ func TestProcessContextCanceledNoLog(t *testing.T) {
 	}
 	if buf.Len() != 0 {
 		t.Fatalf("expected no logs, got %q", buf.String())
+	}
+}
+
+func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
+	bom := []byte{0xEF, 0xBB, 0xBF}
+	input := string(bom) + "variable \"a\" {\r\n  default = 1\r\n  type = number\r\n}\r\n"
+
+	cfg := &config.Config{Mode: config.ModeWrite, Stdout: true, Order: config.DefaultOrder}
+
+	oldStdout := os.Stdout
+	rOut, wOut, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdout = wOut
+	defer func() { os.Stdout = oldStdout }()
+
+	if _, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg); err != nil {
+		t.Fatalf("processReader: %v", err)
+	}
+	_ = wOut.Close()
+	out, err := io.ReadAll(rOut)
+	if err != nil {
+		t.Fatalf("read stdout: %v", err)
+	}
+
+	if !bytes.HasPrefix(out, bom) {
+		t.Fatalf("bom not preserved")
+	}
+	if bytes.Contains(bytes.ReplaceAll(out, []byte("\r\n"), []byte{}), []byte("\n")) {
+		t.Fatalf("LF line ending found")
+	}
+
+	expectedFile, diags := hclwrite.ParseConfig([]byte("variable \"a\" {\n  default = 1\n  type = number\n}\n"), "stdin", hcl.InitialPos)
+	if diags.HasErrors() {
+		t.Fatalf("parse expected: %v", diags)
+	}
+	hclprocessing.ReorderAttributes(expectedFile, config.DefaultOrder)
+	expected := internalfs.ApplyHints(expectedFile.Bytes(), []byte("\r\n"), bom)
+	if string(out) != string(expected) {
+		t.Fatalf("unexpected output: got %q, want %q", out, expected)
+	}
+}
+
+func TestProcessReaderDiffPreservesNewline(t *testing.T) {
+	bom := []byte{0xEF, 0xBB, 0xBF}
+	input := string(bom) + "variable \"a\" {\r\n  default = 1\r\n  type = number\r\n}\r\n"
+
+	cfg := &config.Config{Mode: config.ModeDiff, Order: config.DefaultOrder}
+
+	oldStdout := os.Stdout
+	rOut, wOut, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdout = wOut
+	defer func() { os.Stdout = oldStdout }()
+
+	changed, err := processReader(context.Background(), bytes.NewReader([]byte(input)), cfg)
+	if err != nil {
+		t.Fatalf("processReader: %v", err)
+	}
+	if !changed {
+		t.Fatalf("expected changes")
+	}
+	_ = wOut.Close()
+	out, err := io.ReadAll(rOut)
+	if err != nil {
+		t.Fatalf("read stdout: %v", err)
+	}
+	if !bytes.Contains(out, []byte("\r\n")) {
+		t.Fatalf("expected CRLF in diff output")
 	}
 }
