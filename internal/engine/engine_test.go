@@ -574,3 +574,48 @@ func TestProcessReaderStdoutError(t *testing.T) {
 	}
 	_ = r.Close()
 }
+
+func TestProcessStrictOrder(t *testing.T) {
+	t.Run("unknown attribute", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "a.tf")
+		err := os.WriteFile(path, []byte("variable \"a\" {\n  foo = 1\n}\n"), 0644)
+		require.NoError(t, err)
+
+		cfg := &config.Config{
+			Target:      dir,
+			Mode:        config.ModeCheck,
+			Include:     config.DefaultInclude,
+			Exclude:     config.DefaultExclude,
+			Order:       config.CanonicalOrder,
+			StrictOrder: true,
+			Concurrency: 1,
+		}
+		require.NoError(t, cfg.Validate())
+
+		_, err = Process(context.Background(), cfg)
+		require.Error(t, err)
+	})
+
+	t.Run("valid", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "a.tf")
+		content := "variable \"a\" {\n  description = \"d\"\n  type        = string\n  default     = \"v\"\n  sensitive   = false\n  nullable    = true\n}\n"
+		err := os.WriteFile(path, []byte(content), 0644)
+		require.NoError(t, err)
+
+		cfg := &config.Config{
+			Target:      dir,
+			Mode:        config.ModeCheck,
+			Include:     config.DefaultInclude,
+			Exclude:     config.DefaultExclude,
+			Order:       config.CanonicalOrder,
+			StrictOrder: true,
+			Concurrency: 1,
+		}
+		require.NoError(t, cfg.Validate())
+
+		_, err = Process(context.Background(), cfg)
+		require.NoError(t, err)
+	})
+}
