@@ -101,14 +101,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	if err := ctx.Err(); err != nil {
 		return false, err
 	}
-	fileInfo, err := os.Stat(filePath)
-	if err != nil {
-		return false, fmt.Errorf("error retrieving file info for %s: %w", filePath, err)
-	}
-	if err := ctx.Err(); err != nil {
-		return false, err
-	}
-	original, err := os.ReadFile(filePath)
+	data, perm, hints, err := internalfs.ReadFileWithHints(filePath)
 	if err != nil {
 		return false, fmt.Errorf("error reading file %s: %w", filePath, err)
 	}
@@ -116,18 +109,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 		return false, err
 	}
 
-	bom := []byte{}
-	content := original
-	if bytes.HasPrefix(content, []byte{0xEF, 0xBB, 0xBF}) {
-		bom = []byte{0xEF, 0xBB, 0xBF}
-		content = content[len(bom):]
-	}
-	newline := []byte("\n")
-	if bytes.Contains(content, []byte("\r\n")) {
-		newline = []byte("\r\n")
-	}
-
-	file, diags := hclwrite.ParseConfig(content, filePath, hcl.InitialPos)
+	file, diags := hclwrite.ParseConfig(data, filePath, hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
@@ -135,7 +117,8 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 	hclprocessing.ReorderAttributes(file, cfg.Order)
 
 	formatted := file.Bytes()
-	styled := internalfs.ApplyHints(formatted, newline, bom)
+	styled := internalfs.ApplyHints(formatted, hints)
+	original := internalfs.ApplyHints(data, hints)
 	changed := !bytes.Equal(original, styled)
 
 	switch cfg.Mode {
@@ -146,7 +129,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 			}
 			return false, nil
 		}
-		if err := internalfs.WriteFile(ctx, filePath, formatted, fileInfo.Mode(), newline, bom); err != nil {
+		if err := internalfs.WriteFileAtomic(filePath, formatted, perm, hints); err != nil {
 			return false, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
 		}
 		if cfg.Stdout {
@@ -184,25 +167,20 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 		return false, err
 	}
 
-	bom := []byte{}
-	content := data
-	if bytes.HasPrefix(content, []byte{0xEF, 0xBB, 0xBF}) {
-		bom = []byte{0xEF, 0xBB, 0xBF}
-		content = content[len(bom):]
-	}
-	newline := []byte("\n")
-	if bytes.Contains(content, []byte("\r\n")) {
-		newline = []byte("\r\n")
+	hints := internalfs.DetectHintsFromBytes(data)
+	if len(hints.BOM()) > 0 {
+		data = data[len(hints.BOM()):]
 	}
 
-	file, diags := hclwrite.ParseConfig(content, "stdin", hcl.InitialPos)
+	file, diags := hclwrite.ParseConfig(data, "stdin", hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, fmt.Errorf("parsing error: %v", diags.Errs())
 	}
 	hclprocessing.ReorderAttributes(file, cfg.Order)
 	formatted := file.Bytes()
-	styled := internalfs.ApplyHints(formatted, newline, bom)
-	changed := !bytes.Equal(data, styled)
+	styled := internalfs.ApplyHints(formatted, hints)
+	original := internalfs.ApplyHints(data, hints)
+	changed := !bytes.Equal(original, styled)
 
 	switch cfg.Mode {
 	case config.ModeDiff:

@@ -165,7 +165,7 @@ func TestProcessReaderPreservesNewlineAndBOM(t *testing.T) {
 		t.Fatalf("parse expected: %v", diags)
 	}
 	hclprocessing.ReorderAttributes(expectedFile, config.DefaultOrder)
-	expected := internalfs.ApplyHints(expectedFile.Bytes(), []byte("\r\n"), bom)
+	expected := internalfs.ApplyHints(expectedFile.Bytes(), internalfs.Hints{HasBOM: true, Newline: "\r\n"})
 	if string(out) != string(expected) {
 		t.Fatalf("unexpected output: got %q, want %q", out, expected)
 	}
