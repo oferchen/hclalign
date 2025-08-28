@@ -1,3 +1,4 @@
+// cli/cli_test.go
 package cli
 
 import (
@@ -62,8 +63,8 @@ func TestRunEFormattingNeeded(t *testing.T) {
 func TestRunERuntimeError(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "bad.tf")
-	// Invalid HCL to trigger processing error
-	require.NoError(t, os.WriteFile(path, []byte("variable \"a\" {"), 0o644))
+	invalidHCL := []byte("variable \"a\" {")
+	require.NoError(t, os.WriteFile(path, invalidHCL, 0o644))
 
 	cmd := newRootCmd()
 	cmd.SetArgs([]string{path})

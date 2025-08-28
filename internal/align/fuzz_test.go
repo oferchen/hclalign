@@ -1,3 +1,4 @@
+// internal/align/fuzz_test.go
 package align
 
 import (
@@ -11,26 +12,24 @@ import (
 	"github.com/oferchen/hclalign/hclprocessing"
 )
 
-// FuzzReorder generates random attribute orders with optional padding and
-// ensures reorder is stable.
-func FuzzReorder(f *testing.F) {
+func FuzzReorderStability(f *testing.F) {
 	f.Add(uint64(0))
 	f.Fuzz(func(t *testing.T, seed uint64) {
 		r := rand.New(rand.NewSource(int64(seed)))
 		attrs := []string{"description", "type", "default", "sensitive", "nullable", "extra", "foo"}
 		r.Shuffle(len(attrs), func(i, j int) { attrs[i], attrs[j] = attrs[j], attrs[i] })
 
-		const maxSize = 1 << 12 // 4KiB limit to avoid resource exhaustion
+		const maxFuzzBytes = 1 << 12
 		var src bytes.Buffer
 		src.WriteString("variable \"fuzz\" {\n")
 		for i, name := range attrs {
-			insertPadding(&src, r)
+			addRandomPadding(&src, r)
 			fmt.Fprintf(&src, "  %s = %d\n", name, i)
-			insertPadding(&src, r)
+			addRandomPadding(&src, r)
 		}
 		src.WriteString("}\n")
 
-		if src.Len() > maxSize {
+		if src.Len() > maxFuzzBytes {
 			t.Skip("input too large")
 		}
 
@@ -41,7 +40,7 @@ func FuzzReorder(f *testing.F) {
 		hclprocessing.ReorderAttributes(file, nil, false)
 		out := file.Bytes()
 
-		if len(out) > maxSize {
+		if len(out) > maxFuzzBytes {
 			t.Skip("output too large")
 		}
 
@@ -56,8 +55,7 @@ func FuzzReorder(f *testing.F) {
 	})
 }
 
-// insertPadding randomly adds comments or blank lines around attributes.
-func insertPadding(buf *bytes.Buffer, r *rand.Rand) {
+func addRandomPadding(buf *bytes.Buffer, r *rand.Rand) {
 	for j := 0; j < r.Intn(3); j++ {
 		switch r.Intn(3) {
 		case 0:

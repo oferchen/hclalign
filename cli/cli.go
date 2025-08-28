@@ -1,6 +1,4 @@
-// cli.go
-// Defines the CLI interface and command execution logic.
-
+// cli/cli.go
 package cli
 
 import (
@@ -12,7 +10,6 @@ import (
 	"github.com/oferchen/hclalign/fileprocessing"
 )
 
-// ExitCodeError wraps an error with an exit code that should be returned to the shell.
 type ExitCodeError struct {
 	Err  error
 	Code int
@@ -20,7 +17,6 @@ type ExitCodeError struct {
 
 func (e *ExitCodeError) Error() string { return e.Err.Error() }
 
-// RunE executes the root command.
 func RunE(cmd *cobra.Command, args []string) error {
 	if len(args) > 1 {
 		return &ExitCodeError{Err: fmt.Errorf("accepts at most 1 arg(s), received %d", len(args)), Code: 2}
@@ -95,7 +91,7 @@ func RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	if !stdin && target == "" {
-		return &ExitCodeError{Err: fmt.Errorf(config.MissingTarget), Code: 2}
+		return &ExitCodeError{Err: fmt.Errorf(config.ErrMissingTarget), Code: 2}
 	}
 	if stdin && target != "" {
 		return &ExitCodeError{Err: fmt.Errorf("cannot specify target when --stdin is used"), Code: 2}

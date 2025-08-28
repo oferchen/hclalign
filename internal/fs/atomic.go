@@ -1,3 +1,4 @@
+// internal/fs/atomic.go
 package fs
 
 import (
@@ -10,15 +11,11 @@ import (
 
 var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
 
-// Hints describes how a file's content is structured. Newline indicates the
-// newline sequence used in the file ("\n" or "\r\n"), and HasBOM specifies
-// whether the file starts with a UTF-8 BOM.
 type Hints struct {
 	HasBOM  bool
 	Newline string
 }
 
-// BOM returns the byte slice representing the BOM if one should be used.
 func (h Hints) BOM() []byte {
 	if h.HasBOM {
 		return utf8BOM
@@ -26,8 +23,6 @@ func (h Hints) BOM() []byte {
 	return nil
 }
 
-// DetectHintsFromBytes inspects b and returns detected newline style and BOM
-// presence. The returned hints default to "\n" newlines with no BOM.
 func DetectHintsFromBytes(b []byte) Hints {
 	h := Hints{Newline: "\n"}
 	if len(b) >= len(utf8BOM) && bytes.Equal(b[:len(utf8BOM)], utf8BOM) {
@@ -40,8 +35,6 @@ func DetectHintsFromBytes(b []byte) Hints {
 	return h
 }
 
-// ReadFileWithHints reads the file at path and returns its data without any
-// leading BOM, its permissions, and detected newline/BOM hints.
 func ReadFileWithHints(path string) (data []byte, perm iofs.FileMode, hints Hints, err error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -59,9 +52,6 @@ func ReadFileWithHints(path string) (data []byte, perm iofs.FileMode, hints Hint
 	return raw, perm, hints, nil
 }
 
-// ApplyHints returns data adjusted to the desired newline style and BOM. The
-// input data is assumed to use \n newlines and contain no BOM. If Newline is
-// empty, \n is used. If HasBOM is true, a UTF-8 BOM is prepended to the result.
 func ApplyHints(data []byte, hints Hints) []byte {
 	out := data
 	if hints.Newline == "\r\n" {
@@ -73,10 +63,6 @@ func ApplyHints(data []byte, hints Hints) []byte {
 	return out
 }
 
-// WriteFileAtomic writes data to path atomically while preserving permissions.
-// It writes to a temporary file in the same directory, syncs file and
-// directory descriptors, and atomically renames it over the destination. The
-// data is adjusted using the provided hints before writing.
 func WriteFileAtomic(path string, data []byte, perm iofs.FileMode, hints Hints) error {
 	dir := filepath.Dir(path)
 	uid, gid := -1, -1
