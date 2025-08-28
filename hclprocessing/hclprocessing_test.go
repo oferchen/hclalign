@@ -1,6 +1,7 @@
 package hclprocessing_test
 
 import (
+	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -85,7 +86,7 @@ func TestProcessSingleFile_ValidHCL_PermissionsPreserved(t *testing.T) {
 	originalPerms := originalFileInfo.Mode()
 
 	order := []string{"attribute2", "attribute1"}
-	require.NoError(t, fileprocessing.ProcessSingleFile(filePath, order))
+	require.NoError(t, fileprocessing.ProcessSingleFile(context.Background(), filePath, order))
 
 	// After processing, check that the file permissions have not changed
 	processedFileInfo, err := os.Stat(filePath)
