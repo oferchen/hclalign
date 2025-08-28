@@ -4,6 +4,7 @@ package engine
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -215,6 +216,47 @@ func TestProcessPropagatesFileError(t *testing.T) {
 	if _, err := Process(context.Background(), cfg); err == nil {
 		t.Fatalf("expected error due to invalid file")
 	}
+}
+
+func TestProcessMissingTarget(t *testing.T) {
+	t.Run("nonexistent path", func(t *testing.T) {
+		dir := t.TempDir()
+		target := filepath.Join(dir, "missing.tf")
+
+		cfg := &config.Config{
+			Target:      target,
+			Mode:        config.ModeCheck,
+			Include:     config.DefaultInclude,
+			Exclude:     config.DefaultExclude,
+			Order:       config.CanonicalOrder,
+			Concurrency: 1,
+		}
+		require.NoError(t, cfg.Validate())
+		_, err := Process(context.Background(), cfg)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("target %q does not exist", target))
+	})
+
+	t.Run("broken symlink", func(t *testing.T) {
+		dir := t.TempDir()
+		link := filepath.Join(dir, "broken.tf")
+		if err := os.Symlink(filepath.Join(dir, "missing.tf"), link); err != nil {
+			t.Fatalf("symlink: %v", err)
+		}
+
+		cfg := &config.Config{
+			Target:      link,
+			Mode:        config.ModeCheck,
+			Include:     config.DefaultInclude,
+			Exclude:     config.DefaultExclude,
+			Order:       config.CanonicalOrder,
+			Concurrency: 1,
+		}
+		require.NoError(t, cfg.Validate())
+		_, err := Process(context.Background(), cfg)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("target %q does not exist", link))
+	})
 }
 
 func TestProcessSymlinkedDirTargetFollowSymlinks(t *testing.T) {
