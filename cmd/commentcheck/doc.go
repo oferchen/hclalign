@@ -1,10 +1,23 @@
-// Command commentcheck verifies that each Go source file in the module starts with a
-// comment matching its relative path.
+// cmd/commentcheck/doc.go
+
+// Command commentcheck verifies that each Go source file in the module
+// starts with a comment containing its repository-relative path.
 //
-// Example usage:
+// Example:
+//
+//	$ cat hello.go
+//	// hello.go
+//	package hello
 //
 //	$ commentcheck
-//	internal/foo/bar.go: first line must be "// internal/foo/bar.go"
+//	(no output)
 //
-// The tool exits with status 1 when mismatches are found.
+// If the comment is missing or incorrect:
+//
+//	$ cat bad.go
+//	package hello
+//
+//	$ commentcheck
+//	bad.go: first line must be "// bad.go"
+
 package main
