@@ -2,6 +2,7 @@
 
 BINARY_NAME=hclalign
 MODULE_NAME=github.com/oferchen/hclalign
+PKG_TEST=$(shell go list ./... | grep -v cmd/commentcheck | grep -v internal/ci/covercheck)
 
 all: build
 
