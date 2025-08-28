@@ -1,4 +1,3 @@
-// cmd/commentcheck/main.go
 // Command commentcheck verifies that each Go source file starts with a
 // comment matching its relative path.
 package main
@@ -6,7 +5,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -89,22 +87,10 @@ func checkFile(path string) error {
 }
 
 func packageDirs() ([]string, error) {
-
 	if _, err := lookPath("go"); err != nil {
 		return nil, fmt.Errorf("commentcheck requires a Go toolchain: %w", err)
 	}
 	out, err := execCommand("go", "list", "-f", "{{.Dir}}", "./...").Output()
-=======
-	cmd := execCommand("go", "list", "-f", "{{.Dir}}", "./...")
-	out, err := cmd.Output()
-	if err != nil {
-		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
-			return nil, errors.New("commentcheck requires a Go toolchain")
-		}
-		return nil, err
-	}
-	cwd, err := os.Getwd()
-
 	if err != nil {
 		return nil, err
 	}
@@ -116,11 +102,7 @@ func packageDirs() ([]string, error) {
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	for scanner.Scan() {
 		dir := scanner.Text()
-
 		rel, err := filepath.Rel(wd, dir)
-=======
-		rel, err := filepath.Rel(cwd, dir)
-
 		if err != nil {
 			return nil, err
 		}
