@@ -1,4 +1,3 @@
-// cmd/commentcheck/main.go
 // Command commentcheck verifies that each Go source file starts with a
 // comment matching its relative path.
 package main
@@ -6,7 +5,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -89,7 +87,6 @@ func checkFile(path string) error {
 }
 
 func packageDirs() ([]string, error) {
-
 	if _, err := lookPath("go"); err != nil {
 		return nil, fmt.Errorf("commentcheck requires a Go toolchain: %w", err)
 	}

@@ -18,4 +18,5 @@
 //
 //	$ commentcheck
 //	bad.go: first line must be "// bad.go"
+
 package main
