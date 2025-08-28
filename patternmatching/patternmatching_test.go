@@ -1,83 +1,39 @@
 package patternmatching
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestMatchesFileCriteria(t *testing.T) {
-	criteria := []string{"*.txt", "README.*"}
-	tests := []struct {
-		name          string
-		filePath      string
-		expectToMatch bool
-	}{
-		{
-			name:          "match txt file",
-			filePath:      "document.txt",
-			expectToMatch: true,
-		},
-		{
-			name:          "match README",
-			filePath:      "README.md",
-			expectToMatch: true,
-		},
-		{
-			name:          "no match",
-			filePath:      "image.jpg",
-			expectToMatch: false,
-		},
-	}
+func TestMatcherMatches(t *testing.T) {
+	wd := t.TempDir()
+	oldwd, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(wd))
+	t.Cleanup(func() { _ = os.Chdir(oldwd) })
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := MatchesFileCriteria(tt.filePath, criteria)
-			assert.Equal(t, tt.expectToMatch, result)
-		})
-	}
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0644))
+	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "v.tf"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "note.txt"), []byte(""), 0644))
+
+	m, err := NewMatcher([]string{"**/*.tf"}, []string{"**/vendor/**"})
+	require.NoError(t, err)
+
+	assert.True(t, m.Matches(filepath.Join(wd, "main.tf")))
+	assert.False(t, m.Matches(filepath.Join(wd, "note.txt")))
+	assert.False(t, m.Matches(filepath.Join(wd, "vendor")))
+	assert.False(t, m.Matches(filepath.Join(wd, "vendor", "v.tf")))
 }
 
-func TestIsValidCriteria(t *testing.T) {
-	tests := []struct {
-		name       string
-		criteria   []string
-		expectErr  bool
-		errMessage string
-	}{
-		{
-			name:      "valid single wildcard",
-			criteria:  []string{"*.hcl"},
-			expectErr: false,
-		},
-		{
-			name:      "valid multiple criteria",
-			criteria:  []string{"main.hcl", "*.jpg", "directory/"},
-			expectErr: false,
-		},
-		{
-			name:       "invalid pattern",
-			criteria:   []string{"["},
-			expectErr:  true,
-			errMessage: "invalid criterion",
-		},
-		{
-			name:       "empty criterion",
-			criteria:   []string{""},
-			expectErr:  true,
-			errMessage: "criterion is empty",
-		},
-	}
+func TestValidatePatterns(t *testing.T) {
+	err := ValidatePatterns([]string{"**/*.tf", "*.hcl"})
+	assert.NoError(t, err)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := IsValidCriteria(tt.criteria)
-			if tt.expectErr {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.errMessage)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+	err = ValidatePatterns([]string{"["})
+	assert.Error(t, err)
 }

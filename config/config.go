@@ -37,8 +37,8 @@ type Config struct {
 
 // DefaultInclude, DefaultExclude and DefaultOrder define the default behaviour of the CLI.
 var (
-	DefaultInclude = []string{"*.hcl"}
-	DefaultExclude = []string{}
+	DefaultInclude = []string{"**/*.tf"}
+	DefaultExclude = []string{"**/.terraform/**", "**/vendor/**"}
 	DefaultOrder   = []string{"description", "type", "default", "sensitive", "nullable", "validation"}
 )
 
@@ -52,10 +52,10 @@ func (c *Config) Validate() error {
 	if c.Concurrency < 1 {
 		return fmt.Errorf("concurrency must be at least 1")
 	}
-	if err := patternmatching.IsValidCriteria(c.Include); err != nil {
+	if err := patternmatching.ValidatePatterns(c.Include); err != nil {
 		return fmt.Errorf("invalid include: %w", err)
 	}
-	if err := patternmatching.IsValidCriteria(c.Exclude); err != nil {
+	if err := patternmatching.ValidatePatterns(c.Exclude); err != nil {
 		return fmt.Errorf("invalid exclude: %w", err)
 	}
 	if err := ValidateOrder(c.Order, c.StrictOrder); err != nil {

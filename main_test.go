@@ -14,7 +14,7 @@ import (
 // Helper function to create a temporary HCL file.
 func createTempHCLFile(t *testing.T, content string) string {
 	t.Helper()
-	tempFile, err := os.CreateTemp("", "*.hcl")
+	tempFile, err := os.CreateTemp("", "*.tf")
 	if err != nil {
 		t.Fatalf("Failed to create temp HCL file: %v", err)
 	}
