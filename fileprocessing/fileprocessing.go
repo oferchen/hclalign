@@ -184,7 +184,9 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
 
-	hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder)
+	if err := hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+		return false, nil, err
+	}
 
 	formatted := bytes.ReplaceAll(file.Bytes(), []byte("\r\n"), []byte("\n"))
 	styled := internalfs.ApplyHints(formatted, hints)
@@ -242,7 +244,9 @@ func processReader(ctx context.Context, r io.Reader, cfg *config.Config) (bool, 
 	if diags.HasErrors() {
 		return false, fmt.Errorf("parsing error: %v", diags.Errs())
 	}
-	hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder)
+	if err := hclprocessing.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+		return false, err
+	}
 	formatted := bytes.ReplaceAll(file.Bytes(), []byte("\r\n"), []byte("\n"))
 	styled := internalfs.ApplyHints(formatted, hints)
 	original := data

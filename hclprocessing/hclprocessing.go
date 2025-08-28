@@ -3,6 +3,9 @@ package hclprocessing
 
 import (
 	"bytes"
+	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -11,7 +14,7 @@ import (
 
 var canonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 
-func ReorderAttributes(file *hclwrite.File, order []string, strict bool) {
+func ReorderAttributes(file *hclwrite.File, order []string, strict bool) error {
 	if len(order) == 0 {
 		order = config.CanonicalOrder
 	}
@@ -39,15 +42,49 @@ func ReorderAttributes(file *hclwrite.File, order []string, strict bool) {
 			continue
 		}
 
-		reorderVariableBlock(block, knownOrder, canonicalSet, strict)
+		if err := reorderVariableBlock(block, knownOrder, canonicalSet, strict); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}, strict bool) {
+func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}, strict bool) error {
 	body := block.Body()
 
 	attrs := body.Attributes()
 	nestedBlocks := body.Blocks()
+
+	if strict {
+		var unknown, missing []string
+		for name := range attrs {
+			if _, ok := canonicalSet[name]; !ok {
+				unknown = append(unknown, name)
+			}
+		}
+		for name := range canonicalSet {
+			if _, ok := attrs[name]; !ok {
+				missing = append(missing, name)
+			}
+		}
+		if len(unknown) > 0 || len(missing) > 0 {
+			sort.Strings(unknown)
+			sort.Strings(missing)
+			var parts []string
+			if len(unknown) > 0 {
+				parts = append(parts, fmt.Sprintf("unknown attributes: %s", strings.Join(unknown, ", ")))
+			}
+			if len(missing) > 0 {
+				parts = append(parts, fmt.Sprintf("missing attributes: %s", strings.Join(missing, ", ")))
+			}
+			varName := ""
+			if labels := block.Labels(); len(labels) > 0 {
+				varName = labels[0]
+			}
+			return fmt.Errorf("variable %q: %s", varName, strings.Join(parts, "; "))
+		}
+	}
 
 	allTokens := body.BuildTokens(nil)
 	prefixTokens := hclwrite.Tokens{}
@@ -220,6 +257,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		body.AppendBlock(nb)
 	}
 	body.AppendUnstructuredTokens(tailTokens)
+
+	return nil
 }
 
 type attrTokens struct {

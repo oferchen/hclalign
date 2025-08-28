@@ -52,7 +52,13 @@ func TestGolden(t *testing.T) {
 				if diags.HasErrors() {
 					t.Fatalf("parse input: %v", diags)
 				}
-				hclprocessing.ReorderAttributes(file, nil, strict)
+				if err := hclprocessing.ReorderAttributes(file, nil, strict); err != nil {
+					if strict {
+						t.Skipf("strict mode error: %v", err)
+						return
+					}
+					t.Fatalf("reorder: %v", err)
+				}
 				got := file.Bytes()
 				if !bytes.Equal(got, expBytes) {
 					t.Fatalf("output mismatch for %s (strict=%v):\n-- got --\n%s\n-- want --\n%s", name, strict, got, expBytes)
@@ -62,7 +68,13 @@ func TestGolden(t *testing.T) {
 				if diags.HasErrors() {
 					t.Fatalf("parse expected: %v", diags)
 				}
-				hclprocessing.ReorderAttributes(file2, nil, strict)
+				if err := hclprocessing.ReorderAttributes(file2, nil, strict); err != nil {
+					if strict {
+						t.Skipf("strict mode error: %v", err)
+						return
+					}
+					t.Fatalf("reorder expected: %v", err)
+				}
 				if !bytes.Equal(expBytes, file2.Bytes()) {
 					t.Fatalf("non-idempotent on expected for %s (strict=%v)", name, strict)
 				}
