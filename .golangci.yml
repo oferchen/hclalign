@@ -1,4 +1,6 @@
-# .golangci.yml — validated for golangci-lint v1.60.x
+# .golangci.yml — validated for golangci-lint v2
+
+version: 2
 
 run:
   timeout: 5m
@@ -12,35 +14,38 @@ run:
   #   - integration
 
 output:
-  formats:
-    - format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
-  uniq-by-line: false
+  text:
+    format: colored-line-number
+    print-issued-lines: true
+    print-linter-name: true
+    uniq-by-line: false
   # Optional: emit SARIF for code scanning
-  # formats:
-  #   - format: sarif
-  #     path: ./lint.sarif
+  # sarif:
+  #   path: ./lint.sarif
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  disable: []
 
 linters:
   enable:
     - govet
     - staticcheck
-    - gosimple
     - ineffassign
     - revive
     - gocritic
-    - gofmt
-    - goimports
     - goconst
     - misspell
     - errcheck
     - unused
-    - typecheck
     - asciicheck
     - unconvert
     - gosec
-    - exportloopref
+    - depguard
+    - gocyclo
   disable: []  # must be an array, not null
 
 linters-settings:
@@ -74,6 +79,25 @@ linters-settings:
   goimports:
     # Set your module path here to group local imports; leave "" to use defaults.
     local-prefixes: ""
+
+  gofumpt:
+    extra-rules: true
+
+  depguard:
+    rules:
+      main:
+        files:
+          - $all
+          - "!$test"
+        list-mode: lax
+        allow:
+          - $gostd
+          - github.com
+          - golang.org
+          - gopkg.in
+
+  gocyclo:
+    min-complexity: 30
 
   misspell:
     locale: US
@@ -112,6 +136,10 @@ issues:
 
   exclude-rules:
     - path: _test\.go
-      linters: [ gocyclo, funlen, gosec ]
+      linters: [ gocyclo, funlen, gosec, gofumpt ]
     - linters: [ errcheck ]
       text: "Close.*error"   # allow ignored Close() errors selectively
+    - path: internal/engine/engine\.go
+      linters: [ gocyclo ]
+    - path: internal/hclalign/hclalign\.go
+      linters: [ gocyclo ]
