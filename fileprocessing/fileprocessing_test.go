@@ -42,7 +42,7 @@ func TestProcessPreservesNewlineAndBOM(t *testing.T) {
 		t.Fatalf("process: %v", err)
 	}
 
-	_, _, hints, err := internalfs.ReadFileWithHints(path)
+	_, _, hints, err := internalfs.ReadFileWithHints(context.Background(), path)
 	if err != nil {
 		t.Fatalf("read file: %v", err)
 	}
@@ -306,7 +306,7 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 	}
 }
 
-func TestProcessContinuesAfterMalformedFile(t *testing.T) {
+func TestProcessStopsAfterMalformedFile(t *testing.T) {
 	dir := t.TempDir()
 
 	good := filepath.Join(dir, "good.tf")
@@ -340,13 +340,13 @@ func TestProcessContinuesAfterMalformedFile(t *testing.T) {
 	if procErr == nil {
 		t.Fatalf("expected error")
 	}
-	if !changed {
-		t.Fatalf("expected changes")
+	if changed {
+		t.Fatalf("did not expect changes")
 	}
 
 	out := buf.String()
-	if !strings.Contains(out, "processed file: "+good) {
-		t.Fatalf("expected log for good file, got %q", out)
+	if strings.Contains(out, "processed file: "+good) {
+		t.Fatalf("did not expect log for good file, got %q", out)
 	}
 	if !strings.Contains(out, "error processing file "+bad) {
 		t.Fatalf("expected error log for bad file, got %q", out)
@@ -356,14 +356,9 @@ func TestProcessContinuesAfterMalformedFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read good file: %v", err)
 	}
-	expectedFile, diags := hclwrite.ParseConfig([]byte("variable \"a\" {\n  default = 1\n  type = number\n}\n"), good, hcl.InitialPos)
-	if diags.HasErrors() {
-		t.Fatalf("parse expected: %v", diags)
-	}
-	hclprocessing.ReorderAttributes(expectedFile, config.DefaultOrder, false)
-	expected := expectedFile.Bytes()
-	if string(data) != string(expected) {
-		t.Fatalf("good file not processed: got %q, want %q", data, expected)
+	original := []byte("variable \"a\" {\n  default = 1\n  type = number\n}\n")
+	if string(data) != string(original) {
+		t.Fatalf("good file unexpectedly modified: got %q, want %q", data, original)
 	}
 	if !strings.Contains(procErr.Error(), "bad.tf") {
 		t.Fatalf("error does not mention bad file: %v", procErr)
