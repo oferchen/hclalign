@@ -1,3 +1,4 @@
+// internal/ci/covercheck/main.go
 package main
 
 import (
@@ -21,7 +22,7 @@ func main() {
 	defer f.Close()
 
 	s := bufio.NewScanner(f)
-	if !s.Scan() { // skip first line (mode)
+	if !s.Scan() {
 		fmt.Fprintln(os.Stderr, "empty coverage profile")
 		os.Exit(1)
 	}
