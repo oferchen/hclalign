@@ -70,7 +70,7 @@ func TestMainFunctionality(t *testing.T) {
 			args := tc.setup(t)
 
 			rootCmd := &cobra.Command{
-				Use:   "hcl_align [target file or directory]",
+				Use:   "hclalign [target file or directory]",
 				Short: "Aligns HCL files based on given criteria",
 				Args:  cobra.ExactArgs(1),
 				RunE:  cli.RunE,
