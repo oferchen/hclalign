@@ -39,6 +39,10 @@ func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 	return processFiles(ctx, cfg)
 }
 
+// processFiles walks the target path, queuing files that match the include and
+// exclude patterns. Files are processed concurrently by a worker pool which
+// stops dispatching new work after the first error. The provided context
+// cancels both dispatcher and workers to avoid unnecessary processing.
 func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	if _, err := os.Stat(cfg.Target); err != nil {
 		if os.IsNotExist(err) {
@@ -123,7 +127,6 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	}
 	sort.Strings(files)
 
-
 	var changed atomic.Bool
 	outs := make(map[string][]byte, len(files))
 	for _, f := range files {
@@ -171,15 +174,23 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	// promptly.
 	g, ctx := errgroup.WithContext(ctx)
 	var changed atomic.Bool
+
 	type result struct {
 		path string
 		data []byte
 	}
+	g, ctx := errgroup.WithContext(ctx)
+	fileCh := make(chan string)
 	results := make(chan result, len(files))
+
+	var changed atomic.Bool
+
+	// dispatcher
 
 	fileCh := make(chan string)
 
 	// Dispatcher goroutine.
+
 	g.Go(func() error {
 		defer close(fileCh)
 		for _, f := range files {
@@ -192,7 +203,8 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		return nil
 	})
 
-	// Worker goroutines.
+
+	// workers
 	for i := 0; i < cfg.Concurrency; i++ {
 		g.Go(func() error {
 			for {
@@ -214,7 +226,15 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 						changed.Store(true)
 					}
 					if len(out) > 0 {
+
+						select {
+						case results <- result{path: f, data: out}:
+						case <-ctx.Done():
+							return ctx.Err()
+						}
+
 						results <- result{path: f, data: out}
+
 					}
 					if cfg.Verbose {
 						log.Printf("processed file: %s", f)
