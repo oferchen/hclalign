@@ -23,16 +23,17 @@ const (
 
 // Config stores configuration for processing HCL files.
 type Config struct {
-	Target      string
-	Mode        Mode
-	Stdin       bool
-	Stdout      bool
-	Include     []string
-	Exclude     []string
-	Order       []string
-	StrictOrder bool
-	Concurrency int
-	Verbose     bool
+	Target         string
+	Mode           Mode
+	Stdin          bool
+	Stdout         bool
+	Include        []string
+	Exclude        []string
+	Order          []string
+	StrictOrder    bool
+	Concurrency    int
+	Verbose        bool
+	FollowSymlinks bool
 }
 
 // DefaultInclude, DefaultExclude and DefaultOrder define the default behaviour of the CLI.

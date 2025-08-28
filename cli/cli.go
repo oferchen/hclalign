@@ -75,6 +75,10 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	followSymlinks, err := cmd.Flags().GetBool("follow-symlinks")
+	if err != nil {
+		return err
+	}
 
 	modeCount := 0
 	if writeMode {
@@ -108,16 +112,17 @@ func RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := &config.Config{
-		Target:      target,
-		Mode:        mode,
-		Stdin:       stdin,
-		Stdout:      stdout,
-		Include:     include,
-		Exclude:     exclude,
-		Order:       order,
-		StrictOrder: strictOrder,
-		Concurrency: concurrency,
-		Verbose:     verbose,
+		Target:         target,
+		Mode:           mode,
+		Stdin:          stdin,
+		Stdout:         stdout,
+		Include:        include,
+		Exclude:        exclude,
+		Order:          order,
+		StrictOrder:    strictOrder,
+		Concurrency:    concurrency,
+		Verbose:        verbose,
+		FollowSymlinks: followSymlinks,
 	}
 
 	if err := cfg.Validate(); err != nil {

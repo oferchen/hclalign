@@ -98,6 +98,7 @@ func TestMainFunctionality(t *testing.T) {
 			rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 			rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 			rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+			rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 			rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 			rootCmd.SetArgs(args)
@@ -140,6 +141,7 @@ func TestCLIOrderFlagInfluencesProcessing(t *testing.T) {
 	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 	rootCmd.SetArgs([]string{filePath, "--order=default", "--order=description"})
@@ -175,6 +177,7 @@ func TestCLIStrictOrderUnknownAttribute(t *testing.T) {
 	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 	rootCmd.SetArgs([]string{filePath, "--order=description", "--order=unknown", "--strict-order"})

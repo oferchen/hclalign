@@ -33,6 +33,7 @@ func main() {
 	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
+	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 
 	if err := rootCmd.Execute(); err != nil {
 		if ec, ok := err.(*cli.ExitCodeError); ok {

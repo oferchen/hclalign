@@ -201,3 +201,39 @@ func TestProcessReaderDiffPreservesNewline(t *testing.T) {
 		t.Fatalf("expected CRLF in diff output")
 	}
 }
+
+func TestProcessSkipsDefaultExcludedDirs(t *testing.T) {
+	dir := t.TempDir()
+	// valid file to ensure processing succeeds
+	valid := filepath.Join(dir, "main.tf")
+	if err := os.WriteFile(valid, []byte("variable \"a\" {}\n"), 0644); err != nil {
+		t.Fatalf("write valid: %v", err)
+	}
+	excluded := []string{".git", ".terraform", "vendor", "node_modules"}
+	for _, d := range excluded {
+		path := filepath.Join(dir, d)
+		if err := os.Mkdir(path, 0755); err != nil {
+			t.Fatalf("mkdir %s: %v", d, err)
+		}
+		bad := filepath.Join(path, "bad.tf")
+		if err := os.WriteFile(bad, []byte("not hcl"), 0644); err != nil {
+			t.Fatalf("write bad: %v", err)
+		}
+	}
+
+	cfg := &config.Config{
+		Target:      dir,
+		Mode:        config.ModeCheck,
+		Include:     config.DefaultInclude,
+		Exclude:     config.DefaultExclude,
+		Order:       config.DefaultOrder,
+		Concurrency: 1,
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+
+	if _, err := Process(context.Background(), cfg); err != nil {
+		t.Fatalf("process: %v", err)
+	}
+}
