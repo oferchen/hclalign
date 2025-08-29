@@ -39,7 +39,7 @@ jobs:
         run: go vet ./...
 
       - name: Comment policy
-        run: go run ./cmd/commentcheck
+        run: make comments
 
       - name: Vulnerability check (non-blocking)
         continue-on-error: true

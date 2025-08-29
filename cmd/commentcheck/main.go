@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -93,33 +94,30 @@ func checkFileFunc(path string) error {
 }
 
 func packageDirsFunc() ([]string, error) {
-	if _, err := lookPath("go"); err != nil {
-		return nil, fmt.Errorf("commentcheck requires a Go toolchain: %w", err)
+	if _, err := lookPath("git"); err != nil {
+		return nil, fmt.Errorf("commentcheck requires git: %w", err)
 	}
-	cmd := execCommand("go", "list", "-f", "{{.Dir}}", "./...")
+	cmd := execCommand("git", "ls-files", "--", "*.go")
 	out, err := cmd.Output()
 	if err != nil {
 		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
-			return nil, errors.New("commentcheck requires a Go toolchain")
+			return nil, errors.New("commentcheck requires git")
 		}
 		return nil, err
 	}
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	var dirs []string
+	dirsSet := make(map[string]struct{})
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	for scanner.Scan() {
-		dir := scanner.Text()
-		rel, err := filepath.Rel(wd, dir)
-		if err != nil {
-			return nil, err
-		}
-		dirs = append(dirs, rel)
+		dir := filepath.Dir(scanner.Text())
+		dirsSet[dir] = struct{}{}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
+	dirs := make([]string, 0, len(dirsSet))
+	for d := range dirsSet {
+		dirs = append(dirs, d)
+	}
+	sort.Strings(dirs)
 	return dirs, nil
 }
