@@ -18,32 +18,19 @@ func (terraformStrategy) Name() string { return "terraform" }
 func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	body := block.Body()
 
-	for _, nb := range body.Blocks() {
-		if nb.Type() == "required_providers" {
-			attrs := nb.Body().Attributes()
-			names := make([]string, 0, len(attrs))
-			for name := range attrs {
-				names = append(names, name)
-			}
-			sort.Strings(names)
-			if err := reorderBlock(nb, names); err != nil {
-				return err
-			}
-		}
-	}
-
 	attrs := body.Attributes()
 	blocks := body.Blocks()
 
-	canonical := []string{"required_version", "required_providers", "backend", "cloud"}
+	canonical := []string{"required_version", "experiments", "required_providers", "backend", "cloud"}
 	canonSet := make(map[string]struct{}, len(canonical))
 	for _, n := range canonical {
 		canonSet[n] = struct{}{}
 	}
 
 	if opts != nil && opts.Strict {
+		required := []string{"required_version", "required_providers", "backend", "cloud"}
 		var missing []string
-		for _, n := range canonical {
+		for _, n := range required {
 			if _, ok := attrs[n]; ok {
 				continue
 			}
@@ -79,9 +66,25 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		}
 	}
 
+	for _, nb := range blocks {
+		if nb.Type() == "required_providers" && opts != nil && opts.Strict {
+			attrs := nb.Body().Attributes()
+			names := make([]string, 0, len(attrs))
+			for name := range attrs {
+				names = append(names, name)
+			}
+			sort.Strings(names)
+			if err := reorderBlock(nb, names); err != nil {
+				return err
+			}
+		}
+	}
+
 	tokens := body.BuildTokens(nil)
 	newline := ihcl.DetectLineEnding(tokens)
 	trailingComma := ihcl.HasTrailingComma(tokens)
+
+	order := ihcl.AttributeOrder(body, attrs)
 
 	attrTokens := map[string]ihcl.AttrTokens{}
 	for name, attr := range attrs {
@@ -89,37 +92,9 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		body.RemoveAttribute(name)
 	}
 
-	var reqProviders, cloudBlock, backendBlock *hclwrite.Block
-	otherBlocks := make([]*hclwrite.Block, 0, len(blocks))
 	for _, b := range blocks {
 		body.RemoveBlock(b)
-		switch b.Type() {
-		case "required_providers":
-			reqProviders = b
-		case "cloud":
-			cloudBlock = b
-		case "backend":
-			backendBlock = b
-		default:
-			otherBlocks = append(otherBlocks, b)
-		}
 	}
-
-	sort.SliceStable(otherBlocks, func(i, j int) bool {
-		bi, bj := otherBlocks[i], otherBlocks[j]
-		if bi.Type() != bj.Type() {
-			return bi.Type() < bj.Type()
-		}
-		return strings.Join(bi.Labels(), "\x00") < strings.Join(bj.Labels(), "\x00")
-	})
-
-	otherAttrNames := make([]string, 0, len(attrTokens))
-	for name := range attrTokens {
-		if name != "required_version" {
-			otherAttrNames = append(otherAttrNames, name)
-		}
-	}
-	sort.Strings(otherAttrNames)
 
 	type item struct {
 		name   string
@@ -131,19 +106,16 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if _, ok := attrTokens["required_version"]; ok {
 		items = append(items, item{name: "required_version", isAttr: true})
 	}
-	if reqProviders != nil {
-		items = append(items, item{block: reqProviders})
+	if _, ok := attrTokens["experiments"]; ok {
+		items = append(items, item{name: "experiments", isAttr: true})
 	}
-	if backendBlock != nil {
-		items = append(items, item{block: backendBlock})
-	}
-	if cloudBlock != nil {
-		items = append(items, item{block: cloudBlock})
-	}
-	for _, name := range otherAttrNames {
+	for _, name := range order {
+		if name == "required_version" || name == "experiments" {
+			continue
+		}
 		items = append(items, item{name: name, isAttr: true})
 	}
-	for _, b := range otherBlocks {
+	for _, b := range blocks {
 		items = append(items, item{block: b})
 	}
 
