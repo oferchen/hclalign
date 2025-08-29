@@ -29,7 +29,11 @@ lint:
 	golangci-lint run --timeout=5m
 
 nocomments:
+	mkdir -p $(BUILD_DIR)
+	$(GO) build -o $(BUILD_DIR)/nocomments ./tools/nocomments
+	$(BUILD_DIR)/nocomments $(shell git ls-files '*.go')
 	$(GO) run ./cmd/commentcheck
+	$(GO) build $(PKG)
 
 vet:
 	$(GO) vet $(PKG)
