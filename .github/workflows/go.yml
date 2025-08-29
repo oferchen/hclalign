@@ -28,52 +28,14 @@ jobs:
       - name: Download modules
         run: go mod download
 
-      - name: Strip comments
-        run: make strip-comments
-
-      - name: Format
-        run: make fmt
-
-      - name: Lint (golangci-lint)
-        uses: golangci/golangci-lint-action@v6
-        with:
-          # Pin a known-good version for reproducibility; update as needed.
-          version: v1.60.3
-          args: --timeout=5m
-
-      - name: Vet
-        run: go vet ./...
-
-      - name: Comment policy
-        run: make comments
+      - name: CI
+        run: make ci
 
       - name: Vulnerability check (non-blocking)
         continue-on-error: true
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
-
-      - name: Test
-        run: |
-          go test -race -shuffle=on -covermode=atomic -coverpkg=./cli,./config,./internal/...,./patternmatching -coverprofile=coverage.out $(go list ./... | grep -v '^github.com/oferchen/hclalign$' | grep -v '^github.com/oferchen/hclalign/cmd/commentcheck$' | grep -v '^github.com/oferchen/hclalign/internal/ci')
-
-      - name: Check coverage
-        run: go run ./internal/ci/covercheck
-
-      - name: Upload coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{ matrix.os }}-${{ matrix.go }}
-          path: coverage.out
-
-      - name: Build
-        run: go build -o hclalign ./...
-
-      - name: Idempotency check
-        run: |
-          find tests/cases -name out.tf -print0 \
-            | xargs -0 -n1 ./hclalign --check
 
       - name: Upload release artifacts
         if: startsWith(github.ref, 'refs/tags/')
