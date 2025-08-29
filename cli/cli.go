@@ -126,7 +126,7 @@ func RunE(cmd *cobra.Command, args []string) error {
 		return &ExitCodeError{Err: err, Code: 2}
 	}
 
-	changed, err := engine.Process(cmd.Context(), cfg)
+	changed, err := engine.Run(cmd.Context(), cfg)
 	if err != nil {
 		return &ExitCodeError{Err: err, Code: 3}
 	}

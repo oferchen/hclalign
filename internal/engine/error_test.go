@@ -22,12 +22,12 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 	require.NoError(t, os.WriteFile(path, []byte(orig), 0o644))
 
 	cfg := &config.Config{
-		Target:		path,
-		Include:	[]string{"**/*.hcl"},
-		Concurrency:	1,
+		Target:      path,
+		Include:     []string{"**/*.hcl"},
+		Concurrency: 1,
 	}
 
-	changed, err := Process(context.Background(), cfg)
+	changed, err := Run(context.Background(), cfg)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "parsing error")
 	require.False(t, changed)
@@ -49,12 +49,12 @@ func TestProcessStopsAfterFirstError(t *testing.T) {
 	require.NoError(t, os.WriteFile(goodPath, []byte(good), 0o644))
 
 	cfg := &config.Config{
-		Target:		dir,
-		Include:	[]string{"**/*.hcl"},
-		Concurrency:	1,
+		Target:      dir,
+		Include:     []string{"**/*.hcl"},
+		Concurrency: 1,
 	}
 
-	changed, err := Process(context.Background(), cfg)
+	changed, err := Run(context.Background(), cfg)
 	require.Error(t, err)
 	require.False(t, changed)
 	require.Contains(t, err.Error(), "bad.hcl")
@@ -90,4 +90,3 @@ func TestProcessReaderEmpty(t *testing.T) {
 	require.False(t, changed)
 	require.Empty(t, buf.String())
 }
-

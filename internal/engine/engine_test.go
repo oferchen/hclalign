@@ -27,7 +27,7 @@ func TestProcessMissingTarget(t *testing.T) {
 		Concurrency: 1,
 	}
 
-	changed, err := Process(context.Background(), cfg)
+	changed, err := Run(context.Background(), cfg)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "does not exist")
 	require.False(t, changed)
@@ -51,7 +51,7 @@ func TestProcessContextCancelled(t *testing.T) {
 	testHookAfterParse = func() { cancel() }
 	defer func() { testHookAfterParse = nil }()
 
-	changed, err := Process(ctx, cfg)
+	changed, err := Run(ctx, cfg)
 	require.ErrorIs(t, err, context.Canceled)
 	require.False(t, changed)
 }
@@ -74,7 +74,7 @@ func TestProcessContextCancelledAfterReorder(t *testing.T) {
 	testHookAfterReorder = func() { cancel() }
 	defer func() { testHookAfterReorder = nil }()
 
-	changed, err := Process(ctx, cfg)
+	changed, err := Run(ctx, cfg)
 	require.ErrorIs(t, err, context.Canceled)
 	require.False(t, changed)
 }
@@ -401,7 +401,7 @@ func TestProcessScenarios(t *testing.T) {
 			stdout := os.Stdout
 			os.Stdout = w
 			t.Cleanup(func() { os.Stdout = stdout })
-			changed, err := Process(context.Background(), cfg)
+			changed, err := Run(context.Background(), cfg)
 			require.NoError(t, err)
 			require.Equal(t, wantChanged, changed)
 			w.Close()
@@ -457,7 +457,7 @@ func TestProcessManyFilesDeterministic(t *testing.T) {
 	os.Stdout = w
 	t.Cleanup(func() { os.Stdout = stdout })
 
-	changed, err := Process(context.Background(), cfg)
+	changed, err := Run(context.Background(), cfg)
 	require.NoError(t, err)
 	require.Equal(t, expectedChanged, changed)
 

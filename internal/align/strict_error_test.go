@@ -7,19 +7,19 @@ import (
 
 	hcl "github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/internal/hclalign"
+	"github.com/oferchen/hclalign/config"
 )
 
 func TestStrictOrderErrors(t *testing.T) {
 	cases := []struct {
-		name	string
-		src	string
-		want	string
+		name string
+		src  string
+		want string
 	}{
 		{
-			name:	"missing",
-			src:	"variable \"a\" {\n  type = string\n}",
-			want:	"missing attributes",
+			name: "missing",
+			src:  "variable \"a\" {\n  type = string\n}",
+			want: "missing attributes",
 		},
 	}
 
@@ -29,7 +29,7 @@ func TestStrictOrderErrors(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse: %v", diags)
 			}
-			err := hclalign.ReorderAttributes(f, nil, true)
+			err := Apply(f, &config.Config{StrictOrder: true})
 			if err == nil {
 				t.Fatalf("expected error")
 			}
@@ -46,8 +46,7 @@ func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
 	if diags.HasErrors() {
 		t.Fatalf("parse: %v", diags)
 	}
-	if err := hclalign.ReorderAttributes(f, nil, true); err == nil {
+	if err := Apply(f, &config.Config{StrictOrder: true}); err == nil {
 		t.Fatalf("expected error")
 	}
 }
-

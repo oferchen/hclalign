@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/internal/hclalign"
+	"github.com/oferchen/hclalign/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,7 +38,7 @@ func FuzzReorderStability(f *testing.F) {
 		if diags.HasErrors() {
 			t.Fatalf("parse: %v", diags)
 		}
-		require.NoError(t, hclalign.ReorderAttributes(file, nil, false))
+		require.NoError(t, Apply(file, &config.Config{}))
 		out := file.Bytes()
 
 		if len(out) > maxFuzzBytes {
@@ -49,7 +49,7 @@ func FuzzReorderStability(f *testing.F) {
 		if diags.HasErrors() {
 			t.Fatalf("parse reordered: %v", diags)
 		}
-		require.NoError(t, hclalign.ReorderAttributes(file2, nil, false))
+		require.NoError(t, Apply(file2, &config.Config{}))
 		if !bytes.Equal(out, file2.Bytes()) {
 			t.Fatalf("round-trip mismatch")
 		}
@@ -68,4 +68,3 @@ func addRandomPadding(buf *bytes.Buffer, r *rand.Rand) {
 		}
 	}
 }
-
