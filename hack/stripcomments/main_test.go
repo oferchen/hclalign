@@ -1,4 +1,4 @@
-// hack/stripcomments/main_test.go
+// hack/stripcomments/main_test.go — SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
@@ -38,7 +38,7 @@ func main() { // inline
 	if err != nil {
 		t.Fatalf("rel: %v", err)
 	}
-	expected := "// " + filepath.ToSlash(rel) + "\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hi\")\n}\n\n"
+	expected := "// " + filepath.ToSlash(rel) + " — SPDX-License-Identifier: Apache-2.0\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hi\")\n}\n\n"
 	if string(out) != expected {
 		t.Fatalf("unexpected output:\n%s", out)
 	}
@@ -67,7 +67,7 @@ func TestStripWithBuildTag(t *testing.T) {
 		t.Fatalf("rel: %v", err)
 	}
 	outStr := strings.ReplaceAll(string(out), "\t", "")
-	need := "//go:build windows\n\n// " + filepath.ToSlash(rel) + "\npackage main\n\nfunc main(){}\n"
+	need := "//go:build windows\n\n// " + filepath.ToSlash(rel) + " — SPDX-License-Identifier: Apache-2.0\npackage main\n\nfunc main(){}\n"
 	if !strings.Contains(outStr, need) {
 		t.Fatalf("unexpected output:\n%s", out)
 	}
@@ -94,4 +94,3 @@ func TestProcessFilePreservesMode(t *testing.T) {
 		t.Fatalf("mode changed: got %v, want %v", info2.Mode(), info.Mode())
 	}
 }
-

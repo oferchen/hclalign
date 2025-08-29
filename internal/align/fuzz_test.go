@@ -1,4 +1,4 @@
-// internal/align/fuzz_test.go
+// internal/align/fuzz_test.go — SPDX-License-Identifier: Apache-2.0
 package align
 
 import (
@@ -68,4 +68,3 @@ func addRandomPadding(buf *bytes.Buffer, r *rand.Rand) {
 		}
 	}
 }
-

@@ -1,4 +1,4 @@
-// cli/cli_test.go
+// cli/cli_test.go — SPDX-License-Identifier: Apache-2.0
 package cli
 
 import (
@@ -16,15 +16,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newRootCmd(exclusive bool) *cobra.Command	{ return newTestRootCmd(exclusive) }
+func newRootCmd(exclusive bool) *cobra.Command { return newTestRootCmd(exclusive) }
 
 func newTestRootCmd(exclusive bool) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:		"hclalign [target file or directory]",
-		Args:		cobra.ArbitraryArgs,
-		RunE:		RunE,
-		SilenceUsage:	true,
+		Use:          "hclalign [target file or directory]",
+		Args:         cobra.ArbitraryArgs,
+		RunE:         RunE,
+		SilenceUsage: true,
 	}
 	cmd.Flags().Bool("write", false, "write result to file(s)")
 	cmd.Flags().Bool("check", false, "check if files are formatted")
@@ -150,9 +150,9 @@ func TestRunEInvalidConcurrency(t *testing.T) {
 
 func TestRunEInvalidGlob(t *testing.T) {
 	tests := []struct {
-		name	string
-		flag	string
-		message	string
+		name    string
+		flag    string
+		message string
 	}{
 		{name: "include", flag: "--include", message: "invalid include"},
 		{name: "exclude", flag: "--exclude", message: "invalid exclude"},
@@ -177,44 +177,44 @@ func TestRunEModes(t *testing.T) {
 	formatted := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
 
 	tests := []struct {
-		name		string
-		flags		[]string
-		stdin		string
-		wantCode	int
-		wantStdout	string
-		contains	string
-		withFile	bool
-		wantFile	string
+		name       string
+		flags      []string
+		stdin      string
+		wantCode   int
+		wantStdout string
+		contains   string
+		withFile   bool
+		wantFile   string
 	}{
 		{
-			name:		"diff",
-			flags:		[]string{"--diff"},
-			wantCode:	1,
-			contains:	"@@",
-			withFile:	true,
-			wantFile:	unformatted,
+			name:     "diff",
+			flags:    []string{"--diff"},
+			wantCode: 1,
+			contains: "@@",
+			withFile: true,
+			wantFile: unformatted,
 		},
 		{
-			name:		"stdin",
-			flags:		[]string{"--stdin", "--stdout"},
-			stdin:		unformatted,
-			wantCode:	0,
-			wantStdout:	formatted,
+			name:       "stdin",
+			flags:      []string{"--stdin", "--stdout"},
+			stdin:      unformatted,
+			wantCode:   0,
+			wantStdout: formatted,
 		},
 		{
-			name:		"write",
-			flags:		[]string{"--write"},
-			wantCode:	0,
-			withFile:	true,
-			wantFile:	formatted,
+			name:     "write",
+			flags:    []string{"--write"},
+			wantCode: 0,
+			withFile: true,
+			wantFile: formatted,
 		},
 		{
-			name:		"stdout",
-			flags:		[]string{"--stdout"},
-			wantCode:	0,
-			wantStdout:	formatted,
-			withFile:	true,
-			wantFile:	formatted,
+			name:       "stdout",
+			flags:      []string{"--stdout"},
+			wantCode:   0,
+			wantStdout: formatted,
+			withFile:   true,
+			wantFile:   formatted,
 		},
 	}
 
@@ -296,9 +296,9 @@ func TestRunEVerbose(t *testing.T) {
 	unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
 
 	tests := []struct {
-		name	string
-		verbose	bool
-		wantLog	bool
+		name    string
+		verbose bool
+		wantLog bool
 	}{
 		{name: "verbose", verbose: true, wantLog: true},
 		{name: "silent", verbose: false, wantLog: false},
@@ -348,9 +348,9 @@ func TestRunEFollowSymlinks(t *testing.T) {
 	formatted := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
 
 	tests := []struct {
-		name	string
-		follow	bool
-		want	string
+		name   string
+		follow bool
+		want   string
 	}{
 		{name: "follow", follow: true, want: formatted},
 		{name: "no_follow", follow: false, want: unformatted},
@@ -381,4 +381,3 @@ func TestRunEFollowSymlinks(t *testing.T) {
 		})
 	}
 }
-

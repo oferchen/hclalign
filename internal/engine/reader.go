@@ -1,4 +1,4 @@
-// internal/engine/reader.go
+// internal/engine/reader.go — SPDX-License-Identifier: Apache-2.0
 package engine
 
 import (
@@ -11,4 +11,3 @@ import (
 func ProcessReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Config) (bool, error) {
 	return processReader(ctx, r, w, cfg)
 }
-

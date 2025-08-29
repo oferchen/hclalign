@@ -1,6 +1,6 @@
 //go:build windows
 
-// internal/fs/ewindows_windows.go
+// internal/fs/ewindows_windows.go — SPDX-License-Identifier: Apache-2.0
 package fs
 
 import (
@@ -11,4 +11,3 @@ import (
 func isErrWindows(err error) bool {
 	return errors.Is(err, syscall.EWINDOWS)
 }
-

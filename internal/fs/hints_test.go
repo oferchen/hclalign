@@ -1,4 +1,4 @@
-// internal/fs/hints_test.go
+// internal/fs/hints_test.go — SPDX-License-Identifier: Apache-2.0
 package fs
 
 import (
@@ -13,29 +13,29 @@ import (
 func TestDetectHintsFromBytes(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name	string
-		input	[]byte
-		want	Hints
+		name  string
+		input []byte
+		want  Hints
 	}{
 		{
-			name:	"lf",
-			input:	[]byte("one\ntwo\n"),
-			want:	Hints{Newline: "\n"},
+			name:  "lf",
+			input: []byte("one\ntwo\n"),
+			want:  Hints{Newline: "\n"},
 		},
 		{
-			name:	"crlf",
-			input:	[]byte("one\r\ntwo\r\n"),
-			want:	Hints{Newline: "\r\n"},
+			name:  "crlf",
+			input: []byte("one\r\ntwo\r\n"),
+			want:  Hints{Newline: "\r\n"},
 		},
 		{
-			name:	"bom_lf",
-			input:	append(append([]byte{}, utf8BOM...), []byte("one\ntwo\n")...),
-			want:	Hints{HasBOM: true, Newline: "\n"},
+			name:  "bom_lf",
+			input: append(append([]byte{}, utf8BOM...), []byte("one\ntwo\n")...),
+			want:  Hints{HasBOM: true, Newline: "\n"},
 		},
 		{
-			name:	"bom_crlf",
-			input:	append(append([]byte{}, utf8BOM...), []byte("one\r\ntwo\r\n")...),
-			want:	Hints{HasBOM: true, Newline: "\r\n"},
+			name:  "bom_crlf",
+			input: append(append([]byte{}, utf8BOM...), []byte("one\r\ntwo\r\n")...),
+			want:  Hints{HasBOM: true, Newline: "\r\n"},
 		},
 	}
 	for _, tc := range tests {
@@ -52,25 +52,25 @@ func TestDetectHintsFromBytes(t *testing.T) {
 func TestReadFileWithHints(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name		string
-		content		[]byte
-		mode		os.FileMode
-		wantData	[]byte
-		wantHint	Hints
+		name     string
+		content  []byte
+		mode     os.FileMode
+		wantData []byte
+		wantHint Hints
 	}{
 		{
-			name:		"bom_crlf",
-			content:	append(append([]byte{}, utf8BOM...), []byte("one\r\ntwo\r\n")...),
-			mode:		0o600,
-			wantData:	[]byte("one\r\ntwo\r\n"),
-			wantHint:	Hints{HasBOM: true, Newline: "\r\n"},
+			name:     "bom_crlf",
+			content:  append(append([]byte{}, utf8BOM...), []byte("one\r\ntwo\r\n")...),
+			mode:     0o600,
+			wantData: []byte("one\r\ntwo\r\n"),
+			wantHint: Hints{HasBOM: true, Newline: "\r\n"},
 		},
 		{
-			name:		"plain",
-			content:	[]byte("one\ntwo\n"),
-			mode:		0o644,
-			wantData:	[]byte("one\ntwo\n"),
-			wantHint:	Hints{Newline: "\n"},
+			name:     "plain",
+			content:  []byte("one\ntwo\n"),
+			mode:     0o644,
+			wantData: []byte("one\ntwo\n"),
+			wantHint: Hints{Newline: "\n"},
 		},
 	}
 	for _, tc := range tests {
@@ -113,19 +113,19 @@ func TestReadFileWithHintsCanceledContext(t *testing.T) {
 func TestHintsBOM(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name	string
-		hints	Hints
-		want	[]byte
+		name  string
+		hints Hints
+		want  []byte
 	}{
 		{
-			name:	"with_bom",
-			hints:	Hints{HasBOM: true},
-			want:	utf8BOM,
+			name:  "with_bom",
+			hints: Hints{HasBOM: true},
+			want:  utf8BOM,
 		},
 		{
-			name:	"without_bom",
-			hints:	Hints{HasBOM: false},
-			want:	nil,
+			name:  "without_bom",
+			hints: Hints{HasBOM: false},
+			want:  nil,
 		},
 	}
 	for _, tc := range tests {
@@ -144,4 +144,3 @@ func TestHintsBOM(t *testing.T) {
 		})
 	}
 }
-
