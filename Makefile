@@ -2,7 +2,11 @@
 
 BINARY_NAME=hclalign
 MODULE_NAME=github.com/oferchen/hclalign
-PKG_TEST=$(shell go list ./... | grep -v cmd/commentcheck | grep -v internal/ci/covercheck)
+# Packages to include in tests and coverage; exclude main, cmd/commentcheck, and internal/ci packages
+PKG_TEST=$(shell go list ./... \
+        | grep -v '^$(MODULE_NAME)$$' \
+        | grep -v '^$(MODULE_NAME)/cmd/commentcheck$$' \
+        | grep -v '^$(MODULE_NAME)/internal/ci')
 
 all: build
 
@@ -53,15 +57,10 @@ test-race:
 	go test -race -shuffle=on -cover ./...
 
 cover:
-	@echo "Running tests with race detector and coverage..."
-	go test -race -shuffle=on -covermode=atomic -coverprofile=coverage.out ./...
-	go test -race -shuffle=on -covermode=atomic -coverprofile=cmd_commentcheck.out ./cmd/commentcheck
-	tail -n +2 cmd_commentcheck.out >> coverage.out
-	go test -race -shuffle=on -covermode=atomic -coverprofile=ci_covercheck.out ./internal/ci/covercheck
-	tail -n +2 ci_covercheck.out >> coverage.out
-	rm cmd_commentcheck.out ci_covercheck.out
-	@echo "Coverage report:"
-	go tool cover -func=coverage.out
+        @echo "Running tests with race detector and coverage..."
+        go test -race -shuffle=on -covermode=atomic -coverpkg=./cli,./config,./internal/...,./patternmatching -coverprofile=coverage.out $(PKG_TEST)
+        @echo "Coverage report:"
+        go tool cover -func=coverage.out
 
 fuzz:
 	@echo "Running fuzz tests..."

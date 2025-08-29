@@ -41,6 +41,12 @@ func TestCovercheck(t *testing.T) {
 			wantExit: 1,
 			wantMsg:  "Coverage 50.0% is below 95.0%",
 		},
+		{
+			name:     "ignored path",
+			profile:  "mode: set\ncmd/commentcheck/file.go:1.1,1.2 1 0\nfile.go:2.1,2.2 1 1\n",
+			wantExit: 0,
+			wantMsg:  "Total coverage: 100.0%",
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
