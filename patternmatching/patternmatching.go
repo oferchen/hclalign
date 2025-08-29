@@ -5,26 +5,40 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/bmatcuk/doublestar/v4"
 )
 
 type Matcher struct {
-	include		[]string
-	exclude		[]string
-	rootOnce	sync.Once
-	root		string
+	include  []string
+	exclude  []string
+	rootOnce sync.Once
+	root     string
 }
 
-func NewMatcher(include, exclude []string) (*Matcher, error) {
+func NewMatcher(include, exclude []string, root string) (*Matcher, error) {
 	if err := validatePatterns(include); err != nil {
 		return nil, fmt.Errorf("invalid include: %w", err)
 	}
 	if err := validatePatterns(exclude); err != nil {
 		return nil, fmt.Errorf("invalid exclude: %w", err)
 	}
-	return &Matcher{include: include, exclude: exclude}, nil
+	m := &Matcher{include: include, exclude: exclude}
+	if root != "" {
+		absRoot, err := filepath.Abs(root)
+		if err == nil {
+			root = absRoot
+		}
+		info, err := os.Stat(root)
+		if err == nil && info.IsDir() {
+			m.root = root
+		} else {
+			m.root = filepath.Dir(root)
+		}
+	}
+	return m, nil
 }
 
 func validatePatterns(patterns []string) error {
@@ -44,20 +58,25 @@ func (m *Matcher) Matches(path string) bool {
 	if err != nil {
 		absPath = path
 	}
-	m.rootOnce.Do(func() {
-		info, err := os.Stat(absPath)
-		if err == nil && info.IsDir() {
-			m.root = absPath
-		} else {
-			m.root = filepath.Dir(absPath)
-		}
-	})
-	relPath, err := filepath.Rel(m.root, absPath)
+	if m.root == "" {
+		m.rootOnce.Do(func() {
+			info, err := os.Stat(absPath)
+			if err == nil && info.IsDir() {
+				m.root = absPath
+			} else {
+				m.root = filepath.Dir(absPath)
+			}
+		})
+	}
+	relPathOS, err := filepath.Rel(m.root, absPath)
 	if err != nil {
-		relPath = absPath
+		relPathOS = absPath
 	}
 
-	relPath = filepath.ToSlash(relPath)
+	relPath := filepath.ToSlash(relPathOS)
+	if relPath == ".." || strings.HasPrefix(relPath, "../") {
+		return false
+	}
 
 	for _, ex := range m.exclude {
 		if ok, _ := doublestar.PathMatch(ex, relPath); ok {
@@ -77,5 +96,4 @@ func (m *Matcher) Matches(path string) bool {
 	return false
 }
 
-func ValidatePatterns(patterns []string) error	{ return validatePatterns(patterns) }
-
+func ValidatePatterns(patterns []string) error { return validatePatterns(patterns) }
