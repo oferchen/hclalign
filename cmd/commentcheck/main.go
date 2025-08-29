@@ -79,11 +79,14 @@ func checkFile(path string) error {
 		return fmt.Errorf("%s: missing file comment", path)
 	}
 	firstGroup := file.Comments[0]
-	pos := fset.Position(firstGroup.Pos())
-	if pos.Line != 1 || firstGroup.List[0].Text != expected {
-		return fmt.Errorf("%s: first comment must be %q", path, expected)
-	}
-	return nil
+        pos := fset.Position(firstGroup.Pos())
+        if pos.Line != 1 || firstGroup.List[0].Text != expected {
+                return fmt.Errorf("%s: first comment must be %q", path, expected)
+        }
+       if len(file.Comments) > 1 || len(firstGroup.List) > 1 {
+               return fmt.Errorf("%s: found additional comments", path)
+       }
+        return nil
 }
 
 func packageDirs() ([]string, error) {
