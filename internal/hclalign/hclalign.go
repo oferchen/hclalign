@@ -1,4 +1,4 @@
-// internal/hclalign/hclalign.go
+// /internal/hclalign/hclalign.go
 package hclalign
 
 import (

@@ -1,4 +1,4 @@
-// internal/align/locals_test.go
+// /internal/align/locals_test.go
 package align_test
 
 import (

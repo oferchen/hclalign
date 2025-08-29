@@ -1,4 +1,4 @@
-// tools/nocomments/main.go
+// /tools/nocomments/main.go
 package main
 
 import (
@@ -88,7 +88,7 @@ func process(root, path string) error {
 	if len(tags) > 0 {
 		out.WriteByte('\n')
 	}
-	out.WriteString("// " + filepath.ToSlash(rel) + "\n")
+	out.WriteString("// /" + filepath.ToSlash(rel) + "\n")
 	out.Write(formatted)
 	b := out.Bytes()
 	if len(b) == 0 || b[len(b)-1] != '\n' {

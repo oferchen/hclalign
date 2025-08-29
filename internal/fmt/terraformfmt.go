@@ -1,4 +1,4 @@
-// internal/fmt/terraformfmt.go
+// /internal/fmt/terraformfmt.go
 package terraformfmt
 
 import (
