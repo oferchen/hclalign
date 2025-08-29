@@ -97,7 +97,7 @@ func TestReorderAttributes_StrictUnknownAttrError(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestReorderAttributes_LooseKeepsUnknownAtTop(t *testing.T) {
+func TestReorderAttributes_LooseAppendsUnknownAtEnd(t *testing.T) {
 	src := `variable "example" {
   custom      = true
   description = "d"
@@ -109,9 +109,9 @@ func TestReorderAttributes_LooseKeepsUnknownAtTop(t *testing.T) {
 	require.NoError(t, hclalign.ReorderAttributes(f, []string{"description", "type"}, false))
 
 	expected := `variable "example" {
-  custom      = true
   description = "d"
   type        = string
+  custom      = true
 }`
 	require.Equal(t, expected, string(f.Bytes()))
 }
