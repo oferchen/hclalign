@@ -120,11 +120,10 @@ func TestMainModes(t *testing.T) {
 		t.Fatalf("fix via main failed: %q", data)
 	}
 
-	// run in ci mode on fixed file
-	code = 0
-	os.Args = []string{"cmd", "--mode=ci"}
-	main()
-	if code != 0 {
+       code = 0
+       os.Args = []string{"cmd", "--mode=ci"}
+       main()
+       if code != 0 {
 		t.Fatalf("unexpected exit %d", code)
 	}
 }
