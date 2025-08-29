@@ -51,7 +51,7 @@ func Apply(file *hclwrite.File, opts *Options) error {
 
 func applyBody(body *hclwrite.Body, opts *Options) error {
 	for _, b := range body.Blocks() {
-		if strat, ok := registry[b.Type()]; ok {
+		if strategy, ok := registry[b.Type()]; ok {
 			sub := *opts
 			sub.Schema = nil
 			if len(b.Labels()) > 0 && opts.Schemas != nil {
@@ -59,7 +59,7 @@ func applyBody(body *hclwrite.Body, opts *Options) error {
 					sub.Schema = s
 				}
 			}
-			if err := strat.Align(b, &sub); err != nil {
+			if err := strategy.Align(b, &sub); err != nil {
 				return err
 			}
 		}

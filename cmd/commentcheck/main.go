@@ -25,7 +25,10 @@ var (
 func main() {
 	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	mode := fs.String("mode", "ci", "ci or fix")
-	fs.Parse(os.Args[1:])
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		osExit(1)
+	}
 
 	files, err := goFiles()
 	if err != nil {

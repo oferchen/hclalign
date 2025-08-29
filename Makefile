@@ -6,7 +6,10 @@ COVERPROFILE := $(BUILD_DIR)/coverage.out
 
 GO ?= go
 
-.PHONY: all init tidy fmt lint vet test test-race cover build clean commentcheck fix-comments
+FMT_PKGS := $(shell $(GO) list $(PKG))
+FMT_DIRS := $(shell $(GO) list -f '{{.Dir}}' $(PKG))
+
+.PHONY: all init tidy fmt lint vet vuln test test-race cover cover-html build ci clean commentcheck fix-comments
 
 all: build
 
@@ -18,8 +21,8 @@ tidy:
 	$(GO) mod tidy
 
 fmt:
-	$(GO) run mvdan.cc/gofumpt@latest -w .
-	$(GO) fmt $(PKG)
+	$(GO) fmt $(FMT_PKGS)
+	$(GO) run mvdan.cc/gofumpt@latest -w $(FMT_DIRS)
 
 lint:
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
@@ -39,15 +42,23 @@ test-race:
 cover: test
 	$(GO) run ./internal/ci/covercheck
 
+cover-html: test
+	$(GO) tool cover -html=$(COVERPROFILE) -o $(BUILD_DIR)/coverage.html
+
 build:
 	mkdir -p $(BUILD_DIR)
-	$(GO) build -trimpath -ldflags="-s -w" -o $(BUILD_DIR)/$(APP) .
+	$(GO) build -trimpath -buildvcs=false -ldflags="-s -w" -o $(BUILD_DIR)/$(APP) ./cmd/hclalign
+
+vuln:
+	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
 
 commentcheck:
 	$(GO) run ./cmd/commentcheck --mode=ci
 
 fix-comments:
 	$(GO) run ./cmd/commentcheck --mode=fix
+
+ci: tidy fmt lint vuln test cover build commentcheck
 
 clean:
 	rm -rf $(BUILD_DIR)

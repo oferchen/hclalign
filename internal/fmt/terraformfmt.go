@@ -21,8 +21,8 @@ const (
 
 // Format formats HCL source using the specified strategy.
 // The filename parameter is used only for parse diagnostics.
-func Format(src []byte, filename, strat string) ([]byte, error) {
-	switch Strategy(strat) {
+func Format(src []byte, filename, strategy string) ([]byte, error) {
+	switch Strategy(strategy) {
 	case StrategyGo:
 		return formatter.Format(src, filename)
 	case StrategyBinary:
@@ -33,7 +33,7 @@ func Format(src []byte, filename, strat string) ([]byte, error) {
 		}
 		return formatter.Format(src, filename)
 	default:
-		return nil, fmt.Errorf("unknown fmt strategy %q", strat)
+		return nil, fmt.Errorf("unknown fmt strategy %q", strategy)
 	}
 }
 
