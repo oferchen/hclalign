@@ -1,11 +1,11 @@
 resource "r" "t" {
-  a = 2
   b = 1
+  a = 2
 }
 
 data "d" "t" {
-  a = 2
   b = 1
+  a = 2
 }
 
 provider "p" {

@@ -25,16 +25,31 @@ func init() { Register(resourceStrategy{}) }
 func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 	body := block.Body()
 	attrs := body.Attributes()
+	originalOrder := ihcl.AttributeOrder(body, attrs)
 	names := make([]string, 0, len(attrs))
 	for name := range attrs {
 		names = append(names, name)
 	}
 	if opts == nil || opts.Schema == nil {
-		sort.Strings(names)
-		return reorderBlock(block, names)
+		metaAttrs := []string{}
+		for _, n := range []string{"provider", "count", "for_each", "depends_on"} {
+			if _, ok := attrs[n]; ok {
+				metaAttrs = append(metaAttrs, n)
+			}
+		}
+		metaSet := map[string]struct{}{}
+		for _, n := range metaAttrs {
+			metaSet[n] = struct{}{}
+		}
+		var rest []string
+		for _, n := range originalOrder {
+			if _, ok := metaSet[n]; !ok {
+				rest = append(rest, n)
+			}
+		}
+		order := append(metaAttrs, rest...)
+		return reorderBlock(block, order)
 	}
-
-	originalOrder := ihcl.AttributeOrder(body, attrs)
 
 	var req, opt, comp []string
 	for _, name := range names {
@@ -56,7 +71,7 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 	sort.Strings(comp)
 
 	metaAttrs := []string{}
-	for _, n := range []string{"depends_on", "count", "for_each", "provider"} {
+	for _, n := range []string{"provider", "count", "for_each", "depends_on"} {
 		if _, ok := attrs[n]; ok {
 			metaAttrs = append(metaAttrs, n)
 		}
