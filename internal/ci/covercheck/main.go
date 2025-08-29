@@ -18,7 +18,7 @@ var ignore = []string{
 }
 
 func main() {
-	const profile = "coverage.out"
+	const profile = ".build/coverage.out"
 
 	f, err := os.Open(profile)
 	if err != nil {
