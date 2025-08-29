@@ -13,12 +13,45 @@ func (moduleStrategy) Name() string { return "module" }
 
 func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	attrs := block.Body().Attributes()
-	names := make([]string, 0, len(attrs))
-	for name := range attrs {
-		names = append(names, name)
+
+	order := make([]string, 0, len(attrs))
+
+	if _, ok := attrs["source"]; ok {
+		order = append(order, "source")
 	}
-	sort.Strings(names)
-	return reorderBlock(block, names)
+	if _, ok := attrs["version"]; ok {
+		order = append(order, "version")
+	}
+	if _, ok := attrs["providers"]; ok {
+		order = append(order, "providers")
+	}
+
+	metaArgs := []string{"count", "for_each", "depends_on"}
+	for _, name := range metaArgs {
+		if _, ok := attrs[name]; ok {
+			order = append(order, name)
+		}
+	}
+
+	reserved := map[string]struct{}{
+		"source":     {},
+		"version":    {},
+		"providers":  {},
+		"count":      {},
+		"for_each":   {},
+		"depends_on": {},
+	}
+
+	vars := make([]string, 0, len(attrs))
+	for name := range attrs {
+		if _, ok := reserved[name]; !ok {
+			vars = append(vars, name)
+		}
+	}
+	sort.Strings(vars)
+	order = append(order, vars...)
+
+	return reorderBlock(block, order)
 }
 
 func init() { Register(moduleStrategy{}) }
