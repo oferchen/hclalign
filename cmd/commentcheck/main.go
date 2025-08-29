@@ -1,5 +1,4 @@
-// Command commentcheck verifies that each Go source file starts with a
-// comment matching its relative path.
+// cmd/commentcheck/main.go
 package main
 
 import (

@@ -1,3 +1,4 @@
+// internal/ci/covercheck/main_test.go
 package main
 
 import (
