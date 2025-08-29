@@ -4,6 +4,7 @@ package fs
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -94,6 +95,18 @@ func TestReadFileWithHints(t *testing.T) {
 				t.Fatalf("hints mismatch: got %+v want %+v", hint, tc.wantHint)
 			}
 		})
+	}
+}
+
+func TestReadFileWithHintsCanceledContext(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, _, _, err := ReadFileWithHints(ctx, "irrelevant")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("ReadFileWithHints error = %v; want %v", err, context.Canceled)
 	}
 }
 
