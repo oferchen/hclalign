@@ -84,8 +84,16 @@ func LoadFile(path string) (map[string]*align.Schema, error) {
 	return Load(f)
 }
 
+var execCommandContext = exec.CommandContext
+
 func FromTerraform(ctx context.Context, cachePath string) (map[string]*align.Schema, error) {
-	cmd := exec.CommandContext(ctx, "terraform", "providers", "schema", "-json")
+	if b, err := os.ReadFile(cachePath); err == nil {
+		return Load(bytes.NewReader(b))
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+
+	cmd := execCommandContext(ctx, "terraform", "providers", "schema", "-json")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("terraform providers schema: %w", err)
