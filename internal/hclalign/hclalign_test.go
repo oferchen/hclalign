@@ -177,3 +177,14 @@ func TestReorderAttributes_DefaultBlockNestedType(t *testing.T) {
 	require.Equal(t, expected, string(f.Bytes()))
 }
 
+func TestReorderAttributes_InlineCommentAfterBrace(t *testing.T) {
+	src := `variable "example" { // comment
+  type = string
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
+
+	require.Equal(t, src, string(f.Bytes()))
+}

@@ -89,11 +89,26 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	prefixTokens := hclwrite.Tokens{}
 	tailTokens := hclwrite.Tokens{}
 	blockLeadTokens := make(map[*hclwrite.Block]hclwrite.Tokens)
+	attrLeadTrim := make(map[string]int)
 	currentTokens := hclwrite.Tokens{}
 	prefixCaptured := false
 	blockIndex := 0
+	capturedComments := 0
 	for i := 0; i < len(allTokens); {
 		tok := allTokens[i]
+		if tok.Type == hclsyntax.TokenComment && !prefixCaptured {
+			cpy := *tok
+			if n := len(cpy.Bytes); n > 0 && cpy.Bytes[n-1] == '\n' {
+				cpy.Bytes = cpy.Bytes[:n-1]
+				prefixTokens = append(prefixTokens, &cpy)
+				prefixTokens = append(prefixTokens, &hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: []byte{'\n'}})
+			} else {
+				prefixTokens = append(prefixTokens, &cpy)
+			}
+			capturedComments++
+			i++
+			continue
+		}
 		if tok.Type == hclsyntax.TokenIdent {
 			name := string(tok.Bytes)
 			if attr, ok := attrs[name]; ok && i+1 < len(allTokens) && allTokens[i+1].Type == hclsyntax.TokenEqual {
@@ -103,8 +118,10 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 					leadCount++
 				}
 				if !prefixCaptured {
-					if len(currentTokens) >= leadCount {
-						prefixTokens = append(hclwrite.Tokens{}, currentTokens[:len(currentTokens)-leadCount]...)
+					prefixTokens = append(prefixTokens, currentTokens...)
+					if capturedComments > 0 {
+						attrLeadTrim[name] = capturedComments
+						capturedComments = 0
 					}
 					prefixCaptured = true
 				}
@@ -119,9 +136,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 					leadCount++
 				}
 				if !prefixCaptured {
-					if len(currentTokens) >= leadCount {
-						prefixTokens = append(hclwrite.Tokens{}, currentTokens[:len(currentTokens)-leadCount]...)
-					}
+					prefixTokens = append(prefixTokens, currentTokens...)
+					capturedComments = 0
 					prefixCaptured = true
 				} else {
 					if len(currentTokens) >= leadCount {
@@ -138,7 +154,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		i++
 	}
 	if !prefixCaptured {
-		prefixTokens = currentTokens
+		prefixTokens = append(prefixTokens, currentTokens...)
 		currentTokens = nil
 	}
 	tailTokens = currentTokens
@@ -165,7 +181,15 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 
 	attrTokensMap := make(map[string]attrTokens)
 	for name, attr := range attrs {
-		attrTokensMap[name] = extractAttrTokens(attr)
+		at := extractAttrTokens(attr)
+		if trim := attrLeadTrim[name]; trim > 0 {
+			if trim < len(at.leadTokens) {
+				at.leadTokens = at.leadTokens[trim:]
+			} else {
+				at.leadTokens = nil
+			}
+		}
+		attrTokensMap[name] = at
 	}
 
 	originalOrder := attributeOrder(body, attrs)
@@ -258,8 +282,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 }
 
 type attrTokens struct {
-	leadTokens	hclwrite.Tokens
-	exprTokens	hclwrite.Tokens
+	leadTokens hclwrite.Tokens
+	exprTokens hclwrite.Tokens
 }
 
 func extractAttrTokens(attr *hclwrite.Attribute) attrTokens {
@@ -309,4 +333,3 @@ func attributeOrder(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) [
 	}
 	return order
 }
-
