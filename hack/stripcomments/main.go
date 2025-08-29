@@ -43,6 +43,10 @@ func processFile(path string) error {
 	if err != nil {
 		return err
 	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
 	comment := firstLineComment(src)
 	if comment == "" {
 		root, err := os.Getwd()
@@ -72,7 +76,7 @@ func processFile(path string) error {
 		return err
 	}
 	buf.WriteByte('\n')
-	return os.WriteFile(path, buf.Bytes(), 0644)
+	return os.WriteFile(path, buf.Bytes(), info.Mode())
 }
 
 func firstLineComment(src []byte) string {
@@ -85,4 +89,3 @@ func firstLineComment(src []byte) string {
 	}
 	return ""
 }
-

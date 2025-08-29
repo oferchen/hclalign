@@ -43,3 +43,24 @@ func main() { // inline
 	}
 }
 
+func TestProcessFilePreservesMode(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "perm.go")
+	if err := os.WriteFile(path, []byte("package main\n"), 0755); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat: %v", err)
+	}
+	if err := processFile(path); err != nil {
+		t.Fatalf("processFile: %v", err)
+	}
+	info2, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat: %v", err)
+	}
+	if info2.Mode() != info.Mode() {
+		t.Fatalf("mode changed: got %v, want %v", info2.Mode(), info.Mode())
+	}
+}
