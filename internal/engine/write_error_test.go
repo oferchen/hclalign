@@ -45,8 +45,6 @@ func newRootCmd(exclusive bool) *cobra.Command {
 }
 
 func TestProcessWriteFileError(t *testing.T) {
-	t.Parallel()
-
 	dir := t.TempDir()
 	casesDir := filepath.Join("..", "..", "tests", "cases")
 	data, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
