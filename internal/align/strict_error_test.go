@@ -76,6 +76,14 @@ func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
 			name: "provisioner",
 			src:  "provisioner \"local-exec\" {\n  when = \"create\"\n  foo  = 1\n}",
 		},
+		{
+			name: "connection",
+			src:  "connection {\n  host = \"h\"\n  foo  = 1\n}",
+		},
+		{
+			name: "connection_nested",
+			src:  "provisioner \"local-exec\" {\n  connection {\n    host = \"h\"\n    foo  = 1\n  }\n}",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
