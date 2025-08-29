@@ -1,4 +1,4 @@
-// tests/cli/cli_test.go — SPDX-License-Identifier: Apache-2.0
+// tests/cli/cli_test.go
 package cli_test
 
 import (
@@ -160,3 +160,4 @@ func TestCLI(t *testing.T) {
 		require.NotEmpty(t, stderr.String())
 	})
 }
+

@@ -1,4 +1,4 @@
-// internal/fs/atomic.go — SPDX-License-Identifier: Apache-2.0
+// internal/fs/atomic.go
 package fs
 
 import (
@@ -13,8 +13,8 @@ import (
 var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
 
 type Hints struct {
-	HasBOM  bool
-	Newline string
+	HasBOM	bool
+	Newline	string
 }
 
 func (h Hints) BOM() []byte {
@@ -139,3 +139,4 @@ func WriteFileAtomic(ctx context.Context, path string, data []byte, perm iofs.Fi
 	defer func() { _ = dirf.Close() }()
 	return dirf.Sync()
 }
+

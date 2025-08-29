@@ -1,4 +1,4 @@
-// internal/hclalign/hclalign.go — SPDX-License-Identifier: Apache-2.0
+// internal/hclalign/hclalign.go
 package hclalign
 
 import (
@@ -258,8 +258,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 }
 
 type attrTokens struct {
-	leadTokens hclwrite.Tokens
-	exprTokens hclwrite.Tokens
+	leadTokens	hclwrite.Tokens
+	exprTokens	hclwrite.Tokens
 }
 
 func extractAttrTokens(attr *hclwrite.Attribute) attrTokens {
@@ -309,3 +309,4 @@ func attributeOrder(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) [
 	}
 	return order
 }
+

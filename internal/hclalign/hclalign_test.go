@@ -1,4 +1,4 @@
-// internal/hclalign/hclalign_test.go — SPDX-License-Identifier: Apache-2.0
+// internal/hclalign/hclalign_test.go
 package hclalign_test
 
 import (
@@ -176,3 +176,4 @@ func TestReorderAttributes_DefaultBlockNestedType(t *testing.T) {
 }`
 	require.Equal(t, expected, string(f.Bytes()))
 }
+

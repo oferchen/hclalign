@@ -1,4 +1,4 @@
-// config/config.go — SPDX-License-Identifier: Apache-2.0
+// config/config.go
 package config
 
 import (
@@ -11,7 +11,7 @@ import (
 type Mode int
 
 const (
-	ModeWrite Mode = iota
+	ModeWrite	Mode	= iota
 
 	ModeCheck
 
@@ -19,23 +19,23 @@ const (
 )
 
 type Config struct {
-	Target         string
-	Mode           Mode
-	Stdin          bool
-	Stdout         bool
-	Include        []string
-	Exclude        []string
-	Order          []string
-	StrictOrder    bool
-	Concurrency    int
-	Verbose        bool
-	FollowSymlinks bool
+	Target		string
+	Mode		Mode
+	Stdin		bool
+	Stdout		bool
+	Include		[]string
+	Exclude		[]string
+	Order		[]string
+	StrictOrder	bool
+	Concurrency	int
+	Verbose		bool
+	FollowSymlinks	bool
 }
 
 var (
-	DefaultInclude = []string{"**/*.tf"}
-	DefaultExclude = []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
-	CanonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
+	DefaultInclude	= []string{"**/*.tf"}
+	DefaultExclude	= []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
+	CanonicalOrder	= []string{"description", "type", "default", "sensitive", "nullable"}
 )
 
 const (
@@ -89,3 +89,4 @@ func ValidateOrder(order []string, strict bool) error {
 	}
 	return nil
 }
+
