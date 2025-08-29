@@ -10,9 +10,9 @@ import (
 )
 
 type Matcher struct {
-	include []string
-	exclude []string
-	root    string
+	include	[]string
+	exclude	[]string
+	root	string
 }
 
 func NewMatcher(include, exclude []string) (*Matcher, error) {
@@ -75,4 +75,5 @@ func (m *Matcher) Matches(path string) bool {
 	return false
 }
 
-func ValidatePatterns(patterns []string) error { return validatePatterns(patterns) }
+func ValidatePatterns(patterns []string) error	{ return validatePatterns(patterns) }
+

@@ -22,9 +22,9 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 	require.NoError(t, os.WriteFile(path, []byte(orig), 0o644))
 
 	cfg := &config.Config{
-		Target:      path,
-		Include:     []string{"**/*.hcl"},
-		Concurrency: 1,
+		Target:		path,
+		Include:	[]string{"**/*.hcl"},
+		Concurrency:	1,
 	}
 
 	changed, err := Process(context.Background(), cfg)
@@ -90,3 +90,4 @@ func TestProcessReaderEmpty(t *testing.T) {
 	require.False(t, changed)
 	require.Empty(t, buf.String())
 }
+

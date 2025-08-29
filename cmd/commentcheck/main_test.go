@@ -156,3 +156,4 @@ func TestMainFailure(t *testing.T) {
 		t.Fatalf("expected exit code 1, got %d", code)
 	}
 }
+

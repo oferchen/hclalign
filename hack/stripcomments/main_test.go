@@ -9,8 +9,7 @@ import (
 
 func TestStrip(t *testing.T) {
 	dir := t.TempDir()
-	src := []byte(`// sample.go
-package main
+	src := []byte(`package main
 
 import "fmt"
 
@@ -30,8 +29,17 @@ func main() { // inline
 	if err != nil {
 		t.Fatalf("read file: %v", err)
 	}
-	expected := "// sample.go\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hi\")\n}\n\n"
+	root, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("wd: %v", err)
+	}
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		t.Fatalf("rel: %v", err)
+	}
+	expected := "// " + filepath.ToSlash(rel) + "\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hi\")\n}\n\n"
 	if string(out) != expected {
 		t.Fatalf("unexpected output:\n%s", out)
 	}
 }
+

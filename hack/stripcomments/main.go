@@ -26,7 +26,7 @@ func strip(root string) error {
 		}
 		if d.IsDir() {
 			name := d.Name()
-			if strings.HasPrefix(name, ".") || name == "vendor" {
+			if path != root && (strings.HasPrefix(name, ".") || name == "vendor") {
 				return fs.SkipDir
 			}
 			return nil
@@ -44,6 +44,21 @@ func processFile(path string) error {
 		return err
 	}
 	comment := firstLineComment(src)
+	if comment == "" {
+		root, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(root, abs)
+		if err != nil {
+			return err
+		}
+		comment = "// " + filepath.ToSlash(rel)
+	}
 
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, src, 0)
@@ -51,10 +66,8 @@ func processFile(path string) error {
 		return err
 	}
 	var buf bytes.Buffer
-	if comment != "" {
-		buf.WriteString(comment)
-		buf.WriteByte('\n')
-	}
+	buf.WriteString(comment)
+	buf.WriteByte('\n')
 	if err := printer.Fprint(&buf, fset, file); err != nil {
 		return err
 	}
@@ -72,3 +85,4 @@ func firstLineComment(src []byte) string {
 	}
 	return ""
 }
+

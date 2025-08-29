@@ -132,3 +132,4 @@ func TestCLI(t *testing.T) {
 		require.NotEmpty(t, stderr.String())
 	})
 }
+

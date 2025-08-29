@@ -96,3 +96,4 @@ func TestGolden(t *testing.T) {
 		t.Fatalf("walk cases: %v", err)
 	}
 }
+
