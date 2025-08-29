@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/oferchen/hclalign/patternmatching"
 )
@@ -44,6 +45,9 @@ const (
 func (c *Config) Validate() error {
 	if c.Concurrency < 1 {
 		return fmt.Errorf("concurrency must be at least 1")
+	}
+	if c.Concurrency > runtime.GOMAXPROCS(0) {
+		return fmt.Errorf("concurrency cannot exceed GOMAXPROCS (%d)", runtime.GOMAXPROCS(0))
 	}
 	if err := patternmatching.ValidatePatterns(c.Include); err != nil {
 		return fmt.Errorf("invalid include: %w", err)
