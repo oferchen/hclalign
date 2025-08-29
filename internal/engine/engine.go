@@ -73,11 +73,12 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 				if err != nil {
 					return err
 				}
+				if !cfg.FollowSymlinks {
+					continue
+				}
 				if info.IsDir() {
-					if cfg.FollowSymlinks {
-						if err := walk(ctx, path); err != nil {
-							return err
-						}
+					if err := walk(ctx, path); err != nil {
+						return err
 					}
 					continue
 				}
