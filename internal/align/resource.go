@@ -56,7 +56,7 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 	sort.Strings(comp)
 
 	metaAttrs := []string{}
-	for _, n := range []string{"provider", "count", "for_each", "depends_on"} {
+	for _, n := range []string{"depends_on", "count", "for_each", "provider"} {
 		if _, ok := attrs[n]; ok {
 			metaAttrs = append(metaAttrs, n)
 		}

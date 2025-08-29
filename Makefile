@@ -3,6 +3,7 @@ APP := hclalign
 PKG := ./...
 BUILD_DIR := ./.build
 COVERPROFILE := $(BUILD_DIR)/coverage.out
+COVER_THRESH ?= 95
 
 GO ?= go
 
@@ -21,8 +22,7 @@ tidy:
 	$(GO) mod tidy
 
 fmt:
-	$(GO) fmt $(FMT_PKGS)
-	$(GO) run mvdan.cc/gofumpt@latest -w $(FMT_DIRS)
+	gofumpt -l -w . && gofmt -s -w .
 
 lint:
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
@@ -43,14 +43,14 @@ test-race:
 	$(GO) test $(PKG) -race -shuffle=on
 
 cover: test
-	$(GO) run ./internal/ci/covercheck
+	$(GO) tool cover -func=$(COVERPROFILE) | tee /dev/stderr | awk -v thr=$(COVER_THRESH) '/^total:/ {sub("%", "", $$3); if ($$3+0 < thr) {printf("coverage %s%% is below %s%%\n", $$3, thr); exit 1}}'
 
 cover-html: test
 	$(GO) tool cover -html=$(COVERPROFILE) -o $(BUILD_DIR)/coverage.html
 
 build:
 	mkdir -p $(BUILD_DIR)
-	$(GO) build -trimpath -buildvcs=false -ldflags="-s -w" -o $(BUILD_DIR)/$(APP) ./cmd/hclalign
+	$(GO) build -trimpath -ldflags="-s -w" -o $(BUILD_DIR)/$(APP) ./cmd/hclalign
 
 vuln:
 	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
