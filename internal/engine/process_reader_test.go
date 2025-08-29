@@ -4,6 +4,10 @@ package engine_test
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -83,3 +87,36 @@ func TestProcessReaderModeCheckNoChange(t *testing.T) {
 	require.Empty(t, diffText)
 }
 
+func TestProcessPrintsDelimiters(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	f1 := filepath.Join(dir, "a.tf")
+	f2 := filepath.Join(dir, "b.tf")
+	require.NoError(t, os.WriteFile(f1, []byte("variable \"a\" {}\n"), 0o644))
+	require.NoError(t, os.WriteFile(f2, []byte("variable \"b\" {}\n"), 0o644))
+
+	cfg := &config.Config{
+		Target:      dir,
+		Include:     []string{"**/*.tf"},
+		Mode:        config.ModeCheck,
+		Stdout:      true,
+		Concurrency: 1,
+	}
+
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	stdout := os.Stdout
+	os.Stdout = w
+	t.Cleanup(func() { os.Stdout = stdout })
+
+	_, err = engine.Process(context.Background(), cfg)
+	require.NoError(t, err)
+	w.Close()
+	out, err := io.ReadAll(r)
+	require.NoError(t, err)
+
+	s := string(out)
+	require.Contains(t, s, fmt.Sprintf("\n--- %s ---\n", f1))
+	require.Contains(t, s, fmt.Sprintf("\n--- %s ---\n", f2))
+}
