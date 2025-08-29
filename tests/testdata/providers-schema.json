@@ -1,0 +1,39 @@
+{
+  "provider_schemas": {
+    "registry.terraform.io/hashicorp/aws": {
+      "resource_schemas": {
+        "aws_s3_bucket": {
+          "block": {
+            "attributes": {
+              "bucket": {"required": true},
+              "acl": {"optional": true},
+              "tags": {"optional": true}
+            }
+          }
+        }
+      },
+      "data_source_schemas": {
+        "aws_ami": {
+          "block": {
+            "attributes": {
+              "owners": {"required": true},
+              "most_recent": {"optional": true}
+            }
+          }
+        }
+      }
+    },
+    "registry.terraform.io/hashicorp/null": {
+      "resource_schemas": {
+        "null_resource": {
+          "block": {
+            "attributes": {
+              "triggers": {"optional": true}
+            }
+          }
+        }
+      },
+      "data_source_schemas": {}
+    }
+  }
+}
