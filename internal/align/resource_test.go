@@ -37,11 +37,11 @@ func TestSchemaAwareOrder(t *testing.T) {
 
 	got := string(file.Bytes())
 	exp := `resource "test_thing" "ex" {
+  provider   = "p"
+  depends_on = []
   foo        = 1
   bar        = 2
   baz        = 3
-  depends_on = []
-  provider   = "p"
   random     = 4
 }`
 	require.Equal(t, exp, got)
