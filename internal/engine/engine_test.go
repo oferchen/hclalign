@@ -34,7 +34,6 @@ func TestProcessMissingTarget(t *testing.T) {
 }
 
 func TestProcessContextCancelled(t *testing.T) {
-	t.Parallel()
 
 	dir := t.TempDir()
 	data, err := os.ReadFile(filepath.Join("testdata", "idempotent_input.hcl"))
@@ -58,7 +57,6 @@ func TestProcessContextCancelled(t *testing.T) {
 }
 
 func TestProcessContextCancelledAfterReorder(t *testing.T) {
-	t.Parallel()
 
 	dir := t.TempDir()
 	data, err := os.ReadFile(filepath.Join("testdata", "idempotent_input.hcl"))

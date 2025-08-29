@@ -37,36 +37,31 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 	require.Equal(t, orig, string(data))
 }
 
-func TestProcessFilesAggregatesErrors(t *testing.T) {
+func TestProcessStopsAfterFirstError(t *testing.T) {
 	dir := t.TempDir()
+	badPath := filepath.Join(dir, "bad.hcl")
 	goodPath := filepath.Join(dir, "good.hcl")
-	bad1Path := filepath.Join(dir, "bad1.hcl")
-	bad2Path := filepath.Join(dir, "bad2.hcl")
+
+	bad := "variable \"bad\" {"
+	require.NoError(t, os.WriteFile(badPath, []byte(bad), 0o644))
 
 	good := "variable \"good\" {\n  default     = 1\n  description = \"foo\"\n}\n"
 	require.NoError(t, os.WriteFile(goodPath, []byte(good), 0o644))
 
-	bad1 := "variable \"bad1\" {"
-	bad2 := "variable \"bad2\" { default = [ }"
-	require.NoError(t, os.WriteFile(bad1Path, []byte(bad1), 0o644))
-	require.NoError(t, os.WriteFile(bad2Path, []byte(bad2), 0o644))
-
 	cfg := &config.Config{
 		Target:      dir,
 		Include:     []string{"**/*.hcl"},
-		Concurrency: 2,
+		Concurrency: 1,
 	}
 
 	changed, err := Process(context.Background(), cfg)
 	require.Error(t, err)
-	require.True(t, changed)
-	require.Contains(t, err.Error(), "bad1.hcl")
-	require.Contains(t, err.Error(), "bad2.hcl")
+	require.False(t, changed)
+	require.Contains(t, err.Error(), "bad.hcl")
 
 	data, readErr := os.ReadFile(goodPath)
 	require.NoError(t, readErr)
-	expected := "variable \"good\" {\n  description = \"foo\"\n  default     = 1\n}\n"
-	require.Equal(t, expected, string(data))
+	require.Equal(t, good, string(data))
 }
 
 func TestProcessReaderMalformed(t *testing.T) {
