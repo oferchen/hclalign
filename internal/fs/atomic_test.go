@@ -4,11 +4,13 @@ package fs
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 )
 
 type setupFunc func(t *testing.T, dir, path string) any
@@ -186,6 +188,38 @@ func TestWriteFileAtomic(t *testing.T) {
 				tc.validate(t, dir, path, ctx)
 			}
 		})
+	}
+}
+
+func TestWriteFileAtomicContextCanceledBeforeRename(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "out.txt")
+	if err := os.WriteFile(path, []byte("old"), 0o644); err != nil {
+		t.Fatalf("prewrite: %v", err)
+	}
+
+	data := bytes.Repeat([]byte{'x'}, 100<<20) // 100MB to slow down write
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- WriteFileAtomic(ctx, path, data, 0o644, Hints{})
+	}()
+
+	time.Sleep(10 * time.Millisecond)
+	cancel()
+
+	err := <-errCh
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("WriteFileAtomic error = %v; want %v", err, context.Canceled)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read file: %v", err)
+	}
+	if !bytes.Equal(got, []byte("old")) {
+		t.Fatalf("file modified: %q != %q", got, "old")
 	}
 }
 
