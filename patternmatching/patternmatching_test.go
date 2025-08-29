@@ -71,3 +71,8 @@ func TestValidatePatterns(t *testing.T) {
 	err = ValidatePatterns([]string{"["})
 	assert.Error(t, err)
 }
+
+func TestNewMatcherInvalidPattern(t *testing.T) {
+	_, err := NewMatcher([]string{"["}, nil)
+	assert.Error(t, err)
+}
