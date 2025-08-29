@@ -137,4 +137,4 @@ Contributions to `hclalign` are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) 
 
 ## License
 
-`hclalign` is released under the [MIT License](LICENSE).
+`hclalign` is released under the [Apache-2.0 License](LICENSE).
