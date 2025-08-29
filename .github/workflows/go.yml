@@ -34,14 +34,14 @@ jobs:
       - name: Lint
         run: make lint
 
+      - name: Comment check
+        run: make commentcheck
+
       - name: Test (race)
         run: make test-race
 
       - name: Cover
         run: make cover
-
-      - name: Comment check
-        run: make commentcheck
 
       - name: Vulnerability check (non-blocking)
         continue-on-error: true
