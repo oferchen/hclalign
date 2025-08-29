@@ -7,7 +7,10 @@ COVER_THRESH ?= 95
 
 GO ?= go
 
-.PHONY: all init tidy fmt lint nocomments vet vuln test test-race cover cover-html build ci clean
+FMT_PKGS := $(shell $(GO) list $(PKG))
+FMT_DIRS := $(shell $(GO) list -f '{{.Dir}}' $(PKG))
+
+.PHONY: all init tidy fmt lint vet vuln nocomments test test-race cover cover-html build ci clean
 
 all: build
 
@@ -52,7 +55,7 @@ build:
 vuln:
 	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
 
-ci: tidy fmt lint vet vuln nocomments test test-race cover build
+ci: tidy fmt nocomments lint vet vuln test-race cover build
 
 clean:
 	rm -rf $(BUILD_DIR)
