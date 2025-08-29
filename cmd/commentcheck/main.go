@@ -17,20 +17,23 @@ import (
 var (
 	execCommand = exec.Command
 	lookPath    = exec.LookPath
+	packageDirs = packageDirsFunc
+	checkFile   = checkFileFunc
+	osExit      = os.Exit
 )
 
 func main() {
 	dirs, err := packageDirs()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		osExit(1)
 	}
 	var files []string
 	for _, d := range dirs {
 		entries, err := os.ReadDir(d)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			osExit(1)
 		}
 		for _, e := range entries {
 			if e.IsDir() {
@@ -49,11 +52,11 @@ func main() {
 		}
 	}
 	if failed {
-		os.Exit(1)
+		osExit(1)
 	}
 }
 
-func checkFile(path string) error {
+func checkFileFunc(path string) error {
 	rel := filepath.ToSlash(path)
 	expected := "// " + rel
 	fh, err := os.Open(path)
@@ -79,17 +82,17 @@ func checkFile(path string) error {
 		return fmt.Errorf("%s: missing file comment", path)
 	}
 	firstGroup := file.Comments[0]
-        pos := fset.Position(firstGroup.Pos())
-        if pos.Line != 1 || firstGroup.List[0].Text != expected {
-                return fmt.Errorf("%s: first comment must be %q", path, expected)
-        }
-       if len(file.Comments) > 1 || len(firstGroup.List) > 1 {
-               return fmt.Errorf("%s: found additional comments", path)
-       }
-        return nil
+	pos := fset.Position(firstGroup.Pos())
+	if pos.Line != 1 || firstGroup.List[0].Text != expected {
+		return fmt.Errorf("%s: first comment must be %q", path, expected)
+	}
+	if len(file.Comments) > 1 || len(firstGroup.List) > 1 {
+		return fmt.Errorf("%s: found additional comments", path)
+	}
+	return nil
 }
 
-func packageDirs() ([]string, error) {
+func packageDirsFunc() ([]string, error) {
 	if _, err := lookPath("go"); err != nil {
 		return nil, fmt.Errorf("commentcheck requires a Go toolchain: %w", err)
 	}

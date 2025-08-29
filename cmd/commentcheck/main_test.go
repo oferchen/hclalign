@@ -72,3 +72,58 @@ func TestPackageDirs_CommandFailure(t *testing.T) {
 		t.Fatalf("expected error, got nil")
 	}
 }
+
+func TestMainSuccess(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "foo.go")
+	write(t, path, "")
+
+	originalPackageDirs := packageDirs
+	originalCheckFile := checkFile
+	originalExit := osExit
+	t.Cleanup(func() {
+		packageDirs = originalPackageDirs
+		checkFile = originalCheckFile
+		osExit = originalExit
+	})
+
+	packageDirs = func() ([]string, error) { return []string{dir}, nil }
+	checkFile = func(f string) error {
+		if f != path {
+			t.Fatalf("unexpected path %s", f)
+		}
+		return nil
+	}
+
+	var code = -1
+	osExit = func(c int) { code = c }
+	main()
+	if code != -1 {
+		t.Fatalf("expected exit code 0, got %d", code)
+	}
+}
+
+func TestMainFailure(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "foo.go")
+	write(t, path, "")
+
+	originalPackageDirs := packageDirs
+	originalCheckFile := checkFile
+	originalExit := osExit
+	t.Cleanup(func() {
+		packageDirs = originalPackageDirs
+		checkFile = originalCheckFile
+		osExit = originalExit
+	})
+
+	packageDirs = func() ([]string, error) { return []string{dir}, nil }
+	checkFile = func(string) error { return errors.New("fail") }
+
+	var code = -1
+	osExit = func(c int) { code = c }
+	main()
+	if code != 1 {
+		t.Fatalf("expected exit code 1, got %d", code)
+	}
+}
