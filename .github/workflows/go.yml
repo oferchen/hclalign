@@ -25,11 +25,23 @@ jobs:
           go-version: ${{ matrix.go }}
           cache: true
 
-      - name: Download modules
-        run: go mod download
+      - name: Tidy
+        run: make tidy
 
-      - name: CI
-        run: make ci
+      - name: Format
+        run: make fmt
+
+      - name: Lint
+        run: make lint
+
+      - name: Test (race)
+        run: make test-race
+
+      - name: Cover
+        run: make cover
+
+      - name: Comment check
+        run: make commentcheck
 
       - name: Vulnerability check (non-blocking)
         continue-on-error: true

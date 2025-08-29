@@ -2,7 +2,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,7 +12,7 @@ import (
 
 func write(t *testing.T, path, content string) {
 	t.Helper()
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write file: %v", err)
 	}
 }
@@ -44,229 +43,88 @@ func TestCheckFileMissingComment(t *testing.T) {
 	path := filepath.Join(dir, "foo.go")
 	write(t, path, "package main\n")
 	if err := checkFile(path); err == nil || !strings.Contains(err.Error(), "first line must be") {
-		t.Fatalf("expected missing comment error, got %v", err)
+		t.Fatalf("expected error, got %v", err)
 	}
 }
 
-func TestCheckFileMalformedComment(t *testing.T) {
+func TestFixFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "foo.go")
-	comment := fmt.Sprintf("// %s extra\n", filepath.ToSlash(path))
-	write(t, path, comment+"package main\n")
-	if err := checkFile(path); err == nil || !strings.Contains(err.Error(), "first line must be") {
-		t.Fatalf("expected malformed comment error, got %v", err)
+	write(t, path, "// extra\npackage main\n// trailing\n")
+	if err := fixFile(path); err != nil {
+		t.Fatalf("fix file: %v", err)
 	}
-}
-
-func TestCheckTerraformFile(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "foo.tf")
-	comment := fmt.Sprintf("// %s\n", filepath.ToSlash(path))
-	write(t, path, comment+"resource \"x\" {}\n")
-	if err := checkFile(path); err != nil {
-		t.Fatalf("check file: %v", err)
-	}
-}
-
-func TestCheckMakefile(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "Makefile")
-	comment := fmt.Sprintf("# %s\n", filepath.ToSlash(path))
-	write(t, path, comment+"all:\n\t@echo hi\n")
-	if err := checkFile(path); err != nil {
-		t.Fatalf("check file: %v", err)
-	}
-}
-
-func TestPackageDirs_GitNotFound(t *testing.T) {
-	originalLookPath := lookPath
-	t.Cleanup(func() { lookPath = originalLookPath })
-	lookPath = func(string) (string, error) {
-		return "", exec.ErrNotFound
-	}
-	if _, err := packageDirs(); err == nil || !errors.Is(err, exec.ErrNotFound) {
-		t.Fatalf("expected exec.ErrNotFound, got %v", err)
-	}
-}
-
-func TestPackageDirs_CommandFailure(t *testing.T) {
-	originalLookPath := lookPath
-	originalExecCommand := execCommand
-	t.Cleanup(func() {
-		lookPath = originalLookPath
-		execCommand = originalExecCommand
-	})
-	lookPath = func(string) (string, error) { return "git", nil }
-	execCommand = func(string, ...string) *exec.Cmd {
-		return exec.Command("bash", "-c", "exit 1")
-	}
-	if _, err := packageDirs(); err == nil {
-		t.Fatalf("expected error, got nil")
-	}
-}
-
-func TestPackageDirs_TestOnlyDir(t *testing.T) {
-	dir := t.TempDir()
-	originalWd, err := os.Getwd()
+	root, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
 	}
-	t.Cleanup(func() { os.Chdir(originalWd) })
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		t.Fatalf("rel: %v", err)
+	}
+	want := fmt.Sprintf("// %s\npackage main\n\n", filepath.ToSlash(rel))
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if string(data) != want {
+		t.Fatalf("fix mismatch: %q != %q", data, want)
+	}
+}
+
+func TestGoFilesGitNotFound(t *testing.T) {
+	orig := execCommand
+	defer func() { execCommand = orig }()
+	execCommand = func(string, ...string) *exec.Cmd { return exec.Command("bash", "-c", "exit 1") }
+	if _, err := goFiles(); err == nil {
+		t.Fatalf("expected error")
+	}
+}
+
+func TestMainModes(t *testing.T) {
+	dir := t.TempDir()
+	oldWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer os.Chdir(oldWD)
 	if err := os.Chdir(dir); err != nil {
 		t.Fatalf("chdir: %v", err)
 	}
-	if err := exec.Command("git", "init").Run(); err != nil {
-		t.Fatalf("git init: %v", err)
+	path := filepath.Join(dir, "foo.go")
+	write(t, path, "// bad\npackage main\n")
+
+	gitOutput := fmt.Sprintf("%s\n", filepath.Base(path))
+	origExec := execCommand
+	origExit := osExit
+	defer func() { execCommand = origExec; osExit = origExit }()
+	execCommand = func(name string, args ...string) *exec.Cmd {
+		if name == "git" && len(args) > 0 && args[0] == "ls-files" {
+			return exec.Command("bash", "-c", fmt.Sprintf("printf '%s'", gitOutput))
+		}
+		return exec.Command("bash", "-c", "")
 	}
-	if err := os.Mkdir("foo", 0755); err != nil {
-		t.Fatalf("mkdir foo: %v", err)
+	var code int
+	osExit = func(c int) { code = c }
+	os.Args = []string{"cmd", "--mode=fix"}
+	main()
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
 	}
-	write(t, filepath.Join("foo", "bar_test.go"), "package foo\n")
-	if err := exec.Command("git", "add", ".").Run(); err != nil {
-		t.Fatalf("git add: %v", err)
-	}
-	dirs, err := packageDirs()
+	data, err := os.ReadFile(path)
 	if err != nil {
-		t.Fatalf("packageDirs: %v", err)
+		t.Fatalf("read: %v", err)
 	}
-	if len(dirs) != 1 || dirs[0] != "foo" {
-		t.Fatalf("expected [foo], got %v", dirs)
-	}
-}
-
-func TestMainSuccess(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "foo.go")
-	write(t, path, "")
-
-	originalPackageDirs := packageDirs
-	originalCheckFile := checkFile
-	originalExit := osExit
-	t.Cleanup(func() {
-		packageDirs = originalPackageDirs
-		checkFile = originalCheckFile
-		osExit = originalExit
-	})
-
-	packageDirs = func() ([]string, error) { return []string{dir}, nil }
-	checkFile = func(f string) error {
-		if f != path {
-			t.Fatalf("unexpected path %s", f)
-		}
-		return nil
+	want := fmt.Sprintf("// %s\npackage main\n\n", filepath.ToSlash(filepath.Base(path)))
+	if string(data) != want {
+		t.Fatalf("fix via main failed: %q", data)
 	}
 
-	var code = -1
-	osExit = func(c int) { code = c }
-	oldArgs := os.Args
-	os.Args = []string{"cmd"}
-	defer func() { os.Args = oldArgs }()
+	// run in ci mode on fixed file
+	code = 0
+	os.Args = []string{"cmd", "--mode=ci"}
 	main()
-	if code != -1 {
-		t.Fatalf("expected exit code 0, got %d", code)
-	}
-}
-
-func TestMainFailure(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "foo.go")
-	write(t, path, "")
-
-	originalPackageDirs := packageDirs
-	originalCheckFile := checkFile
-	originalExit := osExit
-	t.Cleanup(func() {
-		packageDirs = originalPackageDirs
-		checkFile = originalCheckFile
-		osExit = originalExit
-	})
-
-	packageDirs = func() ([]string, error) { return []string{dir}, nil }
-	checkFile = func(string) error { return errors.New("fail") }
-
-	var code = -1
-	osExit = func(c int) { code = c }
-	oldArgs := os.Args
-	os.Args = []string{"cmd"}
-	defer func() { os.Args = oldArgs }()
-	main()
-	if code != 1 {
-		t.Fatalf("expected exit code 1, got %d", code)
-	}
-}
-
-func TestMainWithTF(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "foo.tf")
-	write(t, path, "")
-
-	originalPackageDirs := packageDirs
-	originalTFFiles := tfFiles
-	originalCheckFile := checkFile
-	originalExit := osExit
-	t.Cleanup(func() {
-		packageDirs = originalPackageDirs
-		tfFiles = originalTFFiles
-		checkFile = originalCheckFile
-		osExit = originalExit
-	})
-
-	packageDirs = func() ([]string, error) { return nil, nil }
-	tfFiles = func() ([]string, error) { return []string{path}, nil }
-	checkFile = func(f string) error {
-		if f != path {
-			t.Fatalf("unexpected path %s", f)
-		}
-		return nil
-	}
-
-	var code = -1
-	osExit = func(c int) { code = c }
-
-	oldArgs := os.Args
-	os.Args = []string{"cmd", "-tf"}
-	defer func() { os.Args = oldArgs }()
-
-	main()
-	if code != -1 {
-		t.Fatalf("expected exit code 0, got %d", code)
-	}
-}
-
-func TestMainWithMakefile(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "Makefile")
-	write(t, path, "")
-
-	originalPackageDirs := packageDirs
-	originalMakefiles := makefiles
-	originalCheckFile := checkFile
-	originalExit := osExit
-	t.Cleanup(func() {
-		packageDirs = originalPackageDirs
-		makefiles = originalMakefiles
-		checkFile = originalCheckFile
-		osExit = originalExit
-	})
-
-	packageDirs = func() ([]string, error) { return nil, nil }
-	makefiles = func() ([]string, error) { return []string{path}, nil }
-	checkFile = func(f string) error {
-		if f != path {
-			t.Fatalf("unexpected path %s", f)
-		}
-		return nil
-	}
-
-	var code = -1
-	osExit = func(c int) { code = c }
-
-	oldArgs := os.Args
-	os.Args = []string{"cmd", "-makefile"}
-	defer func() { os.Args = oldArgs }()
-
-	main()
-	if code != -1 {
-		t.Fatalf("expected exit code 0, got %d", code)
+	if code != 0 {
+		t.Fatalf("unexpected exit %d", code)
 	}
 }
