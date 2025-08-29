@@ -7,7 +7,8 @@
             "attributes": {
               "bucket": {"required": true},
               "acl": {"optional": true},
-              "tags": {"optional": true}
+              "tags": {"optional": true},
+              "id": {"computed": true}
             }
           }
         }
@@ -28,7 +29,8 @@
         "null_resource": {
           "block": {
             "attributes": {
-              "triggers": {"optional": true}
+              "triggers": {"optional": true},
+              "id": {"computed": true}
             }
           }
         }
