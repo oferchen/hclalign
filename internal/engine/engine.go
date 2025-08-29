@@ -11,11 +11,12 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/oferchen/hclalign/config"
 	"github.com/oferchen/hclalign/internal/diff"
@@ -130,36 +131,50 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	var changed atomic.Bool
 	outs := make(map[string][]byte, len(files))
 
-	g, gctx := errgroup.WithContext(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	fileCh := make(chan string)
 	results := make(chan result, len(files))
 
-	g.Go(func() error {
+	var wg sync.WaitGroup
+	var errMu sync.Mutex
+	var errs []error
+
+	go func() {
 		defer close(fileCh)
 		for _, f := range files {
 			select {
-			case <-gctx.Done():
-				return gctx.Err()
+			case <-ctx.Done():
+				return
 			case fileCh <- f:
 			}
 		}
-		return nil
-	})
+	}()
 
 	for i := 0; i < cfg.Concurrency; i++ {
-		g.Go(func() error {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 			for {
 				select {
+				case <-ctx.Done():
+					return
 				case f, ok := <-fileCh:
 					if !ok {
-						return nil
+						return
 					}
-					ch, out, err := processSingleFile(gctx, f, cfg)
+					ch, out, err := processSingleFile(ctx, f, cfg)
 					if err != nil {
-						if !errors.Is(err, context.Canceled) {
-							log.Printf("error processing file %s: %v", f, err)
+						if errors.Is(err, context.Canceled) {
+							cancel()
+							return
 						}
-						return fmt.Errorf("%s: %w", f, err)
+						log.Printf("error processing file %s: %v", f, err)
+						errMu.Lock()
+						errs = append(errs, fmt.Errorf("%s: %w", f, err))
+						errMu.Unlock()
+						continue
 					}
 					if ch {
 						changed.Store(true)
@@ -167,32 +182,21 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 					if len(out) > 0 {
 						select {
 						case results <- result{path: f, data: out}:
-						case <-gctx.Done():
-							return gctx.Err()
+						case <-ctx.Done():
+							return
 						}
 					}
 					if cfg.Verbose {
 						log.Printf("processed file: %s", f)
 					}
-				case <-gctx.Done():
-					if errors.Is(gctx.Err(), context.Canceled) {
-
-						select {
-						case _, ok := <-fileCh:
-							if !ok {
-								return nil
-							}
-						default:
-						}
-					}
-					return gctx.Err()
 				}
 			}
-		})
+		}()
 	}
 
-	if err := g.Wait(); err != nil {
-		return false, err
+	wg.Wait()
+	if err := ctx.Err(); err != nil {
+		return changed.Load(), err
 	}
 	close(results)
 	for r := range results {
@@ -211,6 +215,14 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 				return changed.Load(), err
 			}
 		}
+	}
+
+	if len(errs) > 0 {
+		messages := make([]string, len(errs))
+		for i, err := range errs {
+			messages[i] = err.Error()
+		}
+		return changed.Load(), errors.New(strings.Join(messages, "\n"))
 	}
 
 	return changed.Load(), nil
