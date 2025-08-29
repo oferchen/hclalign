@@ -59,6 +59,26 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	fmtOnly, err := cmd.Flags().GetBool("fmt-only")
+	if err != nil {
+		return err
+	}
+	noFmt, err := cmd.Flags().GetBool("no-fmt")
+	if err != nil {
+		return err
+	}
+	fmtStrategy, err := cmd.Flags().GetString("fmt-strategy")
+	if err != nil {
+		return err
+	}
+	providersSchema, err := cmd.Flags().GetString("providers-schema")
+	if err != nil {
+		return err
+	}
+	useTerraformSchema, err := cmd.Flags().GetBool("use-terraform-schema")
+	if err != nil {
+		return err
+	}
 	concurrency, err := cmd.Flags().GetInt("concurrency")
 	if err != nil {
 		return err
@@ -85,6 +105,9 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if modeCount > 1 {
 		return &ExitCodeError{Err: fmt.Errorf("cannot specify more than one of --write, --check, or --diff"), Code: 2}
 	}
+	if fmtOnly && noFmt {
+		return &ExitCodeError{Err: fmt.Errorf("cannot specify both --fmt-only and --no-fmt"), Code: 2}
+	}
 
 	if !stdin && target == "" {
 		return &ExitCodeError{Err: fmt.Errorf(config.ErrMissingTarget), Code: 2}
@@ -109,17 +132,22 @@ func RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := &config.Config{
-		Target:         target,
-		Mode:           mode,
-		Stdin:          stdin,
-		Stdout:         stdout,
-		Include:        include,
-		Exclude:        exclude,
-		Order:          order,
-		StrictOrder:    strictOrder,
-		Concurrency:    concurrency,
-		Verbose:        verbose,
-		FollowSymlinks: followSymlinks,
+		Target:             target,
+		Mode:               mode,
+		Stdin:              stdin,
+		Stdout:             stdout,
+		Include:            include,
+		Exclude:            exclude,
+		Order:              order,
+		StrictOrder:        strictOrder,
+		FmtOnly:            fmtOnly,
+		NoFmt:              noFmt,
+		FmtStrategy:        fmtStrategy,
+		ProvidersSchema:    providersSchema,
+		UseTerraformSchema: useTerraformSchema,
+		Concurrency:        concurrency,
+		Verbose:            verbose,
+		FollowSymlinks:     followSymlinks,
 	}
 
 	if err := cfg.Validate(); err != nil {

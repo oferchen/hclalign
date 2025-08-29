@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/config"
+	"github.com/hashicorp/hclalign/config"
 )
 
 // variableStrategy implements alignment for `variable` blocks.

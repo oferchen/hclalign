@@ -8,14 +8,14 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
-	"github.com/oferchen/hclalign/internal/fs"
+	internalfs "github.com/hashicorp/hclalign/internal/fs"
 )
 
 // Format formats the given HCL source. It preserves a UTF-8 BOM and newline
 // style while ensuring non-empty files end with exactly one newline.
 // Non-UTF-8 input is rejected and parse errors are returned.
 func Format(src []byte, filename string) ([]byte, error) {
-	hints := fs.DetectHintsFromBytes(src)
+	hints := internalfs.DetectHintsFromBytes(src)
 	if bom := hints.BOM(); len(bom) > 0 {
 		src = src[len(bom):]
 	}
@@ -34,6 +34,6 @@ func Format(src []byte, filename string) ([]byte, error) {
 		formatted = append(formatted, '\n')
 	}
 
-	formatted = fs.ApplyHints(formatted, hints)
+	formatted = internalfs.ApplyHints(formatted, hints)
 	return formatted, nil
 }

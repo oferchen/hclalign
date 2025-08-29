@@ -1,4 +1,4 @@
-// main.go
+// cmd/hclalign/main.go
 package main
 
 import (
@@ -34,9 +34,15 @@ func run(args []string) int {
 	rootCmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
 	rootCmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
 	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
+	rootCmd.Flags().Bool("fmt-only", false, "only format files, skip alignment")
+	rootCmd.Flags().Bool("no-fmt", false, "skip initial formatting")
+	rootCmd.Flags().String("fmt-strategy", "native", "formatting strategy to use")
+	rootCmd.Flags().String("providers-schema", "", "path to providers schema file")
+	rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	rootCmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
 
 	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
