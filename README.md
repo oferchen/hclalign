@@ -1,5 +1,7 @@
 # hclalign
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 `hclalign` is a Command Line Interface (CLI) tool for reordering attributes inside HCL variable blocks. It helps maintain a consistent style across Terraform and other HCL files.
 
 ## Features
