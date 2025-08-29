@@ -59,7 +59,17 @@ func TestRunETargetWithStdin(t *testing.T) {
 	path := filepath.Join(dir, "test.tf")
 
 	cmd := newRootCmd(true)
-	cmd.SetArgs([]string{path, "--stdin"})
+	cmd.SetArgs([]string{path, "--stdin", "--stdout"})
+	_, err := cmd.ExecuteC()
+	require.Error(t, err)
+	var exitErr *ExitCodeError
+	require.ErrorAs(t, err, &exitErr)
+	require.Equal(t, 2, exitErr.Code)
+}
+
+func TestRunEStdinRequiresStdout(t *testing.T) {
+	cmd := newRootCmd(true)
+	cmd.SetArgs([]string{"--stdin"})
 	_, err := cmd.ExecuteC()
 	require.Error(t, err)
 	var exitErr *ExitCodeError
@@ -109,7 +119,7 @@ func TestRunERuntimeError(t *testing.T) {
 
 func TestRunEInvalidConcurrency(t *testing.T) {
 	cmd := newRootCmd(true)
-	cmd.SetArgs([]string{"--stdin", "--concurrency", "0"})
+	cmd.SetArgs([]string{"--stdin", "--stdout", "--concurrency", "0"})
 	_, err := cmd.ExecuteC()
 	require.Error(t, err)
 	var exitErr *ExitCodeError
@@ -130,7 +140,7 @@ func TestRunEInvalidGlob(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := newRootCmd(true)
-			cmd.SetArgs([]string{"--stdin", tt.flag, "["})
+			cmd.SetArgs([]string{"--stdin", "--stdout", tt.flag, "["})
 			_, err := cmd.ExecuteC()
 			require.Error(t, err)
 			var exitErr *ExitCodeError
