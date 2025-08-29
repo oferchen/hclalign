@@ -55,6 +55,13 @@ func TestValidateOrder_StrictValidationBlock(t *testing.T) {
 	}
 }
 
+func TestValidateOrder_EmptyAttributeName(t *testing.T) {
+	err := ValidateOrder([]string{"description", ""}, false)
+	if err == nil || err.Error() != "attribute name cannot be empty" {
+		t.Fatalf("expected error for empty attribute name, got %v", err)
+	}
+}
+
 func TestDefaultExcludeMatchesExpected(t *testing.T) {
 	expected := []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
 	if !reflect.DeepEqual(DefaultExclude, expected) {
