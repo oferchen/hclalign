@@ -102,6 +102,8 @@ func RunE(cmd *cobra.Command, args []string) error {
 
 	var mode config.Mode
 	switch {
+	case writeMode:
+		mode = config.ModeWrite
 	case checkMode:
 		mode = config.ModeCheck
 	case diffMode:
