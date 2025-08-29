@@ -62,7 +62,7 @@ func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
 		},
 		{
 			name: "terraform",
-			src:  "terraform {\n  required_version = \"1.0\"\n  required_providers {}\n  experiments       = []\n  cloud {}\n  backend \"local\" {}\n  foo = 1\n}",
+			src:  "terraform {\n  required_version = \"1.0\"\n  required_providers {}\n  backend \"local\" {}\n  cloud {}\n  foo = 1\n}",
 		},
 		{
 			name: "dynamic",
