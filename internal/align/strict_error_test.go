@@ -17,11 +17,6 @@ func TestStrictOrderErrors(t *testing.T) {
 		want string
 	}{
 		{
-			name: "unknown",
-			src:  "variable \"a\" {\n  foo = 1\n}",
-			want: "unknown attributes",
-		},
-		{
 			name: "missing",
 			src:  "variable \"a\" {\n  type = string\n}",
 			want: "missing attributes",
@@ -42,5 +37,16 @@ func TestStrictOrderErrors(t *testing.T) {
 				t.Fatalf("error %q does not contain %q", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestStrictOrderAllowsUnknownAttributes(t *testing.T) {
+	src := "variable \"a\" {\n  description = \"desc\"\n  type = string\n  default = 1\n  sensitive = true\n  nullable = false\n  foo = 1\n}"
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	if diags.HasErrors() {
+		t.Fatalf("parse: %v", diags)
+	}
+	if err := hclalign.ReorderAttributes(f, nil, true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

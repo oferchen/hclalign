@@ -1,6 +1,9 @@
 variable "example" {
   foo = "foo"
-  default = 1
+  description = "example"
   bar = "bar"
+  default = 1
   type = number
+  sensitive = true
+  nullable = false
 }
