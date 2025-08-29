@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/oferchen/hclalign/config"
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
@@ -38,9 +39,13 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	cmd.Flags().String("fmt-strategy", string(terraformfmt.StrategyAuto), "formatter strategy: auto, binary, go")
+	cmd.Flags().Bool("fmt-only", false, "run formatter only")
+	cmd.Flags().Bool("no-fmt", false, "disable formatter")
 	if exclusive {
 		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 	}
+	cmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
 	return cmd
 }
 

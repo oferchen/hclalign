@@ -20,6 +20,7 @@ import (
 
 	"github.com/oferchen/hclalign/config"
 	"github.com/oferchen/hclalign/internal/diff"
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
 	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/oferchen/hclalign/internal/hclalign"
 	"github.com/oferchen/hclalign/patternmatching"
@@ -248,7 +249,59 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 		return false, nil, err
 	}
 
-	file, diags := hclwrite.ParseConfig(data, filePath, hcl.InitialPos)
+	src := data
+	if !cfg.NoFmt {
+		strat := cfg.FmtStrategy
+		if strat == "" {
+			strat = terraformfmt.StrategyAuto
+		}
+		formatted, err := terraformfmt.Format(ctx, src, strat)
+		if err != nil {
+			return false, nil, fmt.Errorf("formatting error in file %s: %w", filePath, err)
+		}
+		src = formatted
+	}
+
+	if cfg.FmtOnly {
+		formatted := bytes.ReplaceAll(src, []byte("\r\n"), []byte("\n"))
+		styled := internalfs.ApplyHints(formatted, hints)
+		original := data
+		if bom := hints.BOM(); len(bom) > 0 {
+			original = append(append([]byte{}, bom...), original...)
+		}
+		changed := !bytes.Equal(original, styled)
+		var out []byte
+		switch cfg.Mode {
+		case config.ModeWrite:
+			if !changed {
+				if cfg.Stdout {
+					out = styled
+				}
+				return false, out, nil
+			}
+			if err := WriteFileAtomic(ctx, filePath, formatted, perm, hints); err != nil {
+				return false, nil, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
+			}
+			if cfg.Stdout {
+				out = styled
+			}
+		case config.ModeCheck:
+			if cfg.Stdout {
+				out = styled
+			}
+		case config.ModeDiff:
+			if changed {
+				text, err := diff.Unified(filePath, filePath, original, styled, hints.Newline)
+				if err != nil {
+					return false, nil, err
+				}
+				out = []byte(text)
+			}
+		}
+		return changed, out, nil
+	}
+
+	file, diags := hclwrite.ParseConfig(src, filePath, hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
@@ -324,8 +377,49 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	if len(hints.BOM()) > 0 {
 		data = data[len(hints.BOM()):]
 	}
+	src := data
+	if !cfg.NoFmt {
+		strat := cfg.FmtStrategy
+		if strat == "" {
+			strat = terraformfmt.StrategyAuto
+		}
+		formatted, err := terraformfmt.Format(ctx, src, strat)
+		if err != nil {
+			return false, err
+		}
+		src = formatted
+	}
+	if cfg.FmtOnly {
+		formatted := bytes.ReplaceAll(src, []byte("\r\n"), []byte("\n"))
+		styled := internalfs.ApplyHints(formatted, hints)
+		original := data
+		if bom := hints.BOM(); len(bom) > 0 {
+			original = append(append([]byte{}, bom...), original...)
+		}
+		changed := !bytes.Equal(original, styled)
 
-	file, diags := hclwrite.ParseConfig(data, "stdin", hcl.InitialPos)
+		switch cfg.Mode {
+		case config.ModeDiff:
+			if changed {
+				text, err := diff.Unified("stdin", "stdin", original, styled, hints.Newline)
+				if err != nil {
+					return false, err
+				}
+				if _, err := fmt.Fprint(w, text); err != nil {
+					return false, err
+				}
+			}
+		default:
+			if cfg.Stdout {
+				if _, err := w.Write(styled); err != nil {
+					return changed, err
+				}
+			}
+		}
+		return changed, nil
+	}
+
+	file, diags := hclwrite.ParseConfig(src, "stdin", hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, fmt.Errorf("parsing error: %v", diags.Errs())
 	}

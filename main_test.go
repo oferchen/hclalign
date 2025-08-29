@@ -9,6 +9,7 @@ import (
 
 	"github.com/oferchen/hclalign/cli"
 	"github.com/oferchen/hclalign/config"
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
@@ -95,6 +96,10 @@ func TestMainFunctionality(t *testing.T) {
 			rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 			rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 			rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+			rootCmd.Flags().String("fmt-strategy", string(terraformfmt.StrategyAuto), "formatter strategy: auto, binary, go")
+			rootCmd.Flags().Bool("fmt-only", false, "run formatter only")
+			rootCmd.Flags().Bool("no-fmt", false, "disable formatter")
+			rootCmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
 			rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 			rootCmd.SetArgs(args)
@@ -138,6 +143,10 @@ func TestCLIOrderFlagInfluencesProcessing(t *testing.T) {
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	rootCmd.Flags().String("fmt-strategy", string(terraformfmt.StrategyAuto), "formatter strategy: auto, binary, go")
+	rootCmd.Flags().Bool("fmt-only", false, "run formatter only")
+	rootCmd.Flags().Bool("no-fmt", false, "disable formatter")
+	rootCmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
 	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 	rootCmd.SetArgs([]string{filePath, "--order=default", "--order=description"})
@@ -174,6 +183,10 @@ func TestCLIStrictOrderUnknownAttribute(t *testing.T) {
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	rootCmd.Flags().String("fmt-strategy", string(terraformfmt.StrategyAuto), "formatter strategy: auto, binary, go")
+	rootCmd.Flags().Bool("fmt-only", false, "run formatter only")
+	rootCmd.Flags().Bool("no-fmt", false, "disable formatter")
+	rootCmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
 	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 	rootCmd.SetArgs([]string{filePath, "--order=description", "--order=unknown", "--strict-order"})

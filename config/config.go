@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime"
 
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
 	"github.com/oferchen/hclalign/patternmatching"
 )
 
@@ -30,6 +31,9 @@ type Config struct {
 	Concurrency    int
 	Verbose        bool
 	FollowSymlinks bool
+	FmtStrategy    terraformfmt.Strategy
+	FmtOnly        bool
+	NoFmt          bool
 }
 
 var (
@@ -57,6 +61,17 @@ func (c *Config) Validate() error {
 	}
 	if err := ValidateOrder(c.Order, c.StrictOrder); err != nil {
 		return fmt.Errorf("invalid order: %w", err)
+	}
+	if c.FmtStrategy == "" {
+		c.FmtStrategy = terraformfmt.StrategyAuto
+	}
+	switch c.FmtStrategy {
+	case terraformfmt.StrategyAuto, terraformfmt.StrategyBinary, terraformfmt.StrategyGo:
+	default:
+		return fmt.Errorf("invalid fmt strategy %q", c.FmtStrategy)
+	}
+	if c.FmtOnly && c.NoFmt {
+		return fmt.Errorf("cannot use both fmt-only and no-fmt")
 	}
 	return nil
 }

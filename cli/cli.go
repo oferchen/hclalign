@@ -8,6 +8,7 @@ import (
 
 	"github.com/oferchen/hclalign/config"
 	"github.com/oferchen/hclalign/internal/engine"
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
 )
 
 type ExitCodeError struct {
@@ -71,6 +72,18 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	fmtStrategyStr, err := cmd.Flags().GetString("fmt-strategy")
+	if err != nil {
+		return err
+	}
+	fmtOnly, err := cmd.Flags().GetBool("fmt-only")
+	if err != nil {
+		return err
+	}
+	noFmt, err := cmd.Flags().GetBool("no-fmt")
+	if err != nil {
+		return err
+	}
 
 	modeCount := 0
 	if writeMode {
@@ -120,6 +133,9 @@ func RunE(cmd *cobra.Command, args []string) error {
 		Concurrency:    concurrency,
 		Verbose:        verbose,
 		FollowSymlinks: followSymlinks,
+		FmtStrategy:    terraformfmt.Strategy(fmtStrategyStr),
+		FmtOnly:        fmtOnly,
+		NoFmt:          noFmt,
 	}
 
 	if err := cfg.Validate(); err != nil {

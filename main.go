@@ -9,6 +9,7 @@ import (
 
 	"github.com/oferchen/hclalign/cli"
 	"github.com/oferchen/hclalign/config"
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
 )
 
 var osExit = os.Exit
@@ -37,6 +38,10 @@ func run(args []string) int {
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	rootCmd.Flags().String("fmt-strategy", string(terraformfmt.StrategyAuto), "formatter strategy: auto, binary, go")
+	rootCmd.Flags().Bool("fmt-only", false, "run formatter only")
+	rootCmd.Flags().Bool("no-fmt", false, "disable formatter")
+	rootCmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
 
 	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
