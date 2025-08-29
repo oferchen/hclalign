@@ -37,7 +37,7 @@ func newRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	cmd.Flags().Bool("fmt-only", false, "only format files, skip alignment")
 	cmd.Flags().Bool("no-fmt", false, "skip initial formatting")
-	cmd.Flags().String("fmt-strategy", "native", "formatting strategy to use")
+	cmd.Flags().String("fmt-strategy", "auto", "formatting strategy to use")
 	cmd.Flags().String("providers-schema", "", "path to providers schema file")
 	cmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")

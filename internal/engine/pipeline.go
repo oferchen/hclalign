@@ -14,8 +14,8 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	"github.com/hashicorp/hclalign/config"
-	"github.com/hashicorp/hclalign/formatter"
 	"github.com/hashicorp/hclalign/internal/diff"
+	terraformfmt "github.com/hashicorp/hclalign/internal/fmt"
 	internalfs "github.com/hashicorp/hclalign/internal/fs"
 )
 
@@ -121,7 +121,7 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config) (bool
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
 	formatted := data
 	if !cfg.NoFmt {
-		formatted, err = formatter.Format(data, filePath)
+		formatted, err = terraformfmt.Format(data, filePath, cfg.FmtStrategy)
 		if err != nil {
 			return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
 		}

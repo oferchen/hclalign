@@ -36,7 +36,7 @@ func run(args []string) int {
 	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	rootCmd.Flags().Bool("fmt-only", false, "only format files, skip alignment")
 	rootCmd.Flags().Bool("no-fmt", false, "skip initial formatting")
-	rootCmd.Flags().String("fmt-strategy", "native", "formatting strategy to use")
+	rootCmd.Flags().String("fmt-strategy", "auto", "formatting strategy to use")
 	rootCmd.Flags().String("providers-schema", "", "path to providers schema file")
 	rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
