@@ -1,7 +1,7 @@
 data "aws_ami" "example" {
-  provider    = aws.us
-  count       = 1
   depends_on  = []
+  count       = 1
+  provider    = aws.us
   owners      = ["amazon"]
   most_recent = true
   bar         = "bar"
