@@ -35,6 +35,13 @@ func TestValidateOrder_StrictMissingAttribute(t *testing.T) {
 	}
 }
 
+func TestValidateOrder_EmptyAttribute(t *testing.T) {
+	err := ValidateOrder([]string{""}, false)
+	if err == nil || !strings.Contains(err.Error(), "attribute name cannot be empty") {
+		t.Fatalf("expected error for empty attribute name, got %v", err)
+	}
+}
+
 func TestCanonicalOrderMatchesBuiltInAttributes(t *testing.T) {
 	expected := []string{"description", "type", "default", "sensitive", "nullable"}
 	if !reflect.DeepEqual(CanonicalOrder, expected) {
@@ -120,9 +127,9 @@ func TestValidate_EmptyOrderAttribute(t *testing.T) {
 		Concurrency: 1,
 		Include:     DefaultInclude,
 		Exclude:     DefaultExclude,
-		Order:       []string{"description", ""},
+		Order:       []string{""},
 	}
 	if err := c.Validate(); err == nil || !strings.Contains(err.Error(), "attribute name cannot be empty") {
-		t.Fatalf("expected error for empty attribute name in order, got %v", err)
+		t.Fatalf("expected error for empty order attribute, got %v", err)
 	}
 }
