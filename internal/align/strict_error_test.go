@@ -7,7 +7,6 @@ import (
 
 	hcl "github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/hashicorp/hclalign/internal/hclalign"
 )
 
 func TestStrictOrderErrors(t *testing.T) {
@@ -29,7 +28,7 @@ func TestStrictOrderErrors(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse: %v", diags)
 			}
-			err := hclalign.ReorderAttributes(f, nil, true)
+			err := Apply(f, &Options{Strict: true})
 			if err == nil {
 				t.Fatalf("expected error")
 			}
@@ -46,7 +45,7 @@ func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
 	if diags.HasErrors() {
 		t.Fatalf("parse: %v", diags)
 	}
-	if err := hclalign.ReorderAttributes(f, nil, true); err == nil {
+	if err := Apply(f, &Options{Strict: true}); err == nil {
 		t.Fatalf("expected error")
 	}
 }
