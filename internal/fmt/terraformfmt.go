@@ -1,3 +1,4 @@
+// internal/fmt/terraformfmt.go
 package terraformfmt
 
 import (
@@ -19,8 +20,6 @@ const (
 	StrategyGo     Strategy = "go"
 )
 
-// Format formats HCL source using the specified strategy.
-// The filename parameter is used only for parse diagnostics.
 func Format(src []byte, filename, strategy string) ([]byte, error) {
 	switch Strategy(strategy) {
 	case StrategyGo:

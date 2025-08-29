@@ -1,3 +1,4 @@
+// formatter/formatter_test.go
 package formatter
 
 import (
@@ -5,9 +6,6 @@ import (
 	"testing"
 )
 
-// TestFormatHints verifies that BOMs and newline styles are preserved after
-// formatting. It also checks that the formatted output matches the expected
-// canonical form.
 func TestFormatHints(t *testing.T) {
 	bom := []byte{0xEF, 0xBB, 0xBF}
 	tests := []struct {
@@ -41,8 +39,6 @@ func TestFormatHints(t *testing.T) {
 	}
 }
 
-// TestFormatTrailingNewline ensures that formatter enforces exactly one
-// trailing newline and applies newline hints when adding it.
 func TestFormatTrailingNewline(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -80,7 +76,6 @@ func TestFormatTrailingNewline(t *testing.T) {
 	}
 }
 
-// TestFormatRejectsInvalidUTF8 verifies that non-UTF-8 input is rejected.
 func TestFormatRejectsInvalidUTF8(t *testing.T) {
 	invalid := []byte{0xff, 0xfe, 0xfd}
 	if _, err := Format(invalid, "test.hcl"); err == nil {

@@ -1,3 +1,4 @@
+// internal/align/resource.go
 package align
 
 import (
@@ -18,10 +19,6 @@ func (resourceStrategy) Align(block *hclwrite.Block, opts *Options) error {
 
 func init() { Register(resourceStrategy{}) }
 
-// schemaAwareOrder orders attributes using provider schema information when
-// available. Attributes are grouped as required, optional, computed, meta and
-// unknown. Unknown attributes sort alphabetically after known ones. When opts
-// is nil or opts.Schema is nil, attributes are sorted alphabetically.
 func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 	attrs := block.Body().Attributes()
 	names := make([]string, 0, len(attrs))

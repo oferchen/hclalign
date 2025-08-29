@@ -38,4 +38,3 @@ func TestUnifiedDiffUsesEOL(t *testing.T) {
 		t.Fatalf("expected CRLF line endings in diff, got: %q", diffStr)
 	}
 }
-

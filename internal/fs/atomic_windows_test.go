@@ -30,4 +30,3 @@ func TestWriteFileAtomicChownIgnored(t *testing.T) {
 		t.Fatalf("WriteFileAtomic: %v", err)
 	}
 }
-

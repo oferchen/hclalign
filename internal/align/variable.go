@@ -1,3 +1,4 @@
+// internal/align/variable.go
 package align
 
 import (
@@ -12,7 +13,6 @@ import (
 	ihcl "github.com/hashicorp/hclalign/internal/hcl"
 )
 
-// variableStrategy implements alignment for `variable` blocks.
 type variableStrategy struct{}
 
 func (variableStrategy) Name() string { return "variable" }
@@ -43,8 +43,6 @@ func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
 func init() {
 	Register(variableStrategy{})
 }
-
-// -- original implementation below --
 
 func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}, strict bool) error {
 	body := block.Body()

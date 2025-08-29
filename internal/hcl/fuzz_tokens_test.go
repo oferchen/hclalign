@@ -1,3 +1,4 @@
+// internal/hcl/fuzz_tokens_test.go
 package hcl
 
 import (

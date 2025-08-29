@@ -1,3 +1,4 @@
+// internal/hcl/tokens.go
 package hcl
 
 import (
@@ -7,17 +8,11 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
-// AttrTokens splits an attribute's tokens into leading comment tokens and
-// expression tokens. The resulting slices omit trailing newlines or comments
-// that include a newline so they can be reinserted with SetAttributeRaw.
 type AttrTokens struct {
 	LeadTokens hclwrite.Tokens
 	ExprTokens hclwrite.Tokens
 }
 
-// ExtractAttrTokens returns the leading comment tokens and expression tokens
-// for the given attribute. The returned slices are suitable for reinsertion via
-// SetAttributeRaw.
 func ExtractAttrTokens(attr *hclwrite.Attribute) AttrTokens {
 	toks := attr.BuildTokens(nil)
 	i := 0
@@ -40,8 +35,6 @@ func ExtractAttrTokens(attr *hclwrite.Attribute) AttrTokens {
 	return AttrTokens{LeadTokens: lead, ExprTokens: expr}
 }
 
-// HasTrailingComma reports whether the body tokens contain a trailing comma
-// immediately before the closing brace.
 func HasTrailingComma(tokens hclwrite.Tokens) bool {
 	for i := len(tokens) - 1; i >= 0; i-- {
 		tok := tokens[i]
@@ -62,8 +55,6 @@ func HasTrailingComma(tokens hclwrite.Tokens) bool {
 	return false
 }
 
-// DetectLineEnding inspects tokens and returns the newline sequence used.
-// It defaults to LF if no newline token is found.
 func DetectLineEnding(tokens hclwrite.Tokens) []byte {
 	for _, t := range tokens {
 		if i := bytes.IndexByte(t.Bytes, '\n'); i >= 0 {
@@ -76,9 +67,6 @@ func DetectLineEnding(tokens hclwrite.Tokens) []byte {
 	return []byte{'\n'}
 }
 
-// NormalizeTokens converts CRLF line endings to LF in the provided tokens and
-// strips any UTF-8 BOM from the first token. The returned boolean indicates
-// whether a BOM was removed.
 func NormalizeTokens(tokens hclwrite.Tokens) bool {
 	bom := []byte{0xEF, 0xBB, 0xBF}
 	hasBOM := false
@@ -97,8 +85,6 @@ func NormalizeTokens(tokens hclwrite.Tokens) bool {
 	return hasBOM
 }
 
-// AttributeOrder returns the order of attributes as they originally appear in
-// the body. The attrs map should contain the attributes present in the body.
 func AttributeOrder(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) []string {
 	tokens := body.BuildTokens(nil)
 	order := make([]string, 0, len(attrs))

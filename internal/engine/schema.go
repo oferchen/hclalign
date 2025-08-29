@@ -1,3 +1,4 @@
+// internal/engine/schema.go
 package engine
 
 import (
@@ -9,8 +10,6 @@ import (
 	alignschema "github.com/hashicorp/hclalign/internal/align/schema"
 )
 
-// loadSchemas loads provider schemas based on configuration. It returns nil if
-// no schema options are provided.
 func loadSchemas(ctx context.Context, cfg *config.Config) (map[string]*align.Schema, error) {
 	if cfg.ProvidersSchema == "" && !cfg.UseTerraformSchema {
 		return nil, nil

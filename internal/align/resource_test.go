@@ -1,3 +1,4 @@
+// internal/align/resource_test.go
 package align
 
 import (

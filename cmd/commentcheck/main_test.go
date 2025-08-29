@@ -42,7 +42,17 @@ func TestCheckFileMissingComment(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "foo.go")
 	write(t, path, "package main\n")
-	if err := checkFile(path); err == nil || !strings.Contains(err.Error(), "first line must be") {
+	if err := checkFile(path); err == nil || !strings.Contains(err.Error(), "missing file comment") {
+		t.Fatalf("expected error, got %v", err)
+	}
+}
+
+func TestCheckFileAdditionalComments(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "foo.go")
+	comment := fmt.Sprintf("// %s\n", filepath.ToSlash(path))
+	write(t, path, comment+"package main\n// extra\n")
+	if err := checkFile(path); err == nil || !strings.Contains(err.Error(), "found additional comments") {
 		t.Fatalf("expected error, got %v", err)
 	}
 }

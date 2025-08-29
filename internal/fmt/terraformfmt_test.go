@@ -1,3 +1,4 @@
+// internal/fmt/terraformfmt_test.go
 package terraformfmt
 
 import (

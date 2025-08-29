@@ -1,3 +1,4 @@
+// internal/align/lifecycle.go
 package align
 
 import (
