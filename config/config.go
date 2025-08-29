@@ -11,7 +11,7 @@ import (
 type Mode int
 
 const (
-	ModeWrite	Mode	= iota
+	ModeWrite Mode = iota
 
 	ModeCheck
 
@@ -19,23 +19,23 @@ const (
 )
 
 type Config struct {
-	Target		string
-	Mode		Mode
-	Stdin		bool
-	Stdout		bool
-	Include		[]string
-	Exclude		[]string
-	Order		[]string
-	StrictOrder	bool
-	Concurrency	int
-	Verbose		bool
-	FollowSymlinks	bool
+	Target         string
+	Mode           Mode
+	Stdin          bool
+	Stdout         bool
+	Include        []string
+	Exclude        []string
+	Order          []string
+	StrictOrder    bool
+	Concurrency    int
+	Verbose        bool
+	FollowSymlinks bool
 }
 
 var (
-	DefaultInclude	= []string{"**/*.tf"}
-	DefaultExclude	= []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
-	CanonicalOrder	= []string{"description", "type", "default", "sensitive", "nullable"}
+	DefaultInclude = []string{"**/*.tf"}
+	DefaultExclude = []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
+	CanonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 )
 
 const (
@@ -69,6 +69,9 @@ func ValidateOrder(order []string, strict bool) error {
 	}
 
 	for _, item := range order {
+		if item == "" {
+			return fmt.Errorf("attribute name cannot be empty")
+		}
 		if _, exists := providedSet[item]; exists {
 			return fmt.Errorf("duplicate attribute '%s' found in order", item)
 		}
@@ -89,4 +92,3 @@ func ValidateOrder(order []string, strict bool) error {
 	}
 	return nil
 }
-
