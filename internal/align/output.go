@@ -14,7 +14,7 @@ type outputStrategy struct{}
 
 func (outputStrategy) Name() string { return "output" }
 
-var outputCanonicalOrder = []string{"description", "value", "sensitive", "depends_on"}
+var outputCanonicalOrder = []string{"description", "value", "sensitive"}
 
 func (outputStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	attrs := block.Body().Attributes()

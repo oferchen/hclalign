@@ -12,6 +12,7 @@ output "unknown" {
 }
 
 output "depends" {
+  foo        = "bar"
   depends_on = [var.x]
   value      = var.c
 }
