@@ -95,6 +95,8 @@ func TestMainFunctionality(t *testing.T) {
 			rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 			rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 			rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+			rootCmd.Flags().String("providers-schema", "", "path to providers schema JSON")
+			rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform providers schema to order resource/data attributes")
 			rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 			rootCmd.SetArgs(args)
@@ -138,6 +140,8 @@ func TestCLIOrderFlagInfluencesProcessing(t *testing.T) {
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	rootCmd.Flags().String("providers-schema", "", "path to providers schema JSON")
+	rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform providers schema to order resource/data attributes")
 	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 	rootCmd.SetArgs([]string{filePath, "--order=default", "--order=description"})
@@ -174,6 +178,8 @@ func TestCLIStrictOrderUnknownAttribute(t *testing.T) {
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	rootCmd.Flags().String("providers-schema", "", "path to providers schema JSON")
+	rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform providers schema to order resource/data attributes")
 	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 
 	rootCmd.SetArgs([]string{filePath, "--order=description", "--order=unknown", "--strict-order"})

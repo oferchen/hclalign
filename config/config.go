@@ -19,17 +19,19 @@ const (
 )
 
 type Config struct {
-	Target         string
-	Mode           Mode
-	Stdin          bool
-	Stdout         bool
-	Include        []string
-	Exclude        []string
-	Order          []string
-	StrictOrder    bool
-	Concurrency    int
-	Verbose        bool
-	FollowSymlinks bool
+	Target             string
+	Mode               Mode
+	Stdin              bool
+	Stdout             bool
+	Include            []string
+	Exclude            []string
+	Order              []string
+	StrictOrder        bool
+	Concurrency        int
+	Verbose            bool
+	FollowSymlinks     bool
+	ProvidersSchema    string
+	UseTerraformSchema bool
 }
 
 var (

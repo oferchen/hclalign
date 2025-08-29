@@ -71,6 +71,14 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	providersSchema, err := cmd.Flags().GetString("providers-schema")
+	if err != nil {
+		return err
+	}
+	useTerraformSchema, err := cmd.Flags().GetBool("use-terraform-schema")
+	if err != nil {
+		return err
+	}
 
 	modeCount := 0
 	if writeMode {
@@ -109,17 +117,19 @@ func RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := &config.Config{
-		Target:         target,
-		Mode:           mode,
-		Stdin:          stdin,
-		Stdout:         stdout,
-		Include:        include,
-		Exclude:        exclude,
-		Order:          order,
-		StrictOrder:    strictOrder,
-		Concurrency:    concurrency,
-		Verbose:        verbose,
-		FollowSymlinks: followSymlinks,
+		Target:             target,
+		Mode:               mode,
+		Stdin:              stdin,
+		Stdout:             stdout,
+		Include:            include,
+		Exclude:            exclude,
+		Order:              order,
+		StrictOrder:        strictOrder,
+		Concurrency:        concurrency,
+		Verbose:            verbose,
+		FollowSymlinks:     followSymlinks,
+		ProvidersSchema:    providersSchema,
+		UseTerraformSchema: useTerraformSchema,
 	}
 
 	if err := cfg.Validate(); err != nil {

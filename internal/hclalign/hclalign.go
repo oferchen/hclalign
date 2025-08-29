@@ -10,7 +10,12 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/oferchen/hclalign/config"
+	"github.com/oferchen/hclalign/internal/align/schema"
 )
+
+var providersSchema *schema.ProvidersSchema
+
+func SetProviderSchemas(ps *schema.ProvidersSchema) { providersSchema = ps }
 
 func ReorderAttributes(file *hclwrite.File, order []string, strict bool) error {
 	if len(order) == 0 {
@@ -36,12 +41,24 @@ func ReorderAttributes(file *hclwrite.File, order []string, strict bool) error {
 
 	body := file.Body()
 	for _, block := range body.Blocks() {
-		if block.Type() != "variable" {
-			continue
-		}
-
-		if err := reorderVariableBlock(block, knownOrder, canonicalSet, strict); err != nil {
-			return err
+		switch block.Type() {
+		case "variable":
+			if err := reorderVariableBlock(block, knownOrder, canonicalSet, strict); err != nil {
+				return err
+			}
+		case "resource", "data":
+			if providersSchema == nil {
+				continue
+			}
+			labels := block.Labels()
+			if len(labels) == 0 {
+				continue
+			}
+			order := schemaAttributeOrder(labels[0], block.Type() == "data")
+			if len(order) == 0 {
+				continue
+			}
+			reorderSchemaBlock(block, order)
 		}
 	}
 
@@ -332,4 +349,85 @@ func attributeOrder(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) [
 		}
 	}
 	return order
+}
+
+func schemaAttributeOrder(name string, isData bool) []string {
+	if providersSchema == nil {
+		return nil
+	}
+	var req, opt, comp []string
+	for _, ps := range providersSchema.ProviderSchemas {
+		var rs *schema.ResourceSchema
+		if isData {
+			if ps.DataSourceSchemas != nil {
+				rs = ps.DataSourceSchemas[name]
+			}
+		} else {
+			if ps.ResourceSchemas != nil {
+				rs = ps.ResourceSchemas[name]
+			}
+		}
+		if rs != nil && rs.Block != nil {
+			for n, attr := range rs.Block.Attributes {
+				if attr.Required {
+					req = append(req, n)
+				} else if attr.Optional {
+					opt = append(opt, n)
+				} else if attr.Computed {
+					comp = append(comp, n)
+				}
+			}
+			break
+		}
+	}
+	sort.Strings(req)
+	sort.Strings(opt)
+	sort.Strings(comp)
+	order := make([]string, 0, len(req)+len(opt)+len(comp))
+	order = append(order, req...)
+	order = append(order, opt...)
+	order = append(order, comp...)
+	return order
+}
+
+func reorderSchemaBlock(block *hclwrite.Block, order []string) {
+	body := block.Body()
+	attrs := body.Attributes()
+	nested := body.Blocks()
+	for _, nb := range nested {
+		body.RemoveBlock(nb)
+	}
+	attrTokensMap := make(map[string]attrTokens, len(attrs))
+	for name, attr := range attrs {
+		attrTokensMap[name] = extractAttrTokens(attr)
+	}
+	originalOrder := attributeOrder(body, attrs)
+	for name := range attrs {
+		body.RemoveAttribute(name)
+	}
+	finalOrder := make([]string, 0, len(order)+len(originalOrder))
+	finalOrder = append(finalOrder, order...)
+	for _, name := range originalOrder {
+		if !contains(order, name) {
+			finalOrder = append(finalOrder, name)
+		}
+	}
+	for _, name := range finalOrder {
+		if tok, ok := attrTokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.leadTokens)
+			body.SetAttributeRaw(name, tok.exprTokens)
+		}
+	}
+	for _, nb := range nested {
+		body.AppendBlock(nb)
+	}
+}
+
+func contains(slice []string, s string) bool {
+	for _, v := range slice {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

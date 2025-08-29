@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -19,6 +20,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	"github.com/oferchen/hclalign/config"
+	"github.com/oferchen/hclalign/internal/align/schema"
 	"github.com/oferchen/hclalign/internal/diff"
 	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/oferchen/hclalign/internal/hclalign"
@@ -33,10 +35,37 @@ var (
 )
 
 func Process(ctx context.Context, cfg *config.Config) (bool, error) {
+	if cfg.UseTerraformSchema {
+		ps, err := loadProviderSchemas(ctx, cfg.ProvidersSchema)
+		if err != nil {
+			return false, err
+		}
+		hclalign.SetProviderSchemas(ps)
+	} else {
+		hclalign.SetProviderSchemas(nil)
+	}
 	if cfg.Stdin {
 		return processReader(ctx, os.Stdin, os.Stdout, cfg)
 	}
 	return processFiles(ctx, cfg)
+}
+
+func loadProviderSchemas(ctx context.Context, path string) (*schema.ProvidersSchema, error) {
+	var data []byte
+	var err error
+	if path != "" {
+		data, err = os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cmd := exec.CommandContext(ctx, "terraform", "providers", "schema", "-json")
+		data, err = cmd.Output()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return schema.Parse(bytes.NewReader(data))
 }
 
 func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {

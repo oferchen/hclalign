@@ -2,10 +2,12 @@
 package hclalign_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/oferchen/hclalign/internal/align/schema"
 	"github.com/oferchen/hclalign/internal/hclalign"
 	"github.com/stretchr/testify/require"
 )
@@ -187,4 +189,42 @@ func TestReorderAttributes_InlineCommentAfterBrace(t *testing.T) {
 	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
 
 	require.Equal(t, src, string(f.Bytes()))
+}
+
+func TestReorderAttributes_ResourceAndDataSchema(t *testing.T) {
+	js := `{"provider_schemas":{"test":{"resource_schemas":{"test_res":{"block":{"attributes":{"req":{"required":true},"opt":{"optional":true},"comp":{"computed":true}}}}},"data_source_schemas":{"test_data":{"block":{"attributes":{"req":{"required":true},"opt":{"optional":true},"comp":{"computed":true}}}}}}}}`
+	ps, err := schema.Parse(strings.NewReader(js))
+	require.NoError(t, err)
+	hclalign.SetProviderSchemas(ps)
+	defer hclalign.SetProviderSchemas(nil)
+
+	src := `resource "test_res" "r" {
+  comp = 1
+  opt  = 2
+  req  = 3
+}
+
+data "test_data" "d" {
+  comp = 1
+  req  = 2
+  opt  = 3
+}`
+
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
+
+	expected := `resource "test_res" "r" {
+  req  = 3
+  opt  = 2
+  comp = 1
+}
+
+data "test_data" "d" {
+  req  = 2
+  opt  = 3
+  comp = 1
+}`
+	require.Equal(t, expected, string(f.Bytes()))
 }

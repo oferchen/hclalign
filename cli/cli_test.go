@@ -38,6 +38,8 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	cmd.Flags().String("providers-schema", "", "path to providers schema JSON")
+	cmd.Flags().Bool("use-terraform-schema", false, "use terraform providers schema to order resource/data attributes")
 	if exclusive {
 		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 	}
