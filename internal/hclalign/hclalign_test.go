@@ -97,11 +97,11 @@ func TestReorderAttributes_StrictUnknownAttrError(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestReorderAttributes_LooseAppendsUnknownAtEnd(t *testing.T) {
+func TestReorderAttributes_LooseRetainsUnknownOrder(t *testing.T) {
 	src := `variable "example" {
   custom      = true
-  description = "d"
   type        = string
+  description = "d"
 }`
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
@@ -109,9 +109,9 @@ func TestReorderAttributes_LooseAppendsUnknownAtEnd(t *testing.T) {
 	require.NoError(t, hclalign.ReorderAttributes(f, []string{"description", "type"}, false))
 
 	expected := `variable "example" {
+  custom      = true
   description = "d"
   type        = string
-  custom      = true
 }`
 	require.Equal(t, expected, string(f.Bytes()))
 }

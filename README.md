@@ -118,6 +118,7 @@ Symbolic links are ignored by default to avoid unexpected traversals. Use `--fol
 ## Strict Order Enforcement
 
 Specify attribute order with `--order`. When `--strict-order` is set, all attributes must appear exactly once in the given order and no other attributes are allowed.
+Without `--strict-order`, attributes not in the canonical list remain in their original positions relative to the reordered attributes.
 
 ## Exit Codes
 
