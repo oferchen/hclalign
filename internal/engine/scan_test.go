@@ -13,17 +13,11 @@ import (
 func TestScanDefaultExcludeDirectories(t *testing.T) {
 	t.Parallel()
 
-	dir := t.TempDir()
-	// root tf file
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "main.tf"), []byte(""), 0o644))
+	dir := filepath.Join("..", "..", "tests", "cases", "default_excludes")
 
-	// create default excluded directories each with a tf file
-	excluded := []string{".terraform", "vendor", ".git", "node_modules"}
-	for _, d := range excluded {
-		sub := filepath.Join(dir, d)
-		require.NoError(t, os.MkdirAll(sub, 0o755))
-		require.NoError(t, os.WriteFile(filepath.Join(sub, "ignored.tf"), []byte(""), 0o644))
-	}
+	gitDir := filepath.Join(dir, ".git")
+	require.NoError(t, os.MkdirAll(gitDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(gitDir, "ignored.tf"), []byte(""), 0o644))
 
 	cfg := &config.Config{
 		Target:  dir,

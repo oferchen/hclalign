@@ -88,8 +88,6 @@ func TestProcessReaderModeCheckNoChange(t *testing.T) {
 }
 
 func TestProcessPrintsDelimiters(t *testing.T) {
-	t.Parallel()
-
 	dir := t.TempDir()
 	f1 := filepath.Join(dir, "a.tf")
 	f2 := filepath.Join(dir, "b.tf")
