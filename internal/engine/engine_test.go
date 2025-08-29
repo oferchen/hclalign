@@ -190,6 +190,106 @@ func TestProcessScenarios(t *testing.T) {
 			},
 		},
 		{
+			name: "target symlink dir follow",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				target := t.TempDir()
+				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				require.NoError(t, err)
+				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				require.NoError(t, err)
+				realFile := filepath.Join(target, "file.tf")
+				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
+				linkDir := t.TempDir()
+				link := filepath.Join(linkDir, "link")
+				require.NoError(t, os.Symlink(target, link))
+
+				cfg := &config.Config{
+					Target:         link,
+					Include:        []string{"**/*.tf"},
+					Mode:           config.ModeWrite,
+					Stdout:         true,
+					Concurrency:    1,
+					FollowSymlinks: true,
+				}
+				files := map[string]string{realFile: string(outb)}
+				return cfg, string(outb), true, files
+			},
+		},
+		{
+			name: "target symlink dir no follow",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				target := t.TempDir()
+				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				require.NoError(t, err)
+				realFile := filepath.Join(target, "file.tf")
+				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
+				linkDir := t.TempDir()
+				link := filepath.Join(linkDir, "link")
+				require.NoError(t, os.Symlink(target, link))
+
+				cfg := &config.Config{
+					Target:         link,
+					Include:        []string{"**/*.tf"},
+					Mode:           config.ModeWrite,
+					Stdout:         true,
+					Concurrency:    1,
+					FollowSymlinks: false,
+				}
+				files := map[string]string{realFile: string(inb)}
+				return cfg, "", false, files
+			},
+		},
+		{
+			name: "target symlink file follow",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				dir := t.TempDir()
+				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				require.NoError(t, err)
+				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				require.NoError(t, err)
+				realFile := filepath.Join(dir, "real.tf")
+				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
+				link := filepath.Join(dir, "link.tf")
+				require.NoError(t, os.Symlink(realFile, link))
+
+				cfg := &config.Config{
+					Target:         link,
+					Include:        []string{"**/*.tf"},
+					Mode:           config.ModeWrite,
+					Stdout:         true,
+					Concurrency:    1,
+					FollowSymlinks: true,
+				}
+				files := map[string]string{link: string(outb)}
+				return cfg, string(outb), true, files
+			},
+		},
+		{
+			name: "target symlink file no follow",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				dir := t.TempDir()
+				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				require.NoError(t, err)
+				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				require.NoError(t, err)
+				realFile := filepath.Join(dir, "real.tf")
+				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
+				link := filepath.Join(dir, "link.tf")
+				require.NoError(t, os.Symlink(realFile, link))
+
+				cfg := &config.Config{
+					Target:         link,
+					Include:        []string{"**/*.tf"},
+					Mode:           config.ModeWrite,
+					Stdout:         true,
+					Concurrency:    1,
+					FollowSymlinks: false,
+				}
+				files := map[string]string{link: string(outb)}
+				return cfg, string(outb), true, files
+			},
+		},
+		{
 			name: "concurrency",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
