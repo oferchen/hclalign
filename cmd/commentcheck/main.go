@@ -1,4 +1,4 @@
-// cmd/commentcheck/main.go — SPDX-License-Identifier: Apache-2.0
+// cmd/commentcheck/main.go
 package main
 
 import (
@@ -59,7 +59,7 @@ func main() {
 
 func checkFileFunc(path string) error {
 	rel := filepath.ToSlash(path)
-	expected := "// " + rel + " — SPDX-License-Identifier: Apache-2.0"
+	expected := "// " + rel
 	fh, err := os.Open(path)
 	if err != nil {
 		return err

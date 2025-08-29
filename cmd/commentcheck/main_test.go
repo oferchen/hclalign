@@ -1,4 +1,4 @@
-// cmd/commentcheck/main_test.go — SPDX-License-Identifier: Apache-2.0
+// cmd/commentcheck/main_test.go
 package main
 
 import (
@@ -21,7 +21,7 @@ func write(t *testing.T, path, content string) {
 func TestCheckFileOK(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "foo.go")
-	comment := fmt.Sprintf("// %s — SPDX-License-Identifier: Apache-2.0\n", filepath.ToSlash(path))
+	comment := fmt.Sprintf("// %s\n", filepath.ToSlash(path))
 	write(t, path, comment+"package main\n")
 	if err := checkFile(path); err != nil {
 		t.Fatalf("check file: %v", err)
@@ -31,7 +31,7 @@ func TestCheckFileOK(t *testing.T) {
 func TestCheckFileWithBuildTag(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "foo.go")
-	comment := fmt.Sprintf("// %s — SPDX-License-Identifier: Apache-2.0\n", filepath.ToSlash(path))
+	comment := fmt.Sprintf("// %s\n", filepath.ToSlash(path))
 	content := "//go:build windows\n\n" + comment + "package main\n"
 	write(t, path, content)
 	if err := checkFile(path); err != nil {
@@ -51,7 +51,8 @@ func TestCheckFileMissingComment(t *testing.T) {
 func TestCheckFileMalformedComment(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "foo.go")
-	write(t, path, "// wrong\npackage main\n")
+	comment := fmt.Sprintf("// %s extra\n", filepath.ToSlash(path))
+	write(t, path, comment+"package main\n")
 	if err := checkFile(path); err == nil || !strings.Contains(err.Error(), "first line must be") {
 		t.Fatalf("expected malformed comment error, got %v", err)
 	}

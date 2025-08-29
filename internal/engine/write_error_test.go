@@ -1,4 +1,4 @@
-// internal/engine/write_error_test.go — SPDX-License-Identifier: Apache-2.0
+// internal/engine/write_error_test.go
 package engine_test
 
 import (
@@ -21,10 +21,10 @@ import (
 
 func newRootCmd(exclusive bool) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "hclalign [target file or directory]",
-		Args:         cobra.ArbitraryArgs,
-		RunE:         cli.RunE,
-		SilenceUsage: true,
+		Use:		"hclalign [target file or directory]",
+		Args:		cobra.ArbitraryArgs,
+		RunE:		cli.RunE,
+		SilenceUsage:	true,
 	}
 	cmd.Flags().Bool("write", false, "write result to file(s)")
 	cmd.Flags().Bool("check", false, "check if files are formatted")
@@ -72,3 +72,4 @@ func TestProcessWriteFileError(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, string(data), string(got))
 }
+

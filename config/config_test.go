@@ -1,4 +1,4 @@
-// config/config_test.go — SPDX-License-Identifier: Apache-2.0
+// config/config_test.go
 package config
 
 import (
@@ -85,11 +85,11 @@ func TestValidate_InvalidExcludePattern(t *testing.T) {
 
 func TestValidate_ValidConfig(t *testing.T) {
 	c := Config{
-		Concurrency: 1,
-		Include:     DefaultInclude,
-		Exclude:     DefaultExclude,
-		Order:       CanonicalOrder,
-		StrictOrder: true,
+		Concurrency:	1,
+		Include:	DefaultInclude,
+		Exclude:	DefaultExclude,
+		Order:		CanonicalOrder,
+		StrictOrder:	true,
 	}
 	if err := c.Validate(); err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -98,12 +98,13 @@ func TestValidate_ValidConfig(t *testing.T) {
 
 func TestValidate_DuplicateOrderAttribute(t *testing.T) {
 	c := Config{
-		Concurrency: 1,
-		Include:     DefaultInclude,
-		Exclude:     DefaultExclude,
-		Order:       []string{"description", "description"},
+		Concurrency:	1,
+		Include:	DefaultInclude,
+		Exclude:	DefaultExclude,
+		Order:		[]string{"description", "description"},
 	}
 	if err := c.Validate(); err == nil {
 		t.Fatalf("expected error for duplicate order attribute")
 	}
 }
+

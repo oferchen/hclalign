@@ -1,4 +1,4 @@
-// internal/ci/covercheck/main_test.go — SPDX-License-Identifier: Apache-2.0
+// internal/ci/covercheck/main_test.go
 package main
 
 import (
@@ -24,28 +24,28 @@ func runCovercheck(t *testing.T) (string, int) {
 
 func TestCovercheck(t *testing.T) {
 	tests := []struct {
-		name     string
-		profile  string
-		wantExit int
-		wantMsg  string
+		name		string
+		profile		string
+		wantExit	int
+		wantMsg		string
 	}{
 		{
-			name:     "above",
-			profile:  "mode: set\nfile.go:1.1,1.2 1 1\n",
-			wantExit: 0,
-			wantMsg:  "Total coverage: 100.0%",
+			name:		"above",
+			profile:	"mode: set\nfile.go:1.1,1.2 1 1\n",
+			wantExit:	0,
+			wantMsg:	"Total coverage: 100.0%",
 		},
 		{
-			name:     "below",
-			profile:  "mode: set\nfile.go:1.1,1.2 1 0\nfile.go:2.1,2.2 1 1\n",
-			wantExit: 1,
-			wantMsg:  "Coverage 50.0% is below 95.0%",
+			name:		"below",
+			profile:	"mode: set\nfile.go:1.1,1.2 1 0\nfile.go:2.1,2.2 1 1\n",
+			wantExit:	1,
+			wantMsg:	"Coverage 50.0% is below 95.0%",
 		},
 		{
-			name:     "ignored path",
-			profile:  "mode: set\ncmd/commentcheck/file.go:1.1,1.2 1 0\nfile.go:2.1,2.2 1 1\n",
-			wantExit: 0,
-			wantMsg:  "Total coverage: 100.0%",
+			name:		"ignored path",
+			profile:	"mode: set\ncmd/commentcheck/file.go:1.1,1.2 1 0\nfile.go:2.1,2.2 1 1\n",
+			wantExit:	0,
+			wantMsg:	"Total coverage: 100.0%",
 		},
 	}
 	for _, tc := range tests {
@@ -64,3 +64,4 @@ func TestCovercheck(t *testing.T) {
 		})
 	}
 }
+

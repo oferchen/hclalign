@@ -1,2 +1,3 @@
-// cmd/commentcheck/doc.go — SPDX-License-Identifier: Apache-2.0
+// cmd/commentcheck/doc.go
 package main
+

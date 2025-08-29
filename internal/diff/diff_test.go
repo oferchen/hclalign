@@ -1,4 +1,4 @@
-// internal/diff/diff_test.go — SPDX-License-Identifier: Apache-2.0
+// internal/diff/diff_test.go
 package diff
 
 import (
@@ -38,3 +38,4 @@ func TestUnifiedDiffUsesEOL(t *testing.T) {
 		t.Fatalf("expected CRLF line endings in diff, got: %q", diffStr)
 	}
 }
+

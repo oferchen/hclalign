@@ -1,4 +1,4 @@
-// internal/align/golden_test.go — SPDX-License-Identifier: Apache-2.0
+// internal/align/golden_test.go
 package align
 
 import (
@@ -127,3 +127,4 @@ func TestUnknownAttributesAfterCanonical(t *testing.T) {
 		t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)
 	}
 }
+
