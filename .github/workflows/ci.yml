@@ -7,33 +7,30 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
-    name: Test
+  ci:
+    name: CI
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        go-version: ['1.23', '1.22']
+        go-version: [stable, oldstable]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
           cache: true
-      - run: go mod download
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-      - name: Govulncheck
-        run: govulncheck ./...
-        continue-on-error: true
+      - run: make tidy
+      - run: make fmt
+      - run: make lint
       - run: make commentcheck
-      - run: go test -race -shuffle=on -cover -coverprofile=coverage.out ./...
-      - run: go build ./...
+      - name: Vulnerability check
+        run: make vuln
+        continue-on-error: true
+      - run: make test
+      - run: make test-race
       - run: make cover
+      - run: make build
 
   terraform-fmt:
     name: Terraform fmt equivalence
@@ -44,7 +41,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: stable
           cache: true
-      - run: go mod download
       - run: go test ./internal/fmt -run TestGoMatchesBinary
