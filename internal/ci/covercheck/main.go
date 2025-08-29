@@ -11,9 +11,6 @@ import (
 
 const threshold = 95.0
 
-// paths to ignore when calculating coverage. These packages are excluded from
-// the coverage budget but may still appear in the profile when using
-// -coverpkg.
 var ignore = []string{
 	"cmd/commentcheck/",
 	"internal/ci/",
