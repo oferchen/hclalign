@@ -117,6 +117,30 @@ func TestRunEInvalidConcurrency(t *testing.T) {
 	require.Equal(t, 2, exitErr.Code)
 }
 
+func TestRunEInvalidGlob(t *testing.T) {
+	tests := []struct {
+		name    string
+		flag    string
+		message string
+	}{
+		{name: "include", flag: "--include", message: "invalid include"},
+		{name: "exclude", flag: "--exclude", message: "invalid exclude"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := newRootCmd(true)
+			cmd.SetArgs([]string{"--stdin", tt.flag, "["})
+			_, err := cmd.ExecuteC()
+			require.Error(t, err)
+			var exitErr *ExitCodeError
+			require.ErrorAs(t, err, &exitErr)
+			require.Equal(t, 2, exitErr.Code)
+			require.Contains(t, exitErr.Error(), tt.message)
+		})
+	}
+}
+
 func TestRunEModes(t *testing.T) {
 	unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
 	formatted := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
