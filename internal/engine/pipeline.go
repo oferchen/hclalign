@@ -28,9 +28,6 @@ func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[s
 		return outs, false, []error{err}
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	fileCh := make(chan string)
 	results := make(chan struct {
 		path string
@@ -67,13 +64,13 @@ func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[s
 					}
 					ch, out, err := processFile(ctx, f, cfg, schemas)
 					if err != nil {
-						if !errors.Is(err, context.Canceled) {
-							errMu.Lock()
-							errs = append(errs, fmt.Errorf("%s: %w", f, err))
-							errMu.Unlock()
-							cancel()
+						if errors.Is(err, context.Canceled) {
+							return
 						}
-						return
+						errMu.Lock()
+						errs = append(errs, fmt.Errorf("%s: %w", f, err))
+						errMu.Unlock()
+						continue
 					}
 					if ch {
 						changed.Store(true)
