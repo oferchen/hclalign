@@ -28,6 +28,17 @@ func TestCheckFileOK(t *testing.T) {
 	}
 }
 
+func TestCheckFileWithBuildTag(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "foo.go")
+	comment := fmt.Sprintf("// %s\n", filepath.ToSlash(path))
+	content := "//go:build windows\n\n" + comment + "package main\n"
+	write(t, path, content)
+	if err := checkFile(path); err != nil {
+		t.Fatalf("check file: %v", err)
+	}
+}
+
 func TestCheckFileMissingComment(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "foo.go")
