@@ -49,9 +49,9 @@ func TestProcessStopsAfterFirstError(t *testing.T) {
 	require.NoError(t, os.WriteFile(goodPath, []byte(good), 0o644))
 
 	cfg := &config.Config{
-		Target:      dir,
-		Include:     []string{"**/*.hcl"},
-		Concurrency: 1,
+		Target:		dir,
+		Include:	[]string{"**/*.hcl"},
+		Concurrency:	1,
 	}
 
 	changed, err := Process(context.Background(), cfg)

@@ -1,6 +1,4 @@
-// Package patternmatching provides utilities for matching file paths against
-// include and exclude glob patterns. Matcher values are safe for concurrent use
-// by multiple goroutines.
+// patternmatching/patternmatching.go
 package patternmatching
 
 import (
@@ -13,10 +11,10 @@ import (
 )
 
 type Matcher struct {
-	include  []string
-	exclude  []string
-	rootOnce sync.Once
-	root     string
+	include		[]string
+	exclude		[]string
+	rootOnce	sync.Once
+	root		string
 }
 
 func NewMatcher(include, exclude []string) (*Matcher, error) {
@@ -79,4 +77,5 @@ func (m *Matcher) Matches(path string) bool {
 	return false
 }
 
-func ValidatePatterns(patterns []string) error { return validatePatterns(patterns) }
+func ValidatePatterns(patterns []string) error	{ return validatePatterns(patterns) }
+

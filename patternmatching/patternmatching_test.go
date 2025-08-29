@@ -100,3 +100,4 @@ func TestMatcherMatchesConcurrent(t *testing.T) {
 	}
 	wg.Wait()
 }
+
