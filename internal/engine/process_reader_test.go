@@ -97,11 +97,11 @@ func TestProcessPrintsDelimiters(t *testing.T) {
 	require.NoError(t, os.WriteFile(f2, []byte("variable \"b\" {}\n"), 0o644))
 
 	cfg := &config.Config{
-		Target:      dir,
-		Include:     []string{"**/*.tf"},
-		Mode:        config.ModeCheck,
-		Stdout:      true,
-		Concurrency: 1,
+		Target:		dir,
+		Include:	[]string{"**/*.tf"},
+		Mode:		config.ModeCheck,
+		Stdout:		true,
+		Concurrency:	1,
 	}
 
 	r, w, err := os.Pipe()
@@ -120,3 +120,4 @@ func TestProcessPrintsDelimiters(t *testing.T) {
 	require.Contains(t, s, fmt.Sprintf("\n--- %s ---\n", f1))
 	require.Contains(t, s, fmt.Sprintf("\n--- %s ---\n", f2))
 }
+
