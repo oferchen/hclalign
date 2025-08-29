@@ -12,4 +12,14 @@ provider "aws" {
   assume_role {
     role_arn = "arn:aws:iam::123456789012:role/test"
   }
+
+  # nested a comment
+  nested "a" {
+    v = 1
+  }
+
+  # nested b comment
+  nested "b" {
+    v = 2
+  }
 }
