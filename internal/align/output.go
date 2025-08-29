@@ -2,23 +2,36 @@
 package align
 
 import (
-	"sort"
-
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
 
 type outputStrategy struct{}
 
 func (outputStrategy) Name() string { return "output" }
 
+var outputCanonicalOrder = []string{"description", "value", "sensitive", "depends_on"}
+
 func (outputStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	attrs := block.Body().Attributes()
-	names := make([]string, 0, len(attrs))
-	for name := range attrs {
-		names = append(names, name)
+
+	order := make([]string, 0, len(attrs))
+	reserved := make(map[string]struct{}, len(outputCanonicalOrder))
+	for _, name := range outputCanonicalOrder {
+		if _, ok := attrs[name]; ok {
+			order = append(order, name)
+		}
+		reserved[name] = struct{}{}
 	}
-	sort.Strings(names)
-	return reorderBlock(block, names)
+
+	original := ihcl.AttributeOrder(block.Body(), attrs)
+	for _, name := range original {
+		if _, ok := reserved[name]; !ok {
+			order = append(order, name)
+		}
+	}
+
+	return reorderBlock(block, order)
 }
 
 func init() { Register(outputStrategy{}) }
