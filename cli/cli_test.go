@@ -4,9 +4,11 @@ package cli
 import (
 	"bytes"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/oferchen/hclalign/config"
@@ -220,6 +222,97 @@ func TestRunEModes(t *testing.T) {
 					require.Equal(t, tt.wantFile, string(data))
 				}
 			}
+		})
+	}
+}
+
+func TestRunEVerbose(t *testing.T) {
+	unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
+
+	tests := []struct {
+		name    string
+		verbose bool
+		wantLog bool
+	}{
+		{name: "verbose", verbose: true, wantLog: true},
+		{name: "silent", verbose: false, wantLog: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			path := filepath.Join(dir, "test.tf")
+			require.NoError(t, os.WriteFile(path, []byte(unformatted), 0o644))
+
+			cmd := newRootCmd(true)
+			args := []string{path}
+			if tt.verbose {
+				args = append(args, "-v")
+			}
+			cmd.SetArgs(args)
+
+			oldOut := log.Writer()
+			r, w, err := os.Pipe()
+			require.NoError(t, err)
+			log.SetOutput(w)
+			t.Cleanup(func() { log.SetOutput(oldOut) })
+			logCh := make(chan string)
+			go func() {
+				var buf bytes.Buffer
+				_, _ = io.Copy(&buf, r)
+				logCh <- buf.String()
+			}()
+
+			_, err = cmd.ExecuteC()
+			require.NoError(t, err)
+
+			w.Close()
+			got := <-logCh
+			contains := strings.Contains(got, "processed file: ")
+			if tt.wantLog {
+				require.True(t, contains)
+			} else {
+				require.False(t, contains)
+			}
+		})
+	}
+}
+
+func TestRunEFollowSymlinks(t *testing.T) {
+	unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
+	formatted := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
+
+	tests := []struct {
+		name   string
+		follow bool
+		want   string
+	}{
+		{name: "follow", follow: true, want: formatted},
+		{name: "no_follow", follow: false, want: unformatted},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			base := t.TempDir()
+			target := t.TempDir()
+			realFile := filepath.Join(target, "file.tf")
+			require.NoError(t, os.WriteFile(realFile, []byte(unformatted), 0o644))
+			link := filepath.Join(base, "link")
+			require.NoError(t, os.Symlink(target, link))
+
+			cmd := newRootCmd(true)
+			args := []string{base}
+			if tt.follow {
+				args = append(args, "--follow-symlinks")
+			}
+			cmd.SetArgs(args)
+
+			_, err := cmd.ExecuteC()
+			require.NoError(t, err)
+
+			data, err := os.ReadFile(realFile)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, string(data))
 		})
 	}
 }
