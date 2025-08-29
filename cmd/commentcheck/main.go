@@ -16,11 +16,11 @@ import (
 )
 
 var (
-	execCommand = exec.Command
-	lookPath    = exec.LookPath
-	packageDirs = packageDirsFunc
-	checkFile   = checkFileFunc
-	osExit      = os.Exit
+	execCommand	= exec.Command
+	lookPath	= exec.LookPath
+	packageDirs	= packageDirsFunc
+	checkFile	= checkFileFunc
+	osExit		= os.Exit
 )
 
 func main() {
@@ -121,3 +121,4 @@ func packageDirsFunc() ([]string, error) {
 	sort.Strings(dirs)
 	return dirs, nil
 }
+

@@ -1,3 +1,4 @@
+// internal/engine/fuzz_process_reader_test.go
 package engine
 
 import (
@@ -10,7 +11,7 @@ import (
 
 func FuzzProcessReader(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
-		// Limit excessively large inputs to avoid OOMs during fuzzing.
+
 		const maxBytes = 1 << 12
 		if len(data) > maxBytes {
 			t.Skip()
@@ -38,3 +39,4 @@ func FuzzProcessReader(f *testing.F) {
 		}
 	})
 }
+

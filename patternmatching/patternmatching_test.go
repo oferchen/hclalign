@@ -79,3 +79,4 @@ func TestNewMatcherInvalidPattern(t *testing.T) {
 	_, err := NewMatcher([]string{"["}, nil)
 	assert.Error(t, err)
 }
+

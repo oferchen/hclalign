@@ -22,9 +22,9 @@ func TestProcessMissingTarget(t *testing.T) {
 	t.Parallel()
 
 	cfg := &config.Config{
-		Target:      "nonexistent.hcl",
-		Include:     []string{"**/*.hcl"},
-		Concurrency: 1,
+		Target:		"nonexistent.hcl",
+		Include:	[]string{"**/*.hcl"},
+		Concurrency:	1,
 	}
 
 	changed, err := Process(context.Background(), cfg)
@@ -43,9 +43,9 @@ func TestProcessContextCancelled(t *testing.T) {
 	require.NoError(t, os.WriteFile(filePath, data, 0o644))
 
 	cfg := &config.Config{
-		Target:      dir,
-		Include:     []string{"**/*.hcl"},
-		Concurrency: 1,
+		Target:		dir,
+		Include:	[]string{"**/*.hcl"},
+		Concurrency:	1,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -67,9 +67,9 @@ func TestProcessContextCancelledAfterReorder(t *testing.T) {
 	require.NoError(t, os.WriteFile(filePath, data, 0o644))
 
 	cfg := &config.Config{
-		Target:      dir,
-		Include:     []string{"**/*.hcl"},
-		Concurrency: 1,
+		Target:		dir,
+		Include:	[]string{"**/*.hcl"},
+		Concurrency:	1,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -83,11 +83,11 @@ func TestProcessContextCancelledAfterReorder(t *testing.T) {
 func TestProcessScenarios(t *testing.T) {
 	casesDir := filepath.Join("..", "..", "tests", "cases")
 	tests := []struct {
-		name  string
-		setup func(t *testing.T) (*config.Config, string, bool, map[string]string)
+		name	string
+		setup	func(t *testing.T) (*config.Config, string, bool, map[string]string)
 	}{
 		{
-			name: "stdout multiple files",
+			name:	"stdout multiple files",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
 				in1, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
@@ -105,11 +105,11 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, os.WriteFile(f2, in2, 0o644))
 
 				cfg := &config.Config{
-					Target:      dir,
-					Include:     []string{"**/*.tf"},
-					Mode:        config.ModeWrite,
-					Stdout:      true,
-					Concurrency: 1,
+					Target:		dir,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeWrite,
+					Stdout:		true,
+					Concurrency:	1,
 				}
 
 				expOut := string(out1) + string(out2)
@@ -118,7 +118,7 @@ func TestProcessScenarios(t *testing.T) {
 			},
 		},
 		{
-			name: "mode diff",
+			name:	"mode diff",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
 				inPath := filepath.Join(casesDir, "simple", "in.tf")
@@ -135,18 +135,18 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, err)
 
 				cfg := &config.Config{
-					Target:      f,
-					Include:     []string{"**/*.tf"},
-					Mode:        config.ModeDiff,
-					Stdout:      true,
-					Concurrency: 1,
+					Target:		f,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeDiff,
+					Stdout:		true,
+					Concurrency:	1,
 				}
 				files := map[string]string{f: string(inb)}
 				return cfg, diffText, true, files
 			},
 		},
 		{
-			name: "mode check",
+			name:	"mode check",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
 				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
@@ -157,18 +157,18 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, os.WriteFile(f, inb, 0o644))
 
 				cfg := &config.Config{
-					Target:      f,
-					Include:     []string{"**/*.tf"},
-					Mode:        config.ModeCheck,
-					Stdout:      true,
-					Concurrency: 1,
+					Target:		f,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeCheck,
+					Stdout:		true,
+					Concurrency:	1,
 				}
 				files := map[string]string{f: string(inb)}
 				return cfg, string(outb), true, files
 			},
 		},
 		{
-			name: "symlink follow",
+			name:	"symlink follow",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				base := t.TempDir()
 				target := t.TempDir()
@@ -182,19 +182,19 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, os.Symlink(target, link))
 
 				cfg := &config.Config{
-					Target:         base,
-					Include:        []string{"**/*.tf"},
-					Mode:           config.ModeWrite,
-					Stdout:         true,
-					Concurrency:    1,
-					FollowSymlinks: true,
+					Target:		base,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeWrite,
+					Stdout:		true,
+					Concurrency:	1,
+					FollowSymlinks:	true,
 				}
 				files := map[string]string{realFile: string(outb)}
 				return cfg, string(outb), true, files
 			},
 		},
 		{
-			name: "symlink no follow",
+			name:	"symlink no follow",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				base := t.TempDir()
 				target := t.TempDir()
@@ -206,19 +206,19 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, os.Symlink(target, link))
 
 				cfg := &config.Config{
-					Target:         base,
-					Include:        []string{"**/*.tf"},
-					Mode:           config.ModeWrite,
-					Stdout:         true,
-					Concurrency:    1,
-					FollowSymlinks: false,
+					Target:		base,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeWrite,
+					Stdout:		true,
+					Concurrency:	1,
+					FollowSymlinks:	false,
 				}
 				files := map[string]string{realFile: string(inb)}
 				return cfg, "", false, files
 			},
 		},
 		{
-			name: "target symlink dir follow",
+			name:	"target symlink dir follow",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				target := t.TempDir()
 				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
@@ -232,19 +232,19 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, os.Symlink(target, link))
 
 				cfg := &config.Config{
-					Target:         link,
-					Include:        []string{"**/*.tf"},
-					Mode:           config.ModeWrite,
-					Stdout:         true,
-					Concurrency:    1,
-					FollowSymlinks: true,
+					Target:		link,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeWrite,
+					Stdout:		true,
+					Concurrency:	1,
+					FollowSymlinks:	true,
 				}
 				files := map[string]string{realFile: string(outb)}
 				return cfg, string(outb), true, files
 			},
 		},
 		{
-			name: "target symlink dir no follow",
+			name:	"target symlink dir no follow",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				target := t.TempDir()
 				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
@@ -256,19 +256,19 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, os.Symlink(target, link))
 
 				cfg := &config.Config{
-					Target:         link,
-					Include:        []string{"**/*.tf"},
-					Mode:           config.ModeWrite,
-					Stdout:         true,
-					Concurrency:    1,
-					FollowSymlinks: false,
+					Target:		link,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeWrite,
+					Stdout:		true,
+					Concurrency:	1,
+					FollowSymlinks:	false,
 				}
 				files := map[string]string{realFile: string(inb)}
 				return cfg, "", false, files
 			},
 		},
 		{
-			name: "target symlink file follow",
+			name:	"target symlink file follow",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
 				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
@@ -281,19 +281,19 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, os.Symlink(realFile, link))
 
 				cfg := &config.Config{
-					Target:         link,
-					Include:        []string{"**/*.tf"},
-					Mode:           config.ModeWrite,
-					Stdout:         true,
-					Concurrency:    1,
-					FollowSymlinks: true,
+					Target:		link,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeWrite,
+					Stdout:		true,
+					Concurrency:	1,
+					FollowSymlinks:	true,
 				}
 				files := map[string]string{link: string(outb)}
 				return cfg, string(outb), true, files
 			},
 		},
 		{
-			name: "target symlink file no follow",
+			name:	"target symlink file no follow",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
 				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
@@ -306,19 +306,19 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, os.Symlink(realFile, link))
 
 				cfg := &config.Config{
-					Target:         link,
-					Include:        []string{"**/*.tf"},
-					Mode:           config.ModeWrite,
-					Stdout:         true,
-					Concurrency:    1,
-					FollowSymlinks: false,
+					Target:		link,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeWrite,
+					Stdout:		true,
+					Concurrency:	1,
+					FollowSymlinks:	false,
 				}
 				files := map[string]string{link: string(outb)}
 				return cfg, string(outb), true, files
 			},
 		},
 		{
-			name: "concurrency",
+			name:	"concurrency",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
 				cases := []string{"simple", "trailing_commas", "comments"}
@@ -336,11 +336,11 @@ func TestProcessScenarios(t *testing.T) {
 					expected += string(outb)
 				}
 				cfg := &config.Config{
-					Target:      dir,
-					Include:     []string{"**/*.tf"},
-					Mode:        config.ModeWrite,
-					Stdout:      true,
-					Concurrency: 2,
+					Target:		dir,
+					Include:	[]string{"**/*.tf"},
+					Mode:		config.ModeWrite,
+					Stdout:		true,
+					Concurrency:	2,
 				}
 				return cfg, expected, true, files
 			},
@@ -398,11 +398,11 @@ func TestProcessManyFilesDeterministic(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		Target:      dir,
-		Include:     []string{"**/*.tf"},
-		Mode:        config.ModeWrite,
-		Stdout:      true,
-		Concurrency: 4,
+		Target:		dir,
+		Include:	[]string{"**/*.tf"},
+		Mode:		config.ModeWrite,
+		Stdout:		true,
+		Concurrency:	4,
 	}
 
 	r, w, err := os.Pipe()
@@ -438,3 +438,4 @@ func TestProcessManyFilesDeterministic(t *testing.T) {
 		require.Equal(t, exp, string(got))
 	}
 }
+

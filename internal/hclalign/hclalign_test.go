@@ -176,3 +176,4 @@ func TestReorderAttributes_DefaultBlockNestedType(t *testing.T) {
 }`
 	require.Equal(t, expected, string(f.Bytes()))
 }
+

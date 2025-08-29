@@ -82,3 +82,4 @@ func TestProcessReaderModeCheckNoChange(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, diffText)
 }
+
