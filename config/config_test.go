@@ -3,6 +3,7 @@ package config
 
 import (
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -58,6 +59,13 @@ func TestValidate_ConcurrencyLessThanOne(t *testing.T) {
 	c := Config{Concurrency: 0}
 	if err := c.Validate(); err == nil {
 		t.Fatalf("expected error for concurrency <1")
+	}
+}
+
+func TestValidate_ConcurrencyGreaterThanGOMAXPROCS(t *testing.T) {
+	c := Config{Concurrency: runtime.GOMAXPROCS(0) + 1}
+	if err := c.Validate(); err == nil {
+		t.Fatalf("expected error for concurrency > GOMAXPROCS")
 	}
 }
 
