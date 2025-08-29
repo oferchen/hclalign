@@ -51,7 +51,7 @@ func TestProcessReaderModeDiff(t *testing.T) {
 	require.True(t, changed)
 
 	hints := internalfs.DetectHintsFromBytes([]byte(input))
-	diffText, err := diff.Unified("stdin", "stdin", []byte(input), []byte(styled), hints.Newline)
+	diffText, err := diff.Unified("stdin", "stdin", []byte(input), []byte(styled), hints)
 	require.NoError(t, err)
 	require.Equal(t, diffText, out.String())
 }
@@ -82,7 +82,7 @@ func TestProcessReaderModeCheckNoChange(t *testing.T) {
 	require.Equal(t, input, out.String())
 
 	hints := internalfs.DetectHintsFromBytes([]byte(input))
-	diffText, err := diff.Unified("stdin", "stdin", []byte(input), out.Bytes(), hints.Newline)
+	diffText, err := diff.Unified("stdin", "stdin", []byte(input), out.Bytes(), hints)
 	require.NoError(t, err)
 	require.Empty(t, diffText)
 }

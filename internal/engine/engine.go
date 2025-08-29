@@ -117,7 +117,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	switch cfg.Mode {
 	case config.ModeDiff:
 		if changed {
-			text, err := diff.Unified("stdin", "stdin", original, styled, hints.Newline)
+			text, err := diff.Unified("stdin", "stdin", original, styled, hints)
 			if err != nil {
 				return false, err
 			}

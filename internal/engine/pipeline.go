@@ -183,7 +183,7 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config, schem
 		}
 	case config.ModeDiff:
 		if changed {
-			text, err := diff.Unified(filePath, filePath, original, styled, hints.Newline)
+			text, err := diff.Unified(filePath, filePath, original, styled, hints)
 			if err != nil {
 				return false, nil, err
 			}
