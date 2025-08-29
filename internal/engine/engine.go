@@ -110,8 +110,10 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 					return false, err
 				}
 			}
-		} else if matcher.Matches(cfg.Target) {
-			files = append(files, cfg.Target)
+		} else if cfg.FollowSymlinks {
+			if matcher.Matches(cfg.Target) {
+				files = append(files, cfg.Target)
+			}
 		}
 	} else if info.IsDir() {
 		if err := walk(ctx, cfg.Target); err != nil {
