@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/oferchen/hclalign/config"
-	patternmatching "github.com/oferchen/hclalign/patternmatching"
+	"github.com/hashicorp/hclalign/config"
+	patternmatching "github.com/hashicorp/hclalign/patternmatching"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

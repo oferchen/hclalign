@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/config"
+	"github.com/hashicorp/hclalign/config"
 )
 
 func ReorderAttributes(file *hclwrite.File, order []string, strict bool) error {

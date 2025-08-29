@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/oferchen/hclalign/config"
-	"github.com/oferchen/hclalign/internal/diff"
-	internalfs "github.com/oferchen/hclalign/internal/fs"
+	"github.com/hashicorp/hclalign/config"
+	"github.com/hashicorp/hclalign/internal/diff"
+	internalfs "github.com/hashicorp/hclalign/internal/fs"
 	"github.com/stretchr/testify/require"
 )
 

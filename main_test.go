@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/oferchen/hclalign/cli"
-	"github.com/oferchen/hclalign/config"
+	"github.com/hashicorp/hclalign/cli"
+	"github.com/hashicorp/hclalign/config"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )

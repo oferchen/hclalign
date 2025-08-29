@@ -18,11 +18,11 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
-	"github.com/oferchen/hclalign/config"
-	"github.com/oferchen/hclalign/internal/diff"
-	internalfs "github.com/oferchen/hclalign/internal/fs"
-	"github.com/oferchen/hclalign/internal/hclalign"
-	"github.com/oferchen/hclalign/patternmatching"
+	"github.com/hashicorp/hclalign/config"
+	"github.com/hashicorp/hclalign/internal/diff"
+	internalfs "github.com/hashicorp/hclalign/internal/fs"
+	"github.com/hashicorp/hclalign/internal/hclalign"
+	"github.com/hashicorp/hclalign/patternmatching"
 )
 
 var (

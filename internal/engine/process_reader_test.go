@@ -11,10 +11,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/oferchen/hclalign/config"
-	"github.com/oferchen/hclalign/internal/diff"
-	"github.com/oferchen/hclalign/internal/engine"
-	internalfs "github.com/oferchen/hclalign/internal/fs"
+	"github.com/hashicorp/hclalign/config"
+	"github.com/hashicorp/hclalign/internal/diff"
+	"github.com/hashicorp/hclalign/internal/engine"
+	internalfs "github.com/hashicorp/hclalign/internal/fs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -97,11 +97,11 @@ func TestProcessPrintsDelimiters(t *testing.T) {
 	require.NoError(t, os.WriteFile(f2, []byte("variable \"b\" {}\n"), 0o644))
 
 	cfg := &config.Config{
-		Target:		dir,
-		Include:	[]string{"**/*.tf"},
-		Mode:		config.ModeCheck,
-		Stdout:		true,
-		Concurrency:	1,
+		Target:      dir,
+		Include:     []string{"**/*.tf"},
+		Mode:        config.ModeCheck,
+		Stdout:      true,
+		Concurrency: 1,
 	}
 
 	r, w, err := os.Pipe()
@@ -120,4 +120,3 @@ func TestProcessPrintsDelimiters(t *testing.T) {
 	require.Contains(t, s, fmt.Sprintf("\n--- %s ---\n", f1))
 	require.Contains(t, s, fmt.Sprintf("\n--- %s ---\n", f2))
 }
-
