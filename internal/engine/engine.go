@@ -134,7 +134,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	var changed atomic.Bool
 	outs := make(map[string][]byte, len(files))
 
-	g, ctx := errgroup.WithContext(ctx)
+	g, gctx := errgroup.WithContext(ctx)
 	fileCh := make(chan string)
 	results := make(chan result, len(files))
 
@@ -143,8 +143,8 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		defer close(fileCh)
 		for _, f := range files {
 			select {
-			case <-ctx.Done():
-				return ctx.Err()
+			case <-gctx.Done():
+				return gctx.Err()
 			case fileCh <- f:
 			}
 		}
@@ -156,13 +156,11 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		g.Go(func() error {
 			for {
 				select {
-				case <-ctx.Done():
-					return ctx.Err()
 				case f, ok := <-fileCh:
 					if !ok {
 						return nil
 					}
-					ch, out, err := processSingleFile(ctx, f, cfg)
+					ch, out, err := processSingleFile(gctx, f, cfg)
 					if err != nil {
 						if !errors.Is(err, context.Canceled) {
 							log.Printf("error processing file %s: %v", f, err)
@@ -175,13 +173,25 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 					if len(out) > 0 {
 						select {
 						case results <- result{path: f, data: out}:
-						case <-ctx.Done():
-							return ctx.Err()
+						case <-gctx.Done():
+							return gctx.Err()
 						}
 					}
 					if cfg.Verbose {
 						log.Printf("processed file: %s", f)
 					}
+				case <-gctx.Done():
+					if errors.Is(gctx.Err(), context.Canceled) {
+						// If the channel is closed and we've been canceled, treat it as a successful run.
+						select {
+						case _, ok := <-fileCh:
+							if !ok {
+								return nil
+							}
+						default:
+						}
+					}
+					return gctx.Err()
 				}
 			}
 		})
@@ -198,7 +208,10 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	for _, f := range files {
 		if out, ok := outs[f]; ok && len(out) > 0 {
 			if err := ctx.Err(); err != nil {
-				return changed.Load(), err
+				if !errors.Is(err, context.Canceled) {
+					return changed.Load(), err
+				}
+				break
 			}
 			if _, err := os.Stdout.Write(out); err != nil {
 				return changed.Load(), err
