@@ -52,6 +52,30 @@ func TestProcessContextCancelled(t *testing.T) {
 	require.ErrorIs(t, err, context.Canceled)
 	require.False(t, changed)
 }
+
+func TestProcessContextCancelledAfterReorder(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	data, err := os.ReadFile(filepath.Join("testdata", "idempotent_input.hcl"))
+	require.NoError(t, err)
+	filePath := filepath.Join(dir, "example.hcl")
+	require.NoError(t, os.WriteFile(filePath, data, 0o644))
+
+	cfg := &config.Config{
+		Target:      dir,
+		Include:     []string{"**/*.hcl"},
+		Concurrency: 1,
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	testHookAfterReorder = func() { cancel() }
+	defer func() { testHookAfterReorder = nil }()
+
+	changed, err := Process(ctx, cfg)
+	require.ErrorIs(t, err, context.Canceled)
+	require.False(t, changed)
+}
 func TestProcessScenarios(t *testing.T) {
 	casesDir := filepath.Join("..", "..", "tests", "cases")
 	tests := []struct {
