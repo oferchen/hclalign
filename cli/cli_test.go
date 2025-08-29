@@ -116,6 +116,27 @@ func TestRunERuntimeError(t *testing.T) {
 	require.Equal(t, 3, exitErr.Code)
 }
 
+func TestRunEStdinRuntimeError(t *testing.T) {
+	cmd := newRootCmd(true)
+	cmd.SetArgs([]string{"--stdin", "--stdout"})
+
+	oldStdin := os.Stdin
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	os.Stdin = r
+	t.Cleanup(func() { os.Stdin = oldStdin })
+
+	_, err = w.Write([]byte("variable \"a\" {"))
+	require.NoError(t, err)
+	w.Close()
+
+	_, err = cmd.ExecuteC()
+	require.Error(t, err)
+	var exitErr *ExitCodeError
+	require.ErrorAs(t, err, &exitErr)
+	require.Equal(t, 3, exitErr.Code)
+}
+
 func TestRunEInvalidConcurrency(t *testing.T) {
 	cmd := newRootCmd(true)
 	cmd.SetArgs([]string{"--stdin", "--stdout", "--concurrency", "0"})
