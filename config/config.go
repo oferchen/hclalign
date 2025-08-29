@@ -19,17 +19,22 @@ const (
 )
 
 type Config struct {
-	Target         string
-	Mode           Mode
-	Stdin          bool
-	Stdout         bool
-	Include        []string
-	Exclude        []string
-	Order          []string
-	StrictOrder    bool
-	Concurrency    int
-	Verbose        bool
-	FollowSymlinks bool
+	Target             string
+	Mode               Mode
+	Stdin              bool
+	Stdout             bool
+	Include            []string
+	Exclude            []string
+	Order              []string
+	StrictOrder        bool
+	Concurrency        int
+	Verbose            bool
+	FollowSymlinks     bool
+	FmtOnly            bool
+	NoFmt              bool
+	FmtStrategy        string
+	ProvidersSchema    string
+	UseTerraformSchema bool
 }
 
 var (
@@ -48,6 +53,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Concurrency > runtime.GOMAXPROCS(0) {
 		return fmt.Errorf("concurrency cannot exceed GOMAXPROCS (%d)", runtime.GOMAXPROCS(0))
+	}
+	if c.FmtOnly && c.NoFmt {
+		return fmt.Errorf("fmt-only and no-fmt cannot be used together")
 	}
 	if err := patternmatching.ValidatePatterns(c.Include); err != nil {
 		return fmt.Errorf("invalid include: %w", err)

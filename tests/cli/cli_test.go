@@ -16,7 +16,7 @@ func buildBinary(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
 	bin := filepath.Join(dir, "hclalign")
-	cmd := exec.Command("go", "build", "-o", bin, ".")
+	cmd := exec.Command("go", "build", "-o", bin, "./cmd/hclalign")
 	cmd.Dir = filepath.Join("..", "..")
 	out, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(out))
@@ -160,4 +160,3 @@ func TestCLI(t *testing.T) {
 		require.NotEmpty(t, stderr.String())
 	})
 }
-

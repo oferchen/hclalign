@@ -35,9 +35,15 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
 	cmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
 	cmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
+	cmd.Flags().Bool("fmt-only", false, "only format files, skip alignment")
+	cmd.Flags().Bool("no-fmt", false, "skip initial formatting")
+	cmd.Flags().String("fmt-strategy", "native", "formatting strategy to use")
+	cmd.Flags().String("providers-schema", "", "path to providers schema file")
+	cmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	cmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
 	if exclusive {
 		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 	}
