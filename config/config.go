@@ -77,9 +77,6 @@ func ValidateOrder(order []string, strict bool) error {
 				return fmt.Errorf("unknown attribute '%s' in order", item)
 			}
 		}
-		if len(providedSet) != len(CanonicalOrder) {
-			return fmt.Errorf("provided order length %d doesn't match expected %d", len(providedSet), len(CanonicalOrder))
-		}
 		for _, item := range CanonicalOrder {
 			if _, exists := providedSet[item]; !exists {
 				return fmt.Errorf("missing expected attribute '%s' in provided order", item)

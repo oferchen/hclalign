@@ -3,6 +3,7 @@ package config
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -22,6 +23,14 @@ func TestValidateOrder_NonStrictUnknownAttribute(t *testing.T) {
 func TestValidateOrder_StrictCanonicalOrder(t *testing.T) {
 	if err := ValidateOrder(CanonicalOrder, true); err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestValidateOrder_StrictMissingAttribute(t *testing.T) {
+	subset := CanonicalOrder[:len(CanonicalOrder)-1]
+	err := ValidateOrder(subset, true)
+	if err == nil || !strings.Contains(err.Error(), "missing expected attribute") {
+		t.Fatalf("expected missing expected attribute error, got %v", err)
 	}
 }
 
