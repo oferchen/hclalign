@@ -37,6 +37,7 @@ func check(root string) error {
 		}
 		buildLines := 0
 		var lines []int
+		var texts []string
 		for _, cg := range file.Comments {
 			for _, c := range cg.List {
 				line := fset.Position(c.Slash).Line
@@ -48,9 +49,15 @@ func check(root string) error {
 					}
 				}
 				lines = append(lines, line)
+				texts = append(texts, text)
 			}
 		}
-		if len(lines) != 1 || lines[0] != buildLines+1 {
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		want := "// /" + filepath.ToSlash(rel)
+		if len(lines) != 1 || lines[0] != buildLines+1 || len(texts) != 1 || texts[0] != want {
 			bad = append(bad, path)
 		}
 		return nil
@@ -59,7 +66,7 @@ func check(root string) error {
 		return err
 	}
 	if len(bad) > 0 {
-		return fmt.Errorf("comments beyond first line: %s", strings.Join(bad, ", "))
+		return fmt.Errorf("comment policy violation: %s", strings.Join(bad, ", "))
 	}
 	return nil
 }
