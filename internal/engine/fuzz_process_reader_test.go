@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/oferchen/hclalign/config"
+	"github.com/hashicorp/hclalign/config"
 )
 
 func FuzzProcessReader(f *testing.F) {
@@ -38,4 +38,3 @@ func FuzzProcessReader(f *testing.F) {
 		}
 	})
 }
-

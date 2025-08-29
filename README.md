@@ -2,140 +2,101 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-`hclalign` is a Command Line Interface (CLI) tool for reordering attributes inside HCL variable blocks. It helps maintain a consistent style across Terraform and other HCL files.
+`hclalign` normalizes Terraform and other HCL files with a two‑phase pipeline that first formats input and then reorders attributes for consistent alignment.
 
-## Features
+## Pipeline
 
-- **Variable Attribute Reordering**: Rearranges variable block attributes into a predictable order.
-- **Include/Exclude Globs**: Target or skip files using `--include` and `--exclude` glob patterns.
-- **Strict Ordering**: Enforce that only the specified attributes appear in the given order with `--strict-order`.
-- **Check and Diff Modes**: Use `--check` to ensure files are already formatted or `--diff` to preview required changes.
-- **STDIN/STDOUT Support**: Process input from standard in and write to standard out with `--stdin` and `--stdout` for easy pipeline integration.
-- **Idempotent & Atomic**: Running `hclalign` multiple times produces the same result and updates files using atomic writes to prevent partial edits.
-- **Concurrent Processing**: Utilizes Go's concurrency features to process files in parallel and halts further dispatch when an error occurs.
-- **Optional Symlink Traversal**: Follow symbolic links during directory walks with `--follow-symlinks`.
-- **Verbose Logging**: Enable additional output with `-v` for debugging or development.
+1. **fmt** – parses the file with `hclwrite` to produce canonical formatting.
+2. **align** – reorders attributes to match a configurable schema.
 
-## Atomic Write Guarantees
+This process is idempotent: running the tool multiple times yields the same result.
 
-`hclalign` writes changes to a temporary file and atomically renames it over the original. This prevents partial writes and ensures files are either fully updated or left untouched if an error occurs.
+## Supported Blocks
 
-## Getting Started
+`hclalign` currently aligns attributes inside Terraform `variable` blocks. Other block types are left untouched.
 
-### Prerequisites
+## Schema Options
 
-You must have Go installed on your system to build and run `hclalign`.
+The default schema orders variable attributes as `description`, `type`, `default`, `sensitive`, `nullable`. Override it with `--order` and enforce that only those attributes appear by adding `--strict-order`.
 
-### Installation
+## CLI Flags
 
-Clone the `hclalign` repository and use the Makefile to build the project:
+- `--write` (default): rewrite files in place
+- `--check`: exit with non‑zero status if changes are required
+- `--diff`: print unified diff instead of writing files
+- `--stdin`, `--stdout`: read from stdin and/or write to stdout
+- `--include`, `--exclude`: glob patterns controlling which files are processed
+- `--follow-symlinks`: traverse symbolic links
+- `--order`, `--strict-order`: control and enforce schema ordering
+- `--concurrency`: maximum parallel file processing
+- `-v, --verbose`: enable verbose logging
+
+## Atomic Writes and BOM Preservation
+
+Files are written atomically via a temporary file rename and the original newline style and optional UTF‑8 byte‑order mark (BOM) are preserved.
+
+## Installation
 
 ```sh
-git clone https://github.com/oferchen/hclalign.git
+git clone https://github.com/hashicorp/hclalign.git
 cd hclalign
-make init
-make tidy
-make build
+make init tidy build
 ```
 
-This compiles the project and creates an executable named `hclalign` in the current directory.
+The binary is created at `.build/hclalign`.
 
 ## Usage
 
 ```sh
-./hclalign [target file or directory] [flags]
+hclalign [path] [flags]
 ```
 
-### Common Flags
+### Examples
 
-- `--write`: Write changes back to files (default behavior).
-- `--check`: Exit with a non-zero status if formatting changes are needed.
-- `--diff`: Print a unified diff of required changes instead of modifying files.
-- `--stdin`, `--stdout`: Read from STDIN and/or write results to STDOUT.
-- `--include`: Glob patterns of files to include.
-- `--exclude`: Glob patterns of files to exclude.
-- `--follow-symlinks`: Follow symbolic links when traversing directories.
-- `--order`: Attribute order for variable blocks.
-- `--strict-order`: Fail if attributes appear outside the specified order.
-- `--concurrency`: Maximum number of files processed in parallel (default: number of CPUs).
-- `-v, --verbose`: Enable verbose logging.
-
-## Examples
-
-### Basic Formatting
-
-Format all `.tf` files under the current directory and write the result back to disk:
+Format all `.tf` files under the current directory and write the result back:
 
 ```sh
-./hclalign . --include "**/*.tf"
+hclalign . --include "**/*.tf"
 ```
 
 Check whether files are already formatted:
 
 ```sh
-./hclalign . --check
+hclalign . --check
 ```
 
 Preview the diff of required changes:
 
 ```sh
-./hclalign . --diff
+hclalign . --diff
 ```
 
-Process a single file from STDIN and write the result to STDOUT:
+Process a single file from STDIN and write to STDOUT:
 
 ```sh
-cat variables.tf | ./hclalign --stdin --stdout
+cat variables.tf | hclalign --stdin --stdout
 ```
 
-### CI Usage
+## Make Targets
 
-Use `--check` in Continuous Integration to fail builds when formatting is needed:
+| Target | Description |
+| --- | --- |
+| `make init` | download and verify Go modules |
+| `make tidy` | tidy module dependencies |
+| `make fmt` | run gofumpt and gofmt on the codebase |
+| `make lint` | execute `golangci-lint` |
+| `make vet` | run `go vet` |
+| `make test` | run tests with coverage |
+| `make test-race` | run tests with the race detector |
+| `make cover` | verify coverage ≥95% |
+| `make build` | build the `hclalign` binary into `.build/` |
+| `make commentcheck` | ensure source files include license comments |
+| `make fix-comments` | automatically insert missing license comments |
+| `make clean` | remove build artifacts |
 
-```sh
-hclalign . --check
-```
+## Continuous Integration
 
-### Editor Integration
-
-Editors can format on save by piping file contents through `hclalign`:
-
-```sh
-hclalign --stdin --stdout <file.tf >formatted.tf && mv formatted.tf file.tf
-```
-
-## Default Include and Exclude Patterns
-
-By default, `hclalign` processes Terraform files and skips common build artifacts:
-
-| Type    | Patterns                                                                 |
-|---------|---------------------------------------------------------------------------|
-| Include | `**/*.tf`                                                                |
-| Exclude | `**/.terraform/**`, `**/vendor/**`, `**/.git/**`, `**/node_modules/**`    |
-
-## Following Symlinks
-
-Symbolic links are ignored by default to avoid unexpected traversals. Use `--follow-symlinks` to include files reachable via symlinks.
-
-## Strict Order Enforcement
-
-Specify attribute order with `--order`. When `--strict-order` is set, all attributes must appear exactly once in the given order and no other attributes are allowed.
-Without `--strict-order`, attributes not in the canonical list remain in their original positions relative to the reordered attributes.
-
-## Exit Codes
-
-`hclalign` returns the following exit codes:
-
-| Code | Meaning                                              |
-|------|------------------------------------------------------|
-| 0    | Success; files were formatted or already aligned.    |
-| 1    | Files need formatting in `--check` or `--diff` mode. |
-| 2    | Invalid usage or configuration error.                |
-| 3    | Processing error.                                    |
-
-## Contributing
-
-Contributions to `hclalign` are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Use `hclalign . --check` in CI to fail builds when formatting is needed. The provided GitHub Actions workflow runs `make tidy`, `make fmt`, `make lint`, `make test-race`, `make cover`, and `make commentcheck` on Linux and macOS with multiple Go versions.
 
 ## License
 

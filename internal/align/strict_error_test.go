@@ -7,19 +7,19 @@ import (
 
 	hcl "github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/internal/hclalign"
+	"github.com/hashicorp/hclalign/internal/hclalign"
 )
 
 func TestStrictOrderErrors(t *testing.T) {
 	cases := []struct {
-		name	string
-		src	string
-		want	string
+		name string
+		src  string
+		want string
 	}{
 		{
-			name:	"missing",
-			src:	"variable \"a\" {\n  type = string\n}",
-			want:	"missing attributes",
+			name: "missing",
+			src:  "variable \"a\" {\n  type = string\n}",
+			want: "missing attributes",
 		},
 	}
 
@@ -50,4 +50,3 @@ func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
 		t.Fatalf("expected error")
 	}
 }
-

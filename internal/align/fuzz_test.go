@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/internal/hclalign"
+	"github.com/hashicorp/hclalign/internal/hclalign"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,4 +68,3 @@ func addRandomPadding(buf *bytes.Buffer, r *rand.Rand) {
 		}
 	}
 }
-

@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/internal/hclalign"
+	"github.com/hashicorp/hclalign/internal/hclalign"
 )
 
 func TestGolden(t *testing.T) {
@@ -127,4 +127,3 @@ func TestUnknownAttributesAfterCanonical(t *testing.T) {
 		t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)
 	}
 }
-
