@@ -14,10 +14,22 @@ func (providerStrategy) Name() string { return "provider" }
 func (providerStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	attrs := block.Body().Attributes()
 	names := make([]string, 0, len(attrs))
-	for name := range attrs {
-		names = append(names, name)
+
+	// Ensure alias is first if present
+	if _, ok := attrs["alias"]; ok {
+		names = append(names, "alias")
 	}
-	sort.Strings(names)
+
+	others := make([]string, 0, len(attrs))
+	for name := range attrs {
+		if name == "alias" {
+			continue
+		}
+		others = append(others, name)
+	}
+	sort.Strings(others)
+	names = append(names, others...)
+
 	return reorderBlock(block, names)
 }
 
