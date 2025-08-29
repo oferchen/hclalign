@@ -1,5 +1,5 @@
 // patternmatching/patternmatching_test.go — SPDX-License-Identifier: Apache-2.0
-package patternmatching
+package patternmatching_test
 
 import (
 	"os"
@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/oferchen/hclalign/config"
+	patternmatching "github.com/oferchen/hclalign/patternmatching"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +29,7 @@ func TestMatcherMatches(t *testing.T) {
 	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "excluded"), 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "excluded", "out.tf"), []byte(""), 0644))
 
-	m, err := NewMatcher([]string{"**/*.tf"}, []string{"**/vendor/**", "nested/excluded/**"})
+	m, err := patternmatching.NewMatcher([]string{"**/*.tf"}, []string{"**/vendor/**", "nested/excluded/**"})
 	require.NoError(t, err)
 
 	assert.True(t, m.Matches(filepath.Join(wd, "main.tf")))
@@ -52,7 +54,7 @@ func TestMatcherMatchesOutsideWorkingDir(t *testing.T) {
 	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "excluded"), 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "excluded", "out.tf"), []byte(""), 0644))
 
-	m, err := NewMatcher([]string{"**/*.tf"}, []string{"**/vendor/**", "nested/excluded/**"})
+	m, err := patternmatching.NewMatcher([]string{"**/*.tf"}, []string{"**/vendor/**", "nested/excluded/**"})
 	require.NoError(t, err)
 
 	assert.True(t, m.Matches(filepath.Join(wd, "main.tf")))
@@ -65,19 +67,42 @@ func TestMatcherMatchesOutsideWorkingDir(t *testing.T) {
 	assert.False(t, m.Matches(filepath.Join(wd, "nested", "excluded", "out.tf")))
 }
 
+func TestMatcherDefaultExclude(t *testing.T) {
+	wd := t.TempDir()
+
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0644))
+
+	dirs := []string{".terraform", ".git", "node_modules", "vendor"}
+	for _, d := range dirs {
+		dir := filepath.Join(wd, d)
+		require.NoError(t, os.Mkdir(dir, 0755))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "ignored.tf"), []byte(""), 0644))
+	}
+
+	m, err := patternmatching.NewMatcher(config.DefaultInclude, config.DefaultExclude)
+	require.NoError(t, err)
+
+	assert.True(t, m.Matches(filepath.Join(wd, "main.tf")))
+	for _, d := range dirs {
+		dir := filepath.Join(wd, d)
+		assert.False(t, m.Matches(dir))
+		assert.False(t, m.Matches(filepath.Join(dir, "ignored.tf")))
+	}
+}
+
 func TestValidatePatterns(t *testing.T) {
-	err := ValidatePatterns([]string{"**/*.tf", "*.hcl"})
+	err := patternmatching.ValidatePatterns([]string{"**/*.tf", "*.hcl"})
 	assert.NoError(t, err)
 
-	err = ValidatePatterns([]string{"["})
+	err = patternmatching.ValidatePatterns([]string{"["})
 	assert.Error(t, err)
 
-	err = ValidatePatterns([]string{""})
+	err = patternmatching.ValidatePatterns([]string{""})
 	assert.Error(t, err)
 }
 
 func TestNewMatcherInvalidPattern(t *testing.T) {
-	_, err := NewMatcher([]string{"["}, nil)
+	_, err := patternmatching.NewMatcher([]string{"["}, nil)
 	assert.Error(t, err)
 }
 
@@ -87,7 +112,7 @@ func TestMatcherMatchesConcurrent(t *testing.T) {
 	wd := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0644))
 
-	m, err := NewMatcher([]string{"**/*.tf"}, nil)
+	m, err := patternmatching.NewMatcher([]string{"**/*.tf"}, nil)
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
