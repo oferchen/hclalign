@@ -200,16 +200,20 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		}
 	} else {
 
-		for _, name := range orderedKnown {
-			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.leadTokens)
-				body.SetAttributeRaw(name, tok.exprTokens)
-			}
-		}
+		finalOrder := make([]string, 0, len(originalOrder))
+		idx := 0
 		for _, name := range originalOrder {
 			if _, isKnown := canonicalSet[name]; isKnown {
-				continue
+				if idx < len(orderedKnown) {
+					finalOrder = append(finalOrder, orderedKnown[idx])
+					idx++
+				}
+			} else {
+				finalOrder = append(finalOrder, name)
 			}
+		}
+
+		for _, name := range finalOrder {
 			if tok, ok := attrTokensMap[name]; ok {
 				body.AppendUnstructuredTokens(tok.leadTokens)
 				body.SetAttributeRaw(name, tok.exprTokens)
