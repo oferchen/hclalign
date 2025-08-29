@@ -1,8 +1,14 @@
 resource "aws_s3_bucket" "b" {
-  tags   = {}
-  id     = "id"
-  bucket = "b"
-  acl    = "private"
+  bar        = "bar"
+  provider   = "aws.us"
+  for_each   = {}
+  foo        = "foo"
+  depends_on = []
+  bucket     = "b"
+  count      = 1
+  acl        = "private"
+  tags       = {}
+  id         = "id"
 }
 
 resource "null_resource" "n" {
