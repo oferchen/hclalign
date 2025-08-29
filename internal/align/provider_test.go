@@ -1,4 +1,4 @@
-// internal/align/provider_test.go
+// /internal/align/provider_test.go
 package align_test
 
 import (

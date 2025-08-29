@@ -1,4 +1,4 @@
-// internal/align/strategy.go
+// /internal/align/strategy.go
 package align
 
 import "github.com/hashicorp/hcl/v2/hclwrite"

@@ -1,4 +1,4 @@
-// cli/cli_test.go
+// /cli/cli_test.go
 package cli
 
 import (

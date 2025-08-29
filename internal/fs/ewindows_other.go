@@ -1,5 +1,4 @@
 //go:build !windows
-
 // internal/fs/ewindows_other.go
 package fs
 
