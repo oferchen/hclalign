@@ -13,11 +13,25 @@ This process is idempotent: running the tool multiple times yields the same resu
 
 ## Supported Blocks
 
-`hclalign` currently aligns attributes inside Terraform `variable` blocks. Other block types are left untouched.
+`hclalign` aligns attributes inside Terraform blocks including `variable`, `output`, `locals`, `module`, `provider`, `terraform`, `resource`, `data`, `dynamic`, `lifecycle`, and `provisioner`.
 
 ## Schema Options
 
 The default schema orders variable attributes as `description`, `type`, `default`, `sensitive`, `nullable`. Override it with `--order` and enforce that only those attributes appear by adding `--strict-order`.
+
+## Formatting Strategies
+
+The fmt phase supports multiple strategies controlled by `--fmt-strategy`:
+`auto` chooses the Terraform binary if available, `binary` always shells out to
+`terraform fmt`, and `go` uses the built-in formatter. Use `--fmt-only` to stop
+after formatting or `--no-fmt` to skip this phase.
+
+## Provider Schema Integration
+
+Resource and data blocks can be ordered according to provider schemas. Supply a
+schema file via `--providers-schema` or let `hclalign` invoke `terraform
+providers schema -json` by passing `--use-terraform-schema`. Unknown attributes
+fall back to alphabetical order.
 
 ## CLI Flags
 
@@ -27,9 +41,14 @@ The default schema orders variable attributes as `description`, `type`, `default
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
 - `--include`, `--exclude`: glob patterns controlling which files are processed
 - `--follow-symlinks`: traverse symbolic links
-- `--order`, `--strict-order`: control and enforce schema ordering
+- `--order`, `--strict-order`: control schema ordering; `--strict-order` applies globally to all blocks
 - `--concurrency`: maximum parallel file processing
 - `-v, --verbose`: enable verbose logging
+- `--fmt-only`: run only the formatting phase
+- `--no-fmt`: skip the formatting phase
+- `--fmt-strategy {auto,binary,go}`: choose formatting backend
+- `--providers-schema`: path to a provider schema JSON file
+- `--use-terraform-schema`: derive schema via `terraform providers schema -json`
 
 ## Atomic Writes and BOM Preservation
 
