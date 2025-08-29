@@ -10,14 +10,21 @@ import (
 func TestCheck(t *testing.T) {
 	t.Run("compliant", func(t *testing.T) {
 		dir := t.TempDir()
-		write(t, dir, "ok.go", "// ok.go\npackage main\n")
+		write(t, dir, "ok.go", "// ok.go\n//go:build test\n\npackage main\n")
 		if err := check(dir); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
-	t.Run("noncompliant", func(t *testing.T) {
+	t.Run("noncompliant extra comment", func(t *testing.T) {
 		dir := t.TempDir()
-		write(t, dir, "bad.go", "// bad.go\npackage main\n// bad\n")
+		write(t, dir, "bad.go", "// bad.go\n//go:build test\n\npackage main\n// bad\n")
+		if err := check(dir); err == nil {
+			t.Fatalf("expected error")
+		}
+	})
+	t.Run("noncompliant missing comment", func(t *testing.T) {
+		dir := t.TempDir()
+		write(t, dir, "bad.go", "//go:build test\n\npackage main\n")
 		if err := check(dir); err == nil {
 			t.Fatalf("expected error")
 		}

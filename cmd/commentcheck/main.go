@@ -35,13 +35,17 @@ func check(root string) error {
 		if err != nil {
 			return err
 		}
+		var nonBuild []token.Position
 		for _, cg := range file.Comments {
 			for _, c := range cg.List {
-				if fset.Position(c.Slash).Line > 1 {
-					bad = append(bad, path)
-					return nil
+				if strings.HasPrefix(c.Text, "//go:build") {
+					continue
 				}
+				nonBuild = append(nonBuild, fset.Position(c.Slash))
 			}
+		}
+		if len(nonBuild) != 1 || nonBuild[0].Line != 1 {
+			bad = append(bad, path)
 		}
 		return nil
 	}
