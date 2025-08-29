@@ -4,6 +4,7 @@ package patternmatching
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -80,3 +81,22 @@ func TestNewMatcherInvalidPattern(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestMatcherMatchesConcurrent(t *testing.T) {
+	t.Parallel()
+
+	wd := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0644))
+
+	m, err := NewMatcher([]string{"**/*.tf"}, nil)
+	require.NoError(t, err)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			m.Matches(filepath.Join(wd, "main.tf"))
+		}()
+	}
+	wg.Wait()
+}
