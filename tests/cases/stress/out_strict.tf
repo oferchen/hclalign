@@ -1,14 +1,14 @@
 variable "stress" {
-  description = "d"
-  type        = string
-  default     = 0
-  sensitive   = true
-  nullable    = false
   a1          = 1
+  description = "d"
   a2          = 2
+  type        = string
   a3          = 3
+  default     = 0
   a4          = 4
+  sensitive   = true
   a5          = 5
+  nullable    = false
   a6          = 6
   a7          = 7
   a8          = 8

@@ -97,6 +97,22 @@ func TestReorderAttributes_StrictUnknownAttrError(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestReorderAttributes_StrictUnknownAttrWithCanonical(t *testing.T) {
+	src := `variable "example" {
+  description = "d"
+  type        = string
+  default     = "v"
+  sensitive   = true
+  nullable    = false
+  custom      = true
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	err := hclalign.ReorderAttributes(f, nil, true)
+	require.Error(t, err)
+}
+
 func TestReorderAttributes_LooseRetainsUnknownOrder(t *testing.T) {
 	src := `variable "example" {
   custom      = true
