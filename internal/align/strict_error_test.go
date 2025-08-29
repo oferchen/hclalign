@@ -1,4 +1,4 @@
-// internal/align/strict_error_test.go
+// internal/align/strict_error_test.go — SPDX-License-Identifier: Apache-2.0
 package align
 
 import (
@@ -12,14 +12,14 @@ import (
 
 func TestStrictOrderErrors(t *testing.T) {
 	cases := []struct {
-		name	string
-		src	string
-		want	string
+		name string
+		src  string
+		want string
 	}{
 		{
-			name:	"missing",
-			src:	"variable \"a\" {\n  type = string\n}",
-			want:	"missing attributes",
+			name: "missing",
+			src:  "variable \"a\" {\n  type = string\n}",
+			want: "missing attributes",
 		},
 	}
 
@@ -50,4 +50,3 @@ func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
 		t.Fatalf("expected error")
 	}
 }
-

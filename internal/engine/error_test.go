@@ -1,4 +1,4 @@
-// internal/engine/error_test.go
+// internal/engine/error_test.go — SPDX-License-Identifier: Apache-2.0
 package engine
 
 import (
@@ -22,9 +22,9 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 	require.NoError(t, os.WriteFile(path, []byte(orig), 0o644))
 
 	cfg := &config.Config{
-		Target:		path,
-		Include:	[]string{"**/*.hcl"},
-		Concurrency:	1,
+		Target:      path,
+		Include:     []string{"**/*.hcl"},
+		Concurrency: 1,
 	}
 
 	changed, err := Process(context.Background(), cfg)
@@ -49,9 +49,9 @@ func TestProcessStopsAfterFirstError(t *testing.T) {
 	require.NoError(t, os.WriteFile(goodPath, []byte(good), 0o644))
 
 	cfg := &config.Config{
-		Target:		dir,
-		Include:	[]string{"**/*.hcl"},
-		Concurrency:	1,
+		Target:      dir,
+		Include:     []string{"**/*.hcl"},
+		Concurrency: 1,
 	}
 
 	changed, err := Process(context.Background(), cfg)
@@ -90,4 +90,3 @@ func TestProcessReaderEmpty(t *testing.T) {
 	require.False(t, changed)
 	require.Empty(t, buf.String())
 }
-

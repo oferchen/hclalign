@@ -1,4 +1,4 @@
-// internal/hclalign/benchmark_test.go
+// internal/hclalign/benchmark_test.go — SPDX-License-Identifier: Apache-2.0
 package hclalign
 
 import (
@@ -26,4 +26,3 @@ func BenchmarkReorderAttributes(b *testing.B) {
 		}
 	}
 }
-

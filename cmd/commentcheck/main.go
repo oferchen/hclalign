@@ -1,4 +1,4 @@
-// cmd/commentcheck/main.go
+// cmd/commentcheck/main.go — SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
@@ -16,11 +16,11 @@ import (
 )
 
 var (
-	execCommand	= exec.Command
-	lookPath	= exec.LookPath
-	packageDirs	= packageDirsFunc
-	checkFile	= checkFileFunc
-	osExit		= os.Exit
+	execCommand = exec.Command
+	lookPath    = exec.LookPath
+	packageDirs = packageDirsFunc
+	checkFile   = checkFileFunc
+	osExit      = os.Exit
 )
 
 func main() {
@@ -59,7 +59,7 @@ func main() {
 
 func checkFileFunc(path string) error {
 	rel := filepath.ToSlash(path)
-	expected := "// " + rel
+	expected := "// " + rel + " — SPDX-License-Identifier: Apache-2.0"
 	fh, err := os.Open(path)
 	if err != nil {
 		return err
@@ -166,4 +166,3 @@ func packageDirsFunc() ([]string, error) {
 	sort.Strings(dirs)
 	return dirs, nil
 }
-

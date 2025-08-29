@@ -1,4 +1,4 @@
-// patternmatching/patternmatching_test.go
+// patternmatching/patternmatching_test.go — SPDX-License-Identifier: Apache-2.0
 package patternmatching
 
 import (
@@ -100,4 +100,3 @@ func TestMatcherMatchesConcurrent(t *testing.T) {
 	}
 	wg.Wait()
 }
-

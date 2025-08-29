@@ -1,4 +1,4 @@
-// main.go
+// main.go — SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
@@ -13,11 +13,11 @@ import (
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:		"hclalign [target file or directory]",
-		Short:		"Aligns HCL files based on given criteria",
-		Args:		cobra.ArbitraryArgs,
-		RunE:		cli.RunE,
-		SilenceUsage:	true,
+		Use:          "hclalign [target file or directory]",
+		Short:        "Aligns HCL files based on given criteria",
+		Args:         cobra.ArbitraryArgs,
+		RunE:         cli.RunE,
+		SilenceUsage: true,
 	}
 
 	rootCmd.Flags().Bool("write", false, "write result to file(s)")
@@ -41,4 +41,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-

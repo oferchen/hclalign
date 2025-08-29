@@ -1,4 +1,4 @@
-// internal/hclalign/hclalign.go
+// internal/hclalign/hclalign.go — SPDX-License-Identifier: Apache-2.0
 package hclalign
 
 import (

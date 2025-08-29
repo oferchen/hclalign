@@ -1,4 +1,4 @@
-// internal/engine/fuzz_process_reader_test.go
+// internal/engine/fuzz_process_reader_test.go — SPDX-License-Identifier: Apache-2.0
 package engine
 
 import (
@@ -38,4 +38,3 @@ func FuzzProcessReader(f *testing.F) {
 		}
 	})
 }
-

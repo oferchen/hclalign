@@ -1,4 +1,4 @@
-// hack/stripcomments/main.go
+// hack/stripcomments/main.go — SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
@@ -59,7 +59,7 @@ func processFile(path string) error {
 	if err != nil {
 		return err
 	}
-	comment := "// " + filepath.ToSlash(rel)
+	comment := "// " + filepath.ToSlash(rel) + " — SPDX-License-Identifier: Apache-2.0"
 
 	tags := extractBuildTags(src)
 
@@ -101,4 +101,3 @@ func extractBuildTags(src []byte) []string {
 	}
 	return tags
 }
-

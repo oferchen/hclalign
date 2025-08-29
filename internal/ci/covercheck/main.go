@@ -1,4 +1,4 @@
-// internal/ci/covercheck/main.go
+// internal/ci/covercheck/main.go — SPDX-License-Identifier: Apache-2.0
 package main
 
 import (
@@ -78,4 +78,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-

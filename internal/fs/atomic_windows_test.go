@@ -1,6 +1,6 @@
 //go:build windows
 
-// internal/fs/atomic_windows_test.go
+// internal/fs/atomic_windows_test.go — SPDX-License-Identifier: Apache-2.0
 package fs
 
 import (
@@ -30,4 +30,3 @@ func TestWriteFileAtomicChownIgnored(t *testing.T) {
 		t.Fatalf("WriteFileAtomic: %v", err)
 	}
 }
-
