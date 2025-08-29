@@ -1,18 +1,22 @@
-// patternmatching/patternmatching.go
+// Package patternmatching provides utilities for matching file paths against
+// include and exclude glob patterns. Matcher values are safe for concurrent use
+// by multiple goroutines.
 package patternmatching
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/bmatcuk/doublestar/v4"
 )
 
 type Matcher struct {
-	include	[]string
-	exclude	[]string
-	root	string
+	include  []string
+	exclude  []string
+	rootOnce sync.Once
+	root     string
 }
 
 func NewMatcher(include, exclude []string) (*Matcher, error) {
@@ -42,14 +46,14 @@ func (m *Matcher) Matches(path string) bool {
 	if err != nil {
 		absPath = path
 	}
-	if m.root == "" {
+	m.rootOnce.Do(func() {
 		info, err := os.Stat(absPath)
 		if err == nil && info.IsDir() {
 			m.root = absPath
 		} else {
 			m.root = filepath.Dir(absPath)
 		}
-	}
+	})
 	relPath, err := filepath.Rel(m.root, absPath)
 	if err != nil {
 		relPath = absPath
@@ -75,5 +79,4 @@ func (m *Matcher) Matches(path string) bool {
 	return false
 }
 
-func ValidatePatterns(patterns []string) error	{ return validatePatterns(patterns) }
-
+func ValidatePatterns(patterns []string) error { return validatePatterns(patterns) }
