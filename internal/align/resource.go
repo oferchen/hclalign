@@ -4,7 +4,6 @@ package align
 import (
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -103,9 +102,6 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 			if _, ok := attrs[r]; !ok {
 				return fmt.Errorf("missing required attribute %q", r)
 			}
-		}
-		if len(unk) > 0 {
-			return fmt.Errorf("unknown attributes: %v", strings.Join(unk, ", "))
 		}
 	}
 

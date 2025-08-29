@@ -2,9 +2,7 @@
 package align
 
 import (
-	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
@@ -15,7 +13,6 @@ func (connectionStrategy) Name() string { return "connection" }
 
 func (connectionStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	attrs := block.Body().Attributes()
-	names := make([]string, 0, len(attrs))
 	allowed := map[string]struct{}{
 		"type":                 {},
 		"host":                 {},
@@ -40,18 +37,17 @@ func (connectionStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		"host_key":             {},
 		"bastion_host_key":     {},
 	}
-	var unknown []string
+	var known, unknown []string
 	for name := range attrs {
-		names = append(names, name)
-		if _, ok := allowed[name]; !ok {
+		if _, ok := allowed[name]; ok {
+			known = append(known, name)
+		} else {
 			unknown = append(unknown, name)
 		}
 	}
-	if opts != nil && opts.Strict && len(unknown) > 0 {
-		sort.Strings(unknown)
-		return fmt.Errorf("connection: unknown attributes: %s", strings.Join(unknown, ", "))
-	}
-	sort.Strings(names)
+	sort.Strings(known)
+	sort.Strings(unknown)
+	names := append(known, unknown...)
 	return reorderBlock(block, names)
 }
 

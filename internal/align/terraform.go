@@ -49,21 +49,6 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 			sort.Strings(missing)
 			return fmt.Errorf("terraform: missing attributes or blocks: %s", strings.Join(missing, ", "))
 		}
-		var unknown []string
-		for name := range attrs {
-			if _, ok := canonSet[name]; !ok {
-				unknown = append(unknown, name)
-			}
-		}
-		for _, b := range blocks {
-			if _, ok := canonSet[b.Type()]; !ok {
-				unknown = append(unknown, b.Type())
-			}
-		}
-		if len(unknown) > 0 {
-			sort.Strings(unknown)
-			return fmt.Errorf("terraform: unknown attributes or blocks: %s", strings.Join(unknown, ", "))
-		}
 	}
 
 	for _, nb := range blocks {
@@ -102,6 +87,29 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		isAttr bool
 	}
 
+	var cloudBlock, backendBlock, requiredProviders *hclwrite.Block
+	var otherBlocks []*hclwrite.Block
+	for _, b := range blocks {
+		switch b.Type() {
+		case "required_providers":
+			requiredProviders = b
+		case "backend":
+			backendBlock = b
+		case "cloud":
+			cloudBlock = b
+		default:
+			otherBlocks = append(otherBlocks, b)
+		}
+	}
+
+	var otherAttrs []string
+	for _, name := range order {
+		if name == "required_version" || name == "experiments" {
+			continue
+		}
+		otherAttrs = append(otherAttrs, name)
+	}
+
 	var items []item
 	if _, ok := attrTokens["required_version"]; ok {
 		items = append(items, item{name: "required_version", isAttr: true})
@@ -109,13 +117,19 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if _, ok := attrTokens["experiments"]; ok {
 		items = append(items, item{name: "experiments", isAttr: true})
 	}
-	for _, name := range order {
-		if name == "required_version" || name == "experiments" {
-			continue
-		}
+	if cloudBlock != nil {
+		items = append(items, item{block: cloudBlock})
+	}
+	if backendBlock != nil {
+		items = append(items, item{block: backendBlock})
+	}
+	if requiredProviders != nil {
+		items = append(items, item{block: requiredProviders})
+	}
+	for _, name := range otherAttrs {
 		items = append(items, item{name: name, isAttr: true})
 	}
-	for _, b := range blocks {
+	for _, b := range otherBlocks {
 		items = append(items, item{block: b})
 	}
 

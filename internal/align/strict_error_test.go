@@ -1,4 +1,5 @@
 // /internal/align/strict_error_test.go
+// /internal/align/strict_error_test.go
 package align
 
 import (
@@ -39,7 +40,7 @@ func TestStrictOrderErrors(t *testing.T) {
 	}
 }
 
-func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
+func TestStrictOrderAllowsUnknownAttributes(t *testing.T) {
 	cases := []struct {
 		name string
 		src  string
@@ -87,8 +88,8 @@ func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse: %v", diags)
 			}
-			if err := Apply(f, &Options{Strict: true}); err == nil {
-				t.Fatalf("expected error")
+			if err := Apply(f, &Options{Strict: true}); err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
 		})
 	}
