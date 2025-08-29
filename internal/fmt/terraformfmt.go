@@ -3,8 +3,8 @@ package terraformfmt
 
 import (
 	"bytes"
+	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"unicode/utf8"
 
@@ -42,29 +42,17 @@ func formatBinary(src []byte) ([]byte, error) {
 	if len(src) > 0 && !utf8.Valid(src) {
 		return nil, fmt.Errorf("input is not valid UTF-8")
 	}
-
-	f, err := os.CreateTemp("", "hclalign-*.tf")
-	if err != nil {
-		return nil, err
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "terraform", "fmt", "-no-color", "-list=false", "-write=false", "-")
+	cmd.Stdin = bytes.NewReader(src)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("terraform fmt failed: %v: %s", err, stderr.String())
 	}
-	name := f.Name()
-	if _, err := f.Write(src); err != nil {
-		f.Close()
-		os.Remove(name)
-		return nil, err
-	}
-	f.Close()
-
-	cmd := exec.Command("terraform", "fmt", name)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		os.Remove(name)
-		return nil, fmt.Errorf("terraform fmt failed: %v: %s", err, string(out))
-	}
-	formatted, err := os.ReadFile(name)
-	os.Remove(name)
-	if err != nil {
-		return nil, err
-	}
+	formatted := stdout.Bytes()
 
 	if len(formatted) > 0 {
 		formatted = bytes.TrimRight(formatted, "\n")

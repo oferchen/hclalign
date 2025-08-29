@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"testing"
 
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,4 +28,16 @@ func TestIdempotent(t *testing.T) {
 	second, err := Format(first, "test.tf", string(StrategyGo))
 	require.NoError(t, err)
 	require.Equal(t, string(first), string(second))
+}
+
+func TestBinaryPreservesHints(t *testing.T) {
+	if _, err := exec.LookPath("terraform"); err != nil {
+		t.Skip("terraform binary not found")
+	}
+	src := append([]byte{0xef, 0xbb, 0xbf}, []byte("variable \"a\" {\r\n  type = string\r\n}\r\n")...)
+	formatted, err := Format(src, "test.tf", string(StrategyBinary))
+	require.NoError(t, err)
+	hints := internalfs.DetectHintsFromBytes(formatted)
+	require.True(t, hints.HasBOM)
+	require.Equal(t, "\r\n", hints.Newline)
 }
