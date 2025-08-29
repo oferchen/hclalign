@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"runtime"
 
@@ -11,7 +12,10 @@ import (
 	"github.com/hashicorp/hclalign/config"
 )
 
-var osExit = os.Exit
+var (
+	osExit = os.Exit
+	runE   = cli.RunE
+)
 
 func main() { osExit(run(os.Args[1:])) }
 
@@ -20,7 +24,7 @@ func run(args []string) int {
 		Use:          "hclalign [target file or directory]",
 		Short:        "Aligns HCL files based on given criteria",
 		Args:         cobra.MaximumNArgs(1),
-		RunE:         cli.RunE,
+		RunE:         runE,
 		SilenceUsage: true,
 	}
 
@@ -46,7 +50,8 @@ func run(args []string) int {
 
 	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
-		if ec, ok := err.(*cli.ExitCodeError); ok {
+		var ec *cli.ExitCodeError
+		if errors.As(err, &ec) {
 			return ec.Code
 		}
 		return 1
