@@ -51,3 +51,21 @@ func TestProcessReaderModeDiff(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, diffText, out.String())
 }
+
+func TestProcessReaderModeCheckNoChange(t *testing.T) {
+	t.Parallel()
+
+	input := "variable \"simple\" {\n  type    = number\n  default = 1\n}"
+
+	var out bytes.Buffer
+	cfg := &config.Config{Mode: config.ModeCheck, Stdout: true}
+	changed, err := engine.ProcessReader(context.Background(), strings.NewReader(input), &out, cfg)
+	require.NoError(t, err)
+	require.False(t, changed)
+	require.Equal(t, input, out.String())
+
+	hints := internalfs.DetectHintsFromBytes([]byte(input))
+	diffText, err := diff.Unified("stdin", "stdin", []byte(input), out.Bytes(), hints.Newline)
+	require.NoError(t, err)
+	require.Empty(t, diffText)
+}
