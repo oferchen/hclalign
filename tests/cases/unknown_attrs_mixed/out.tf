@@ -6,4 +6,6 @@ variable "example" {
   nullable    = false
   foo         = "foo"
   bar         = "bar"
+  baz         = "baz"
+  qux         = "qux"
 }

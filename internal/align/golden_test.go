@@ -97,3 +97,33 @@ func TestGolden(t *testing.T) {
 	}
 }
 
+func TestUnknownAttributesAfterCanonical(t *testing.T) {
+	src := []byte(`variable "example" {
+  foo = "foo"
+  description = "example"
+  bar = "bar"
+  type = number
+  default = 1
+}`)
+
+	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
+	if diags.HasErrors() {
+		t.Fatalf("parse input: %v", diags)
+	}
+
+	if err := hclalign.ReorderAttributes(file, nil, false); err != nil {
+		t.Fatalf("reorder: %v", err)
+	}
+
+	got := file.Bytes()
+	exp := []byte(`variable "example" {
+  description = "example"
+  type        = number
+  default     = 1
+  foo         = "foo"
+  bar         = "bar"
+}`)
+	if !bytes.Equal(got, exp) {
+		t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)
+	}
+}

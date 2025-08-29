@@ -113,7 +113,7 @@ func TestReorderAttributes_StrictUnknownAttrWithCanonical(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestReorderAttributes_LooseRetainsUnknownOrder(t *testing.T) {
+func TestReorderAttributes_LoosePlacesUnknownAfterCanonical(t *testing.T) {
 	src := `variable "example" {
   custom      = true
   type        = string
@@ -125,9 +125,9 @@ func TestReorderAttributes_LooseRetainsUnknownOrder(t *testing.T) {
 	require.NoError(t, hclalign.ReorderAttributes(f, []string{"description", "type"}, false))
 
 	expected := `variable "example" {
-  custom      = true
   description = "d"
   type        = string
+  custom      = true
 }`
 	require.Equal(t, expected, string(f.Bytes()))
 }
@@ -176,4 +176,3 @@ func TestReorderAttributes_DefaultBlockNestedType(t *testing.T) {
 }`
 	require.Equal(t, expected, string(f.Bytes()))
 }
-
