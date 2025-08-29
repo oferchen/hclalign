@@ -37,9 +37,7 @@ test-race:
 	$(GO) test $(PKG) -race -shuffle=on
 
 cover: test
-	$(GO) tool cover -func=$(COVERPROFILE) | tee $(BUILD_DIR)/coverage.txt
-	@cov=$$(grep total: $(BUILD_DIR)/coverage.txt | awk '{print $$3}' | sed 's/%//'); \
-	awk 'BEGIN{exit !('"$$cov"' >= 95)}' </dev/null || { echo "Coverage $$cov% < 95%"; exit 1; }
+	$(GO) run ./internal/ci/covercheck
 
 build:
 	mkdir -p $(BUILD_DIR)
