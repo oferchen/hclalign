@@ -96,6 +96,9 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if stdin && target != "" {
 		return &ExitCodeError{Err: fmt.Errorf("cannot specify target when --stdin is used"), Code: 2}
 	}
+	if stdin && !stdout {
+		return &ExitCodeError{Err: fmt.Errorf("--stdout is required when --stdin is used"), Code: 2}
+	}
 
 	var mode config.Mode
 	switch {
