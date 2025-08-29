@@ -1,5 +1,4 @@
 // /internal/align/strict_error_test.go
-// /internal/align/strict_error_test.go
 package align
 
 import (
