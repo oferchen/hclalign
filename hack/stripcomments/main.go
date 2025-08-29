@@ -47,22 +47,21 @@ func processFile(path string) error {
 	if err != nil {
 		return err
 	}
-	comment := firstLineComment(src)
-	if comment == "" {
-		root, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		abs, err := filepath.Abs(path)
-		if err != nil {
-			return err
-		}
-		rel, err := filepath.Rel(root, abs)
-		if err != nil {
-			return err
-		}
-		comment = "// " + filepath.ToSlash(rel)
+	root, err := os.Getwd()
+	if err != nil {
+		return err
 	}
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+	rel, err := filepath.Rel(root, abs)
+	if err != nil {
+		return err
+	}
+	comment := "// " + filepath.ToSlash(rel)
+
+	tags := extractBuildTags(src)
 
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, src, 0)
@@ -70,6 +69,13 @@ func processFile(path string) error {
 		return err
 	}
 	var buf bytes.Buffer
+	for _, t := range tags {
+		buf.WriteString(t)
+		buf.WriteByte('\n')
+	}
+	if len(tags) > 0 {
+		buf.WriteByte('\n')
+	}
 	buf.WriteString(comment)
 	buf.WriteByte('\n')
 	if err := printer.Fprint(&buf, fset, file); err != nil {
@@ -79,13 +85,20 @@ func processFile(path string) error {
 	return os.WriteFile(path, buf.Bytes(), info.Mode())
 }
 
-func firstLineComment(src []byte) string {
+func extractBuildTags(src []byte) []string {
 	scanner := bufio.NewScanner(bytes.NewReader(src))
-	if scanner.Scan() {
+	var tags []string
+	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.HasPrefix(line, "//") {
-			return line
+		if strings.HasPrefix(line, "//go:build") {
+			tags = append(tags, line)
+			continue
 		}
+		if strings.TrimSpace(line) == "" && len(tags) > 0 {
+			break
+		}
+		break
 	}
-	return ""
+	return tags
 }
+

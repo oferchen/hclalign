@@ -1,5 +1,6 @@
 //go:build windows
 
+// internal/fs/atomic_windows_test.go
 package fs
 
 import (
@@ -29,3 +30,4 @@ func TestWriteFileAtomicChownIgnored(t *testing.T) {
 		t.Fatalf("WriteFileAtomic: %v", err)
 	}
 }
+

@@ -71,8 +71,32 @@ func checkFileFunc(path string) error {
 		return fmt.Errorf("%s: unable to read first line", path)
 	}
 	first = strings.TrimRight(first, "\n")
-	if first != expected {
-		return fmt.Errorf("%s: first line must be %q", path, expected)
+	if strings.HasPrefix(first, "//go:build") {
+		for {
+			next, err := reader.ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("%s: unable to read after build tag", path)
+			}
+			line := strings.TrimRight(next, "\n")
+			if line == "" {
+				break
+			}
+			if !strings.HasPrefix(line, "//go:build") {
+				return fmt.Errorf("%s: invalid line %q in build tags", path, line)
+			}
+		}
+		pc, err := reader.ReadString('\n')
+		if err != nil {
+			return fmt.Errorf("%s: unable to read path comment", path)
+		}
+		pc = strings.TrimRight(pc, "\n")
+		if pc != expected {
+			return fmt.Errorf("%s: path comment must be %q", path, expected)
+		}
+	} else {
+		if first != expected {
+			return fmt.Errorf("%s: first line must be %q", path, expected)
+		}
 	}
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
@@ -82,13 +106,34 @@ func checkFileFunc(path string) error {
 	if len(file.Comments) == 0 {
 		return fmt.Errorf("%s: missing file comment", path)
 	}
-	firstGroup := file.Comments[0]
-	pos := fset.Position(firstGroup.Pos())
-	if pos.Line != 1 || firstGroup.List[0].Text != expected {
-		return fmt.Errorf("%s: first comment must be %q", path, expected)
-	}
-	if len(file.Comments) > 1 || len(firstGroup.List) > 1 {
-		return fmt.Errorf("%s: found additional comments", path)
+	groups := file.Comments
+	if strings.HasPrefix(first, "//go:build") {
+		if len(groups) < 2 {
+			return fmt.Errorf("%s: missing file comment", path)
+		}
+		buildGroup := groups[0]
+		for _, c := range buildGroup.List {
+			if !strings.HasPrefix(c.Text, "//go:build") {
+				return fmt.Errorf("%s: unexpected comment %q in build tags", path, c.Text)
+			}
+		}
+		pathGroup := groups[1]
+		pos := fset.Position(pathGroup.Pos())
+		if pathGroup.List[0].Text != expected || pos.Line < 2 {
+			return fmt.Errorf("%s: first non-build comment must be %q", path, expected)
+		}
+		if len(groups) > 2 || len(pathGroup.List) > 1 {
+			return fmt.Errorf("%s: found additional comments", path)
+		}
+	} else {
+		firstGroup := groups[0]
+		pos := fset.Position(firstGroup.Pos())
+		if pos.Line != 1 || firstGroup.List[0].Text != expected {
+			return fmt.Errorf("%s: first comment must be %q", path, expected)
+		}
+		if len(groups) > 1 || len(firstGroup.List) > 1 {
+			return fmt.Errorf("%s: found additional comments", path)
+		}
 	}
 	return nil
 }
