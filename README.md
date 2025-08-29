@@ -1,10 +1,5 @@
 # hclalign
 
-<!--
-WHAT: Document atomic write guarantees, default patterns, symlink handling, strict order, exit codes, and integration examples.
-WHY: Provide clearer usage guidance and highlight safety features for users.
--->
-
 `hclalign` is a Command Line Interface (CLI) tool for reordering attributes inside HCL variable blocks. It helps maintain a consistent style across Terraform and other HCL files.
 
 ## Features
