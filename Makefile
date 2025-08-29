@@ -28,12 +28,17 @@ lint:
 	golangci-lint run
 
 comments:
-	@echo "Checking file comments..."
-	go run ./cmd/commentcheck
+        @echo "Checking file comments..."
+        go run ./cmd/commentcheck
+
+strip-comments:
+        @echo "Stripping comments..."
+        go run ./hack/stripcomments
 
 fmt:
-	@echo "Formatting code..."
-	go fmt ./...
+        @echo "Formatting code..."
+        go install mvdan.cc/gofumpt@v0.8.0
+        gofumpt -w .
 
 vet:
 	@echo "Running go vet..."
@@ -79,8 +84,8 @@ init:
 	@echo "Initializing Go module..."
 	go mod init ${MODULE_NAME}
 
-ci: fmt vet lint comments test-race fuzz-short build
-	@echo "Running CI pipeline..."
+ci: strip-comments fmt vet lint comments test-race fuzz-short build
+        @echo "Running CI pipeline..."
 
 help:
 	@echo "Makefile commands:"
@@ -91,9 +96,10 @@ help:
 	@echo "tidy      - Tidies and verifies the module dependencies."
 	@echo "fmt       - Formats the code."
 	@echo "vet       - Runs go vet."
-	@echo "lint      - Runs golangci-lint."
-	@echo "comments  - Checks file header comments."
-	@echo "test      - Runs all the tests."
+        @echo "lint      - Runs golangci-lint."
+        @echo "comments  - Checks file header comments."
+        @echo "strip-comments - Removes all comments except the first-line path comment."
+        @echo "test      - Runs all the tests."
 	@echo "test-race - Runs tests with the race detector."
 	@echo "cover     - Runs tests with the race detector and generates a coverage report."
 	@echo "fuzz      - Runs fuzz tests."

@@ -28,6 +28,12 @@ jobs:
       - name: Download modules
         run: go mod download
 
+      - name: Strip comments
+        run: make strip-comments
+
+      - name: Format
+        run: make fmt
+
       - name: Lint (golangci-lint)
         uses: golangci/golangci-lint-action@v6
         with:
