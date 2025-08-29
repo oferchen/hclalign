@@ -6,9 +6,9 @@ module "m" {
 module "complex" {
   source     = "./complex"
   version    = "1.0"
-  providers  = {}
   count      = 1
   for_each   = {}
+  providers  = {}
   depends_on = []
   a          = 1
   b          = 2

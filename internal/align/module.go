@@ -24,11 +24,8 @@ func (moduleStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if _, ok := attrs["version"]; ok {
 		order = append(order, "version")
 	}
-	if _, ok := attrs["providers"]; ok {
-		order = append(order, "providers")
-	}
 
-	metaArgs := []string{"count", "for_each", "depends_on"}
+	metaArgs := []string{"count", "for_each", "providers", "depends_on"}
 	for _, name := range metaArgs {
 		if _, ok := attrs[name]; ok {
 			order = append(order, name)
@@ -38,9 +35,9 @@ func (moduleStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	reserved := map[string]struct{}{
 		"source":     {},
 		"version":    {},
-		"providers":  {},
 		"count":      {},
 		"for_each":   {},
+		"providers":  {},
 		"depends_on": {},
 	}
 
