@@ -38,7 +38,7 @@ Files are written atomically via a temporary file rename and the original newlin
 ## Installation
 
 ```sh
-git clone https://github.com/hashicorp/hclalign.git
+git clone https://github.com/oferchen/hclalign.git
 cd hclalign
 make init tidy build
 ```
@@ -90,13 +90,10 @@ cat variables.tf | hclalign --stdin --stdout
 | `make test-race` | run tests with the race detector |
 | `make cover` | verify coverage ≥95% |
 | `make build` | build the `hclalign` binary into `.build/` |
-| `make commentcheck` | ensure source files include license comments |
-| `make fix-comments` | automatically insert missing license comments |
 | `make clean` | remove build artifacts |
 
 ## Continuous Integration
-
-Use `hclalign . --check` in CI to fail builds when formatting is needed. The provided GitHub Actions workflow runs `make tidy`, `make fmt`, `make lint`, `make test-race`, `make cover`, and `make commentcheck` on Linux and macOS with multiple Go versions.
+Use `hclalign . --check` in CI to fail builds when formatting is needed. The provided GitHub Actions workflow runs `make tidy`, `make fmt`, `make lint`, `make test-race`, and `make cover` on Linux and macOS with multiple Go versions.
 
 ## License
 

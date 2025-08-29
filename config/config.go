@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/hashicorp/hclalign/patternmatching"
+	"github.com/oferchen/hclalign/patternmatching"
 )
 
 type Mode int

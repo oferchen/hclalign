@@ -4,7 +4,7 @@ package align
 import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	ihcl "github.com/hashicorp/hclalign/internal/hcl"
+	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
 
 func reorderBlock(block *hclwrite.Block, order []string) error {

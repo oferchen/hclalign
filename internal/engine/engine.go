@@ -12,11 +12,11 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
-	"github.com/hashicorp/hclalign/config"
-	"github.com/hashicorp/hclalign/internal/align"
-	"github.com/hashicorp/hclalign/internal/diff"
-	terraformfmt "github.com/hashicorp/hclalign/internal/fmt"
-	internalfs "github.com/hashicorp/hclalign/internal/fs"
+	"github.com/oferchen/hclalign/config"
+	"github.com/oferchen/hclalign/internal/align"
+	"github.com/oferchen/hclalign/internal/diff"
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 )
 
 var (

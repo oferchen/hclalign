@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/hashicorp/hclalign/config"
+	"github.com/oferchen/hclalign/config"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +19,6 @@ import (
 func newRootCmd(exclusive bool) *cobra.Command { return newTestRootCmd(exclusive) }
 
 func newTestRootCmd(exclusive bool) *cobra.Command {
-
 	cmd := &cobra.Command{
 		Use:          "hclalign [target file or directory]",
 		Args:         cobra.MaximumNArgs(1),

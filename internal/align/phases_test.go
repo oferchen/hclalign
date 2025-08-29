@@ -8,10 +8,10 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	alignpkg "github.com/hashicorp/hclalign/internal/align"
-	alignschema "github.com/hashicorp/hclalign/internal/align/schema"
-	terraformfmt "github.com/hashicorp/hclalign/internal/fmt"
-	internalfs "github.com/hashicorp/hclalign/internal/fs"
+	alignpkg "github.com/oferchen/hclalign/internal/align"
+	alignschema "github.com/oferchen/hclalign/internal/align/schema"
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/stretchr/testify/require"
 )
 

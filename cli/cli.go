@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/hashicorp/hclalign/config"
-	"github.com/hashicorp/hclalign/internal/engine"
+	"github.com/oferchen/hclalign/config"
+	"github.com/oferchen/hclalign/internal/engine"
 )
 
 type ExitCodeError struct {

@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/hashicorp/hclalign/config"
-	"github.com/hashicorp/hclalign/patternmatching"
+	"github.com/oferchen/hclalign/config"
+	"github.com/oferchen/hclalign/patternmatching"
 )
 
 func scan(ctx context.Context, cfg *config.Config) ([]string, error) {

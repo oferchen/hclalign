@@ -5,9 +5,9 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/hashicorp/hclalign/config"
-	"github.com/hashicorp/hclalign/internal/align"
-	alignschema "github.com/hashicorp/hclalign/internal/align/schema"
+	"github.com/oferchen/hclalign/config"
+	"github.com/oferchen/hclalign/internal/align"
+	alignschema "github.com/oferchen/hclalign/internal/align/schema"
 )
 
 func loadSchemas(ctx context.Context, cfg *config.Config) (map[string]*align.Schema, error) {

@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/hashicorp/hclalign/internal/align"
+	"github.com/oferchen/hclalign/internal/align"
 )
 
 func Load(r io.Reader) (map[string]*align.Schema, error) {

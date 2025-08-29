@@ -1,4 +1,4 @@
-module github.com/hashicorp/hclalign
+module github.com/oferchen/hclalign
 
 go 1.23.0
 

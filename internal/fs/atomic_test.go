@@ -13,8 +13,10 @@ import (
 	"time"
 )
 
-type setupFunc func(t *testing.T, dir, path string) any
-type validateFunc func(t *testing.T, dir, path string, ctx any)
+type (
+	setupFunc    func(t *testing.T, dir, path string) any
+	validateFunc func(t *testing.T, dir, path string, ctx any)
+)
 
 func TestWriteFileAtomic(t *testing.T) {
 	t.Parallel()

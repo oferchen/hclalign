@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hashicorp/hclalign/config"
-	terraformfmt "github.com/hashicorp/hclalign/internal/fmt"
+	"github.com/oferchen/hclalign/config"
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
 	"github.com/stretchr/testify/require"
 )
 

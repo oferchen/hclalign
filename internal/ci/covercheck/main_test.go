@@ -42,20 +42,14 @@ func TestCovercheck(t *testing.T) {
 			wantExit: 1,
 			wantMsg:  "Coverage 50.0% is below 95.0%",
 		},
-		{
-			name:     "ignored path",
-			profile:  "mode: set\ncmd/commentcheck/file.go:1.1,1.2 1 0\nfile.go:2.1,2.2 1 1\n",
-			wantExit: 0,
-			wantMsg:  "Total coverage: 100.0%",
-		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if err := os.MkdirAll(".build", 0755); err != nil {
+			if err := os.MkdirAll(".build", 0o755); err != nil {
 				t.Fatalf("mkdir .build: %v", err)
 			}
 			profile := filepath.Join(".build", "coverage.out")
-			if err := os.WriteFile(profile, []byte(tc.profile), 0644); err != nil {
+			if err := os.WriteFile(profile, []byte(tc.profile), 0o644); err != nil {
 				t.Fatalf("write profile: %v", err)
 			}
 			defer os.RemoveAll(".build")
