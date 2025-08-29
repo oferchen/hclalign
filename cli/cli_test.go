@@ -32,7 +32,7 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Bool("stdout", false, "write result to STDOUT")
 	cmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	cmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
-	cmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
+	cmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields and per-block ordering flags (e.g. locals=alphabetical)")
 	cmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	cmd.Flags().Bool("fmt-only", false, "only format files, skip alignment")
 	cmd.Flags().Bool("no-fmt", false, "skip initial formatting")
@@ -393,4 +393,20 @@ func TestRunEFollowSymlinks(t *testing.T) {
 			require.Equal(t, tt.want, string(data))
 		})
 	}
+}
+
+func TestRunELocalsAlphabetical(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.tf")
+	content := "locals {\n  b = 2\n  a = 1\n}\n"
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o644))
+
+	cmd := newRootCmd(true)
+	cmd.SetArgs([]string{path, "--order", "locals=alphabetical"})
+	_, err := cmd.ExecuteC()
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, "locals {\n  a = 1\n  b = 2\n}\n", string(data))
 }

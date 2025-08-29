@@ -37,6 +37,9 @@ func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
 			seen[name] = struct{}{}
 		}
 	}
+	if len(knownOrder) == 0 {
+		knownOrder = config.CanonicalOrder
+	}
 	return reorderVariableBlock(block, knownOrder, canonicalSet, opts.Strict)
 }
 
