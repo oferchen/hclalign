@@ -38,6 +38,9 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      - name: Comment policy
+        run: go run ./cmd/commentcheck
+
       - name: Vulnerability check (non-blocking)
         continue-on-error: true
         run: |
