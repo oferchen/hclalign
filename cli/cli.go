@@ -51,7 +51,11 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	order, err := cmd.Flags().GetStringSlice("order")
+	orderRaw, err := cmd.Flags().GetStringSlice("order")
+	if err != nil {
+		return err
+	}
+	attrOrder, blockOrder, err := config.ParseOrder(orderRaw)
 	if err != nil {
 		return err
 	}
@@ -138,7 +142,8 @@ func RunE(cmd *cobra.Command, args []string) error {
 		Stdout:             stdout,
 		Include:            include,
 		Exclude:            exclude,
-		Order:              order,
+		Order:              attrOrder,
+		BlockOrder:         blockOrder,
 		StrictOrder:        strictOrder,
 		FmtOnly:            fmtOnly,
 		NoFmt:              noFmt,

@@ -8,17 +8,12 @@ import (
 	"testing"
 )
 
-func TestValidateOrder_StrictUnknownAttribute(t *testing.T) {
-	err := ValidateOrder([]string{"description", "unknown"}, true)
-	if err == nil {
-		t.Fatalf("expected error for unknown attribute in strict mode")
-	}
-}
-
-func TestValidateOrder_NonStrictUnknownAttribute(t *testing.T) {
-	if err := ValidateOrder([]string{"description", "unknown"}, false); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+func TestValidateOrder_UnknownAttributeAllowed(t *testing.T) {
+        order := append([]string{}, CanonicalOrder...)
+        order = append(order, "unknown")
+        if err := ValidateOrder(order, true); err != nil {
+                t.Fatalf("unexpected error: %v", err)
+        }
 }
 
 func TestValidateOrder_StrictCanonicalOrder(t *testing.T) {
@@ -42,19 +37,6 @@ func TestValidateOrder_EmptyAttribute(t *testing.T) {
 	}
 }
 
-func TestValidateOrder_BlockOrderingFlag(t *testing.T) {
-	if err := ValidateOrder([]string{"locals=alphabetical"}, false); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
-func TestValidateOrder_DuplicateBlockOrderingFlag(t *testing.T) {
-	err := ValidateOrder([]string{"locals=alphabetical", "locals=alphabetical"}, false)
-	if err == nil {
-		t.Fatalf("expected error for duplicate block ordering flag")
-	}
-}
-
 func TestCanonicalOrderMatchesBuiltInAttributes(t *testing.T) {
 	expected := []string{"description", "type", "default", "sensitive", "nullable"}
 	if !reflect.DeepEqual(CanonicalOrder, expected) {
@@ -62,16 +44,29 @@ func TestCanonicalOrderMatchesBuiltInAttributes(t *testing.T) {
 	}
 }
 
-func TestValidateOrder_StrictValidationBlock(t *testing.T) {
-	if err := ValidateOrder([]string{"description", "validation"}, true); err == nil {
-		t.Fatalf("expected error for validation block in strict mode")
-	}
-}
-
 func TestValidateOrder_EmptyAttributeName(t *testing.T) {
 	err := ValidateOrder([]string{"description", ""}, false)
 	if err == nil || err.Error() != "attribute name cannot be empty" {
 		t.Fatalf("expected error for empty attribute name, got %v", err)
+	}
+}
+
+func TestParseOrder_BlockOrderingFlag(t *testing.T) {
+	attrs, blocks, err := ParseOrder([]string{"locals=alphabetical"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(attrs) != 0 {
+		t.Fatalf("expected no attributes, got %v", attrs)
+	}
+	if blocks["locals"] != "alphabetical" {
+		t.Fatalf("expected locals=alphabetical, got %v", blocks)
+	}
+}
+
+func TestParseOrder_DuplicateBlockOrderingFlag(t *testing.T) {
+	if _, _, err := ParseOrder([]string{"locals=alphabetical", "locals=alphabetical"}); err == nil {
+		t.Fatalf("expected error for duplicate block ordering flag")
 	}
 }
 

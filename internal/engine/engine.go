@@ -98,7 +98,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		if err != nil {
 			return false, err
 		}
-		if err := align.Apply(file, &align.Options{Order: cfg.Order, Strict: cfg.StrictOrder, Schemas: schemas}); err != nil {
+		if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Strict: cfg.StrictOrder, Schemas: schemas}); err != nil {
 			return false, err
 		}
 		formatted = hclwrite.Format(file.Bytes())

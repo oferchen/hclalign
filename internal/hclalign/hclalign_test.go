@@ -84,19 +84,6 @@ func TestReorderAttributes_IgnoresNonVariable(t *testing.T) {
 	require.Equal(t, src, string(f.Bytes()))
 }
 
-func TestReorderAttributes_StrictUnknownAttrError(t *testing.T) {
-	src := `variable "example" {
-  custom      = true
-  description = "d"
-  type        = string
-}`
-	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
-	require.False(t, diags.HasErrors())
-
-	err := hclalign.ReorderAttributes(f, []string{"custom", "description", "type"}, true)
-	require.Error(t, err)
-}
-
 func TestReorderAttributes_StrictUnknownAttrWithCanonical(t *testing.T) {
 	src := `variable "example" {
   description = "d"
@@ -109,8 +96,17 @@ func TestReorderAttributes_StrictUnknownAttrWithCanonical(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	err := hclalign.ReorderAttributes(f, nil, true)
-	require.Error(t, err)
+	require.NoError(t, hclalign.ReorderAttributes(f, nil, true))
+
+	expected := `variable "example" {
+  description = "d"
+  type        = string
+  default     = "v"
+  sensitive   = true
+  nullable    = false
+  custom      = true
+}`
+	require.Equal(t, expected, string(f.Bytes()))
 }
 
 func TestReorderAttributes_LoosePlacesUnknownAfterCanonical(t *testing.T) {

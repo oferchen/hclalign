@@ -36,7 +36,7 @@ func TestLocalsAlphabeticalOrderFlag(t *testing.T) {
 }`)
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Order: []string{"locals=alphabetical"}}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{BlockOrder: map[string]string{"locals": "alphabetical"}}))
 	got := string(file.Bytes())
 	exp := `locals {
   a = 1
