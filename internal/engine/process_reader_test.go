@@ -120,3 +120,51 @@ func TestProcessPrintsDelimiters(t *testing.T) {
 	require.Contains(t, s, fmt.Sprintf("\n--- %s ---\n", f1))
 	require.Contains(t, s, fmt.Sprintf("\n--- %s ---\n", f2))
 }
+
+func TestProcessStdinStdoutPreservesHints(t *testing.T) {
+	t.Parallel()
+
+	bom := string([]byte{0xEF, 0xBB, 0xBF})
+	input := bom + "variable \"simple\" {\r\n  default = 1\r\n  type = number\r\n}"
+	expected := bom + "variable \"simple\" {\r\n  type    = number\r\n  default = 1\r\n}"
+
+	cfg := &config.Config{Mode: config.ModeWrite, Stdin: true, Stdout: true}
+
+	run := func(in string) (string, bool) {
+		inR, inW, err := os.Pipe()
+		require.NoError(t, err)
+		outR, outW, err := os.Pipe()
+		require.NoError(t, err)
+		defer inR.Close()
+		defer outR.Close()
+
+		oldIn, oldOut := os.Stdin, os.Stdout
+		os.Stdin, os.Stdout = inR, outW
+		defer func() { os.Stdin, os.Stdout = oldIn, oldOut }()
+
+		go func() {
+			_, _ = inW.Write([]byte(in))
+			inW.Close()
+		}()
+
+		changed, err := engine.Process(context.Background(), cfg)
+		require.NoError(t, err)
+
+		outW.Close()
+		b, err := io.ReadAll(outR)
+		require.NoError(t, err)
+		return string(b), changed
+	}
+
+	out1, changed1 := run(input)
+	require.True(t, changed1)
+	require.Equal(t, expected, out1)
+
+	out2, changed2 := run(out1)
+	require.False(t, changed2)
+	require.Equal(t, out1, out2)
+
+	hints := internalfs.DetectHintsFromBytes([]byte(out2))
+	require.True(t, hints.HasBOM)
+	require.Equal(t, "\r\n", hints.Newline)
+}
