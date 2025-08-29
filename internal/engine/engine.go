@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	testHookAfterParse	func()
-	testHookAfterReorder	func()
-	reorderAttributes	= hclalign.ReorderAttributes
-	WriteFileAtomic		= internalfs.WriteFileAtomic
+	testHookAfterParse   func()
+	testHookAfterReorder func()
+	reorderAttributes    = hclalign.ReorderAttributes
+	WriteFileAtomic      = internalfs.WriteFileAtomic
 )
 
 func Process(ctx context.Context, cfg *config.Config) (bool, error) {
@@ -46,7 +46,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		}
 		return false, err
 	}
-	matcher, err := patternmatching.NewMatcher(cfg.Include, cfg.Exclude)
+	matcher, err := patternmatching.NewMatcher(cfg.Include, cfg.Exclude, cfg.Target)
 	if err != nil {
 		return false, err
 	}
@@ -125,8 +125,8 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	sort.Strings(files)
 
 	type result struct {
-		path	string
-		data	[]byte
+		path string
+		data []byte
 	}
 
 	var changed atomic.Bool
@@ -358,4 +358,3 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	}
 	return changed, nil
 }
-
