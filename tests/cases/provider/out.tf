@@ -1,12 +1,17 @@
 provider "aws" {
   # alias comment
   alias = "east"
-  # access key comment
-  access_key = "foo"
   # region comment
   region = "us-east-1"
+  # access key comment
+  access_key = "foo"
   # secret key comment
   secret_key = "bar"
+
+  # nested b comment
+  nested "b" {
+    v = 2
+  }
 
   # assume role block
   assume_role {
@@ -16,10 +21,5 @@ provider "aws" {
   # nested a comment
   nested "a" {
     v = 1
-  }
-
-  # nested b comment
-  nested "b" {
-    v = 2
   }
 }
