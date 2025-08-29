@@ -85,6 +85,34 @@ func TestCLI(t *testing.T) {
 		require.Contains(t, stderr.String(), "files need formatting")
 	})
 
+	t.Run("include_exclude", func(t *testing.T) {
+		unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
+		want := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
+
+		dir := t.TempDir()
+		includedFile := filepath.Join(dir, "included.tf")
+		excludedFile := filepath.Join(dir, "excluded.tf")
+		require.NoError(t, os.WriteFile(includedFile, []byte(unformatted), 0o644))
+		require.NoError(t, os.WriteFile(excludedFile, []byte(unformatted), 0o644))
+
+		cmd := exec.Command(bin, dir, "--write", "--include", "included.tf", "--exclude", "excluded.tf")
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		err := cmd.Run()
+		require.NoError(t, err)
+		require.Empty(t, stdout.String())
+		require.Empty(t, stderr.String())
+
+		data, err := os.ReadFile(includedFile)
+		require.NoError(t, err)
+		require.Equal(t, want, string(data))
+
+		data, err = os.ReadFile(excludedFile)
+		require.NoError(t, err)
+		require.Equal(t, unformatted, string(data))
+	})
+
 	t.Run("stdin_stdout", func(t *testing.T) {
 		unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
 		want := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
