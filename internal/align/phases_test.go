@@ -34,7 +34,7 @@ func TestPhases(t *testing.T) {
 			wantAligned, err := os.ReadFile(alignedPath)
 			require.NoError(t, err)
 
-			gotFmt, err := terraformfmt.Format(inBytes, inPath, "")
+			gotFmt, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
 			require.NoError(t, err)
 			hadNewline := len(inBytes) > 0 && inBytes[len(inBytes)-1] == '\n'
 			if !hadNewline && len(gotFmt) > 0 && gotFmt[len(gotFmt)-1] == '\n' {
@@ -64,7 +64,7 @@ func TestPhases(t *testing.T) {
 	}
 
 	t.Run("error", func(t *testing.T) {
-		_, err := terraformfmt.Format([]byte("variable \"a\" {"), "bad.hcl", "")
+		_, err := terraformfmt.Format([]byte("variable \"a\" {"), "bad.hcl", string(terraformfmt.StrategyGo))
 		require.Error(t, err)
 	})
 }
