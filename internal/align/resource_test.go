@@ -37,8 +37,8 @@ func TestSchemaAwareOrder(t *testing.T) {
 
 	got := string(file.Bytes())
 	exp := `resource "test_thing" "ex" {
-  depends_on = []
   provider   = "p"
+  depends_on = []
   foo        = 1
   bar        = 2
   baz        = 3
@@ -86,25 +86,29 @@ resource "null_resource" "n" {
 
 func TestMetaArgsOrder(t *testing.T) {
 	src := []byte(`resource "test" "ex" {
-  provider   = "p"
+  baz        = 3
   for_each   = {}
+  foo        = 1
+  provider   = "p"
   count      = 1
   depends_on = []
-  foo        = 1
+  bar        = 2
 }`)
 
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: map[string]*alignpkg.Schema{"test": {}}}))
+	require.NoError(t, alignpkg.Apply(file, nil))
 
 	got := string(file.Bytes())
 	exp := `resource "test" "ex" {
-  depends_on = []
+  provider   = "p"
   count      = 1
   for_each   = {}
-  provider   = "p"
+  depends_on = []
+  baz        = 3
   foo        = 1
+  bar        = 2
 }`
 	require.Equal(t, exp, got)
 }
