@@ -3,7 +3,6 @@ APP := hclalign
 PKG := ./...
 BUILD_DIR := ./.build
 COVERPROFILE := coverage.out
-COVER_THRESH ?= 95
 
 GO ?= go
 
@@ -47,7 +46,7 @@ test-race:
 
 cover:
 	$(GO) test -race -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...
-	$(GO) tool cover -func=$(COVERPROFILE) | tee /dev/stderr | awk -v thr=$(COVER_THRESH) '/^total:/ {sub("%", "", $$3); if ($$3+0 < thr) {printf("coverage %s%% is below %s%%\n", $$3, thr); exit 1}}'
+	$(GO) tool cover -func=$(COVERPROFILE) | awk '/total:/ { if ($$3+0 < 95) { print "COVERAGE <95%"; exit 1 } }'
 
 cover-html: cover
 	$(GO) tool cover -html=$(COVERPROFILE) -o $(BUILD_DIR)/coverage.html
