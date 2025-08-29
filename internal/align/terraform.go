@@ -39,7 +39,7 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	attrs := body.Attributes()
 	blocks := body.Blocks()
 
-	canonical := []string{"required_version", "required_providers", "experiments", "cloud", "backend"}
+	canonical := []string{"required_version", "required_providers", "backend", "cloud"}
 	canonSet := make(map[string]struct{}, len(canonical))
 	for _, n := range canonical {
 		canonSet[n] = struct{}{}
@@ -119,7 +119,7 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 
 	otherAttrNames := make([]string, 0, len(attrTokens))
 	for name := range attrTokens {
-		if name != "required_version" && name != "experiments" {
+		if name != "required_version" {
 			otherAttrNames = append(otherAttrNames, name)
 		}
 	}
@@ -138,14 +138,11 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if reqProviders != nil {
 		items = append(items, item{block: reqProviders})
 	}
-	if _, ok := attrTokens["experiments"]; ok {
-		items = append(items, item{name: "experiments", isAttr: true})
+	if backendBlock != nil {
+		items = append(items, item{block: backendBlock})
 	}
 	if cloudBlock != nil {
 		items = append(items, item{block: cloudBlock})
-	}
-	if backendBlock != nil {
-		items = append(items, item{block: backendBlock})
 	}
 	for _, name := range otherAttrNames {
 		items = append(items, item{name: name, isAttr: true})
