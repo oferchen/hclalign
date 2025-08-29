@@ -35,6 +35,13 @@ func TestValidateOrder_StrictMissingAttribute(t *testing.T) {
 	}
 }
 
+func TestValidateOrder_EmptyAttribute(t *testing.T) {
+	err := ValidateOrder([]string{""}, false)
+	if err == nil || !strings.Contains(err.Error(), "attribute name cannot be empty") {
+		t.Fatalf("expected error for empty attribute name, got %v", err)
+	}
+}
+
 func TestCanonicalOrderMatchesBuiltInAttributes(t *testing.T) {
 	expected := []string{"description", "type", "default", "sensitive", "nullable"}
 	if !reflect.DeepEqual(CanonicalOrder, expected) {
@@ -85,11 +92,11 @@ func TestValidate_InvalidExcludePattern(t *testing.T) {
 
 func TestValidate_ValidConfig(t *testing.T) {
 	c := Config{
-		Concurrency:	1,
-		Include:	DefaultInclude,
-		Exclude:	DefaultExclude,
-		Order:		CanonicalOrder,
-		StrictOrder:	true,
+		Concurrency: 1,
+		Include:     DefaultInclude,
+		Exclude:     DefaultExclude,
+		Order:       CanonicalOrder,
+		StrictOrder: true,
 	}
 	if err := c.Validate(); err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -98,13 +105,24 @@ func TestValidate_ValidConfig(t *testing.T) {
 
 func TestValidate_DuplicateOrderAttribute(t *testing.T) {
 	c := Config{
-		Concurrency:	1,
-		Include:	DefaultInclude,
-		Exclude:	DefaultExclude,
-		Order:		[]string{"description", "description"},
+		Concurrency: 1,
+		Include:     DefaultInclude,
+		Exclude:     DefaultExclude,
+		Order:       []string{"description", "description"},
 	}
 	if err := c.Validate(); err == nil {
 		t.Fatalf("expected error for duplicate order attribute")
 	}
 }
 
+func TestValidate_EmptyOrderAttribute(t *testing.T) {
+	c := Config{
+		Concurrency: 1,
+		Include:     DefaultInclude,
+		Exclude:     DefaultExclude,
+		Order:       []string{""},
+	}
+	if err := c.Validate(); err == nil || !strings.Contains(err.Error(), "attribute name cannot be empty") {
+		t.Fatalf("expected error for empty order attribute, got %v", err)
+	}
+}
