@@ -14,7 +14,27 @@ type providerStrategy struct{}
 func (providerStrategy) Name() string { return "provider" }
 
 func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
-	attrs := block.Body().Attributes()
+	body := block.Body()
+
+	nested := body.Blocks()
+	if len(nested) > 0 {
+		for _, nb := range nested {
+			body.RemoveBlock(nb)
+		}
+		sort.Slice(nested, func(i, j int) bool {
+			if nested[i].Type() == nested[j].Type() {
+				li := strings.Join(nested[i].Labels(), "\x00")
+				lj := strings.Join(nested[j].Labels(), "\x00")
+				return li < lj
+			}
+			return nested[i].Type() < nested[j].Type()
+		})
+		for _, nb := range nested {
+			body.AppendBlock(nb)
+		}
+	}
+
+	attrs := body.Attributes()
 	names := make([]string, 0, len(attrs))
 
 	// Ensure alias is first if present
