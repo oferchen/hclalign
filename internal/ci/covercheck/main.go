@@ -11,6 +11,15 @@ import (
 
 const threshold = 95.0
 
+// paths to ignore when calculating coverage. These packages are excluded from
+// the coverage budget but may still appear in the profile when using
+// -coverpkg.
+var ignore = []string{
+	"cmd/commentcheck/",
+	"internal/ci/",
+	"main.go",
+}
+
 func main() {
 	const profile = "coverage.out"
 
@@ -31,6 +40,17 @@ func main() {
 	for s.Scan() {
 		fields := strings.Fields(s.Text())
 		if len(fields) < 3 {
+			continue
+		}
+		file := fields[0]
+		skip := false
+		for _, p := range ignore {
+			if strings.Contains(file, p) {
+				skip = true
+				break
+			}
+		}
+		if skip {
 			continue
 		}
 		stmts, err1 := strconv.ParseFloat(fields[1], 64)
