@@ -30,61 +30,58 @@ func createTempHCLFile(t *testing.T, content string) string {
 
 func TestMainFunctionality(t *testing.T) {
 	tests := []struct {
-		name	string
-		setup	func(*testing.T) []string
-		wantErr	bool
-		errMsg	string
+		name    string
+		setup   func(*testing.T) []string
+		wantErr bool
+		errMsg  string
 	}{
 		{
-			name:	"Missing Target Argument",
+			name: "Missing Target Argument",
 			setup: func(t *testing.T) []string {
 				return []string{}
 			},
-			wantErr:	true,
-			errMsg:		config.ErrMissingTarget,
+			wantErr: true,
+			errMsg:  config.ErrMissingTarget,
 		},
 		{
-			name:	"Valid Single File",
+			name: "Valid Single File",
 			setup: func(t *testing.T) []string {
-
 				filePath := createTempHCLFile(t, `variable "test" {}`)
 				return []string{filePath}
 			},
-			wantErr:	false,
+			wantErr: false,
 		},
 		{
-			name:	"Multiple Files",
+			name: "Multiple Files",
 			setup: func(t *testing.T) []string {
-
 				filePath1 := createTempHCLFile(t, `variable "test1" {}`)
 				filePath2 := createTempHCLFile(t, `variable "test2" {}`)
 				return []string{filePath1, filePath2}
 			},
-			wantErr:	true,
-			errMsg:		"accepts at most 1 arg(s)",
+			wantErr: true,
+			errMsg:  "accepts at most 1 arg(s)",
 		},
 		{
-			name:	"Mutually Exclusive Flags",
+			name: "Mutually Exclusive Flags",
 			setup: func(t *testing.T) []string {
 				filePath := createTempHCLFile(t, `variable "test" {}`)
 				return []string{filePath, "--check", "--diff"}
 			},
-			wantErr:	true,
-			errMsg:		"if any flags in the group [write check diff] are set none of the others can be",
+			wantErr: true,
+			errMsg:  "if any flags in the group [write check diff] are set none of the others can be",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-
 			args := tc.setup(t)
 
 			rootCmd := &cobra.Command{
-				Use:		"hclalign [target file or directory]",
-				Short:		"Aligns HCL files based on given criteria",
-				Args:		cobra.ArbitraryArgs,
-				RunE:		cli.RunE,
-				SilenceUsage:	true,
+				Use:          "hclalign [target file or directory]",
+				Short:        "Aligns HCL files based on given criteria",
+				Args:         cobra.ArbitraryArgs,
+				RunE:         cli.RunE,
+				SilenceUsage: true,
 			}
 			rootCmd.Flags().Bool("write", false, "write result to file(s)")
 			rootCmd.Flags().Bool("check", false, "check if files are formatted")
@@ -123,11 +120,11 @@ func TestCLIOrderFlagInfluencesProcessing(t *testing.T) {
 	filePath := createTempHCLFile(t, content)
 
 	rootCmd := &cobra.Command{
-		Use:		"hclalign [target file or directory]",
-		Short:		"Aligns HCL files based on given criteria",
-		Args:		cobra.ArbitraryArgs,
-		RunE:		cli.RunE,
-		SilenceUsage:	true,
+		Use:          "hclalign [target file or directory]",
+		Short:        "Aligns HCL files based on given criteria",
+		Args:         cobra.ArbitraryArgs,
+		RunE:         cli.RunE,
+		SilenceUsage: true,
 	}
 	rootCmd.Flags().Bool("write", false, "write result to file(s)")
 	rootCmd.Flags().Bool("check", false, "check if files are formatted")
@@ -159,11 +156,11 @@ func TestCLIStrictOrderUnknownAttribute(t *testing.T) {
 	filePath := createTempHCLFile(t, `variable "test" {}`)
 
 	rootCmd := &cobra.Command{
-		Use:		"hclalign [target file or directory]",
-		Short:		"Aligns HCL files based on given criteria",
-		Args:		cobra.ArbitraryArgs,
-		RunE:		cli.RunE,
-		SilenceUsage:	true,
+		Use:          "hclalign [target file or directory]",
+		Short:        "Aligns HCL files based on given criteria",
+		Args:         cobra.ArbitraryArgs,
+		RunE:         cli.RunE,
+		SilenceUsage: true,
 	}
 	rootCmd.Flags().Bool("write", false, "write result to file(s)")
 	rootCmd.Flags().Bool("check", false, "check if files are formatted")
@@ -185,3 +182,8 @@ func TestCLIStrictOrderUnknownAttribute(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestRunMissingTarget(t *testing.T) {
+	if code := run([]string{}); code == 0 {
+		t.Fatalf("expected non-zero exit code")
+	}
+}

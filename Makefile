@@ -1,111 +1,55 @@
-# Makefile for the HCL Align project.
+# /Makefile
+APP := hclalign
+PKG := ./...
+BUILD_DIR := ./.build
+COVERPROFILE := $(BUILD_DIR)/coverage.out
 
-BINARY_NAME=hclalign
-MODULE_NAME=github.com/oferchen/hclalign
-# Packages to include in tests and coverage; exclude main, cmd/commentcheck, and internal/ci packages
-PKG_TEST=$(shell go list ./... \
-        | grep -v '^$(MODULE_NAME)$$' \
-        | grep -v '^$(MODULE_NAME)/cmd/commentcheck$$' \
-        | grep -v '^$(MODULE_NAME)/internal/ci')
+GO ?= go
+
+.PHONY: all init tidy fmt lint vet test test-race cover build clean commentcheck fix-comments
 
 all: build
 
-build:
-	@echo "Compiling the project..."
-	go build ./...
-
-run: build
-	@echo "Running the project..."
-	./${BINARY_NAME}
-
-deps:
-	@echo "Checking and downloading dependencies..."
-	go mod download
+init:
+	$(GO) mod download
+	$(GO) mod verify
 
 tidy:
-	@echo "Tidying and verifying module dependencies..."
-	go mod tidy -v
-	git diff --exit-code go.mod go.sum
-
-lint:
-	@echo "Running linters..."
-	golangci-lint run
-
-comments:
-        @echo "Checking file comments..."
-        go run ./cmd/commentcheck
-
-strip-comments:
-        @echo "Stripping comments..."
-        go run ./hack/stripcomments
+	$(GO) mod tidy
 
 fmt:
-        @echo "Formatting code..."
-        go install mvdan.cc/gofumpt@v0.8.0
-        gofumpt -w .
+	$(GO) run mvdan.cc/gofumpt@latest -w .
+	$(GO) fmt $(PKG)
+
+lint:
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	golangci-lint run --timeout=5m
 
 vet:
-	@echo "Running go vet..."
-	go vet ./...
+	$(GO) vet $(PKG)
 
 test:
-	@echo "Running tests..."
-	go test -shuffle=on -cover ./...
+	mkdir -p $(BUILD_DIR)
+	$(GO) test $(PKG) -shuffle=on -cover -covermode=atomic -coverprofile=$(COVERPROFILE)
 
 test-race:
-	@echo "Running tests with race detector..."
-	go test -race -shuffle=on -cover ./...
+	mkdir -p $(BUILD_DIR)
+	$(GO) test $(PKG) -race -shuffle=on
 
-cover:
-        @echo "Running tests with race detector and coverage..."
-        go test -race -shuffle=on -covermode=atomic -coverpkg=./cli,./config,./internal/...,./patternmatching -coverprofile=coverage.out $(PKG_TEST)
-        @echo "Coverage report:"
-        go tool cover -func=coverage.out
+cover: test
+	$(GO) tool cover -func=$(COVERPROFILE) | tee $(BUILD_DIR)/coverage.txt
+	@cov=$$(grep total: $(BUILD_DIR)/coverage.txt | awk '{print $$3}' | sed 's/%//'); \
+	awk 'BEGIN{exit !('"$$cov"' >= 95)}' </dev/null || { echo "Coverage $$cov% < 95%"; exit 1; }
 
-fuzz:
-	@echo "Running fuzz tests..."
-	go test ./... -run Fuzz
+build:
+	mkdir -p $(BUILD_DIR)
+	$(GO) build -trimpath -ldflags="-s -w" -o $(BUILD_DIR)/$(APP) .
 
-fuzz-short:
-	@echo "Running short fuzz tests..."
-	go test ./... -run Fuzz -fuzztime=5s
+commentcheck:
+	$(GO) run ./cmd/commentcheck --mode=ci
 
-vulncheck:
-	@echo "Checking for vulnerabilities..."
-	govulncheck ./... || true
+fix-comments:
+	$(GO) run ./cmd/commentcheck --mode=fix
 
 clean:
-	@echo "Cleaning up..."
-	go clean -modcache -fuzzcache
-	rm -f ${BINARY_NAME} coverage.out
-
-init:
-	@echo "Initializing Go module..."
-	go mod init ${MODULE_NAME}
-
-ci: strip-comments fmt vet lint comments test-race fuzz-short build
-        @echo "Running CI pipeline..."
-
-help:
-	@echo "Makefile commands:"
-	@echo "all       - Compiles the project."
-	@echo "build     - Builds the binary executable."
-	@echo "run       - Runs the compiled binary."
-	@echo "deps      - Downloads the project dependencies."
-	@echo "tidy      - Tidies and verifies the module dependencies."
-	@echo "fmt       - Formats the code."
-	@echo "vet       - Runs go vet."
-        @echo "lint      - Runs golangci-lint."
-        @echo "comments  - Checks file header comments."
-        @echo "strip-comments - Removes all comments except the first-line path comment."
-        @echo "test      - Runs all the tests."
-	@echo "test-race - Runs tests with the race detector."
-	@echo "cover     - Runs tests with the race detector and generates a coverage report."
-	@echo "fuzz      - Runs fuzz tests."
-	@echo "fuzz-short - Runs short fuzz tests."
-	@echo "vulncheck - Checks for vulnerabilities using govulncheck."
-	@echo "ci        - Runs formatting, vetting, linting, coverage tests, fuzz, and build."
-	@echo "clean     - Cleans up the project."
-	@echo "init      - Initializes a new Go module."
-	@echo "help      - Prints this help message."
-
+	rm -rf $(BUILD_DIR)

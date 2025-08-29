@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"go/parser"
+	"go/printer"
 	"go/token"
 	"os"
 	"os/exec"
@@ -18,86 +19,64 @@ import (
 
 var (
 	execCommand = exec.Command
-	lookPath    = exec.LookPath
-	packageDirs = packageDirsFunc
-	tfFiles     = tfFilesFunc
-	makefiles   = makefilesFunc
-	checkFile   = checkFileFunc
 	osExit      = os.Exit
 )
 
 func main() {
 	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-	var checkTF, checkMakefile bool
-	fs.BoolVar(&checkTF, "tf", false, "also check .tf files")
-	fs.BoolVar(&checkMakefile, "makefile", false, "also check Makefile")
+	mode := fs.String("mode", "ci", "ci or fix")
 	fs.Parse(os.Args[1:])
 
-	dirs, err := packageDirs()
+	files, err := goFiles()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		osExit(1)
 	}
-	var files []string
-	for _, d := range dirs {
-		entries, err := os.ReadDir(d)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			osExit(1)
-		}
-		for _, e := range entries {
-			if e.IsDir() {
-				continue
-			}
-			if strings.HasSuffix(e.Name(), ".go") {
-				files = append(files, filepath.Join(d, e.Name()))
-			}
-		}
-	}
-	if checkTF {
-		tfs, err := tfFiles()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			osExit(1)
-		}
-		files = append(files, tfs...)
-	}
-	if checkMakefile {
-		mks, err := makefiles()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			osExit(1)
-		}
-		files = append(files, mks...)
-	}
-	var failed bool
+	failed := false
 	for _, f := range files {
-		if err := checkFile(f); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+		var e error
+		switch *mode {
+		case "ci":
+			e = checkFile(f)
+		case "fix":
+			e = fixFile(f)
+		default:
+			fmt.Fprintf(os.Stderr, "unknown mode %q\n", *mode)
+			osExit(2)
+		}
+		if e != nil {
+			fmt.Fprintln(os.Stderr, e)
 			failed = true
 		}
 	}
-	if failed {
+	if failed && *mode == "ci" {
 		osExit(1)
 	}
 }
 
-func checkFileFunc(path string) error {
-	rel := filepath.ToSlash(path)
-
-	switch {
-	case strings.HasSuffix(path, ".go"):
-		return checkGoFile(path, rel)
-	case strings.HasSuffix(path, ".tf"):
-		return checkOtherFile(path, rel, "//")
-	case filepath.Base(path) == "Makefile":
-		return checkOtherFile(path, rel, "#")
-	default:
-		return fmt.Errorf("%s: unsupported file type", path)
+func goFiles() ([]string, error) {
+	if _, err := execCommand("git", "--version").Output(); err != nil {
+		return nil, errors.New("commentcheck requires git")
 	}
+	cmd := execCommand("git", "ls-files", "--", "*.go")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	scanner := bufio.NewScanner(bytes.NewReader(out))
+	var files []string
+	for scanner.Scan() {
+		files = append(files, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	sort.Strings(files)
+	return files, nil
 }
 
-func checkGoFile(path, rel string) error {
+func checkFile(path string) error {
+	rel := filepath.ToSlash(path)
 	expected := "// " + rel
 	fh, err := os.Open(path)
 	if err != nil {
@@ -177,101 +156,64 @@ func checkGoFile(path, rel string) error {
 	return nil
 }
 
-func checkOtherFile(path, rel, delim string) error {
-	expected := delim + " " + rel
-	data, err := os.ReadFile(path)
+func fixFile(path string) error {
+	src, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	// Normalize line endings
-	content := strings.ReplaceAll(string(data), "\r\n", "\n")
-	lines := strings.Split(content, "\n")
-	if len(lines) == 0 {
-		return fmt.Errorf("%s: unable to read first line", path)
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
 	}
-	first := lines[0]
-	if first != expected {
-		return fmt.Errorf("%s: first line must be %q", path, expected)
+	root, err := os.Getwd()
+	if err != nil {
+		return err
 	}
-	for _, line := range lines[1:] {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+	rel, err := filepath.Rel(root, abs)
+	if err != nil {
+		return err
+	}
+	comment := "// " + filepath.ToSlash(rel)
+	tags := extractBuildTags(src)
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, path, src, 0)
+	if err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	for _, t := range tags {
+		buf.WriteString(t)
+		buf.WriteByte('\n')
+	}
+	if len(tags) > 0 {
+		buf.WriteByte('\n')
+	}
+	buf.WriteString(comment)
+	buf.WriteByte('\n')
+	if err := printer.Fprint(&buf, fset, file); err != nil {
+		return err
+	}
+	buf.WriteByte('\n')
+	return os.WriteFile(path, buf.Bytes(), info.Mode())
+}
+
+func extractBuildTags(src []byte) []string {
+	scanner := bufio.NewScanner(bytes.NewReader(src))
+	var tags []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "//go:build") {
+			tags = append(tags, line)
 			continue
 		}
-		if delim == "//" {
-			if strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "/*") {
-				return fmt.Errorf("%s: found additional comments", path)
-			}
-		} else {
-			if strings.HasPrefix(trimmed, "#") {
-				return fmt.Errorf("%s: found additional comments", path)
-			}
+		if strings.TrimSpace(line) == "" && len(tags) > 0 {
+			break
 		}
+		break
 	}
-	return nil
-}
-
-func packageDirsFunc() ([]string, error) {
-	if _, err := lookPath("git"); err != nil {
-		return nil, fmt.Errorf("commentcheck requires git: %w", err)
-	}
-	cmd := execCommand("git", "ls-files", "--", "*.go")
-	out, err := cmd.Output()
-	if err != nil {
-		if ee, ok := err.(*exec.Error); ok && ee.Err == exec.ErrNotFound {
-			return nil, errors.New("commentcheck requires git")
-		}
-		return nil, err
-	}
-	dirsSet := make(map[string]struct{})
-	scanner := bufio.NewScanner(bytes.NewReader(out))
-	for scanner.Scan() {
-		dir := filepath.Dir(scanner.Text())
-		dirsSet[dir] = struct{}{}
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	dirs := make([]string, 0, len(dirsSet))
-	for d := range dirsSet {
-		dirs = append(dirs, d)
-	}
-	sort.Strings(dirs)
-	return dirs, nil
-}
-
-func tfFilesFunc() ([]string, error) {
-	cmd := execCommand("git", "ls-files", "--", "*.tf")
-	out, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	var files []string
-	scanner := bufio.NewScanner(bytes.NewReader(out))
-	for scanner.Scan() {
-		files = append(files, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	sort.Strings(files)
-	return files, nil
-}
-
-func makefilesFunc() ([]string, error) {
-	cmd := execCommand("git", "ls-files", "--", "Makefile")
-	out, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-	var files []string
-	scanner := bufio.NewScanner(bytes.NewReader(out))
-	for scanner.Scan() {
-		files = append(files, scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	sort.Strings(files)
-	return files, nil
+	return tags
 }

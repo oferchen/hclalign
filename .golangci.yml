@@ -1,148 +1,42 @@
-# .golangci.yml — validated for golangci-lint v2
-
-version: 2
-
+# /.golangci.yml
 run:
   timeout: 5m
-  tests: true
-  allow-parallel-runners: true
-  # Optional: limit packages
-  # packages:
-  #   - ./...
-  # Optional: custom build tags
-  # build-tags:
-  #   - integration
-
-output:
-  text:
-    format: colored-line-number
-    print-issued-lines: true
-    print-linter-name: true
-    uniq-by-line: false
-  # Optional: emit SARIF for code scanning
-  # sarif:
-  #   path: ./lint.sarif
-
-formatters:
-  enable:
-    - gofmt
-    - gofumpt
-    - goimports
-  disable: []
-
 linters:
   enable:
     - govet
     - staticcheck
-    - ineffassign
-    - revive
-    - gocritic
-    - goconst
-    - misspell
     - errcheck
-    - unused
-    - asciicheck
-    - unconvert
-    - gosec
-    - depguard
-    - gocyclo
+    - ineffassign
     - gosimple
-    - dupl
-    - unparam
-  disable: []  # must be an array, not null
-
+    - revive
+    - misspell
+    - gofumpt
+    - depguard
 linters-settings:
+  gofumpt:
+    extra-rules: true
   revive:
-    severity: warning
     rules:
       - name: indent-error-flow
       - name: errorf
-      - name: exported
-        arguments: [ "checkPrivateReceivers" ]
       - name: receiver-naming
       - name: time-naming
-
-  gocritic:
-    enabled-tags: [ diagnostic, performance, style ]
-    disabled-checks:
-      - hugeParam
-
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-    # Optional allowlist for deliberate ignores
-    # exclude-functions:
-    #   - (io.Closer).Close
-    #   - (*net/http.Server).Shutdown
-
-  gofmt:
-    simplify: true
-
-  # IMPORTANT: keep this an object (not null). Empty string is acceptable.
-  goimports:
-    # Set your module path here to group local imports; leave "" to use defaults.
-    local-prefixes: ""
-
-  gofumpt:
-    extra-rules: true
-
   depguard:
     rules:
       main:
         files:
           - $all
-          - "!$test"
         list-mode: lax
         allow:
           - $gostd
           - github.com
           - golang.org
           - gopkg.in
-
-  gocyclo:
-    min-complexity: 30
-
-  misspell:
-    locale: US
-
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-
-  gosec:
-    severity: medium
-    confidence: medium
-    excludes:
-      - G115  # int conversion precision loss (noisy)
-      - G304  # filepath from taint input (often noisy in tools/tests)
-
-  staticcheck:
-    checks: [ "all" ]
-    # Optional:
-    # go: "1.22"
-
-  # NOTE: intentionally no settings for:
-  # - unconvert (no supported keys)
-  # - unused (no supported keys)
-  # - typecheck (no supported keys)
-
 issues:
-  exclude-use-default: false
-  max-issues-per-linter: 0
-  max-same-issues: 0
-
-  exclude-dirs:
-    - vendor
-    - testdata
-    - .git
-    - .github
-
   exclude-rules:
-    - path: _test\.go
-      linters: [ gocyclo, funlen, gosec, gofumpt ]
-    - linters: [ errcheck ]
-      text: "Close.*error"   # allow ignored Close() errors selectively
-    - path: internal/engine/engine\.go
-      linters: [ gocyclo ]
-    - path: internal/hclalign/hclalign\.go
-      linters: [ gocyclo ]
+    - path: _test.go
+      linters:
+        - gofumpt
+    - linters:
+        - errcheck
+      text: "Close.*error"

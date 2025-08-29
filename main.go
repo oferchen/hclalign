@@ -11,13 +11,17 @@ import (
 	"github.com/oferchen/hclalign/config"
 )
 
-func main() {
+var osExit = os.Exit
+
+func main() { osExit(run(os.Args[1:])) }
+
+func run(args []string) int {
 	rootCmd := &cobra.Command{
-		Use:		"hclalign [target file or directory]",
-		Short:		"Aligns HCL files based on given criteria",
-		Args:		cobra.ArbitraryArgs,
-		RunE:		cli.RunE,
-		SilenceUsage:	true,
+		Use:          "hclalign [target file or directory]",
+		Short:        "Aligns HCL files based on given criteria",
+		Args:         cobra.ArbitraryArgs,
+		RunE:         cli.RunE,
+		SilenceUsage: true,
 	}
 
 	rootCmd.Flags().Bool("write", false, "write result to file(s)")
@@ -34,11 +38,12 @@ func main() {
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 
+	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
 		if ec, ok := err.(*cli.ExitCodeError); ok {
-			os.Exit(ec.Code)
+			return ec.Code
 		}
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
-
