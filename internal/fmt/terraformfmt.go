@@ -39,9 +39,7 @@ func Format(src []byte, filename, strat string) ([]byte, error) {
 
 func formatBinary(src []byte) ([]byte, error) {
 	hints := internalfs.DetectHintsFromBytes(src)
-	if bom := hints.BOM(); len(bom) > 0 {
-		src = src[len(bom):]
-	}
+	src = internalfs.PrepareForParse(src, hints)
 	if len(src) > 0 && !utf8.Valid(src) {
 		return nil, fmt.Errorf("input is not valid UTF-8")
 	}

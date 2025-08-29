@@ -72,14 +72,9 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		w = os.Stdout
 	}
 
-	data, err := io.ReadAll(r)
+	data, hints, err := internalfs.ReadAllWithHints(r)
 	if err != nil {
 		return false, err
-	}
-
-	hints := internalfs.DetectHintsFromBytes(data)
-	if len(hints.BOM()) > 0 {
-		data = data[len(hints.BOM()):]
 	}
 
 	original := data
@@ -92,13 +87,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		}
 	}
 
-	parseData := formatted
-	if !cfg.NoFmt {
-		if bom := hints.BOM(); len(bom) > 0 && bytes.HasPrefix(parseData, bom) {
-			parseData = parseData[len(bom):]
-		}
-	}
-	parseData = bytes.ReplaceAll(parseData, []byte("\r\n"), []byte("\n"))
+	parseData := internalfs.PrepareForParse(formatted, hints)
 
 	if !cfg.FmtOnly {
 		file, diags := hclwrite.ParseConfig(parseData, "stdin", hcl.InitialPos)

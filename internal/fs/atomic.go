@@ -4,6 +4,7 @@ package fs
 import (
 	"bytes"
 	"context"
+	"io"
 	iofs "io/fs"
 	"os"
 	"path/filepath"
@@ -13,8 +14,8 @@ import (
 var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
 
 type Hints struct {
-	HasBOM	bool
-	Newline	string
+	HasBOM  bool
+	Newline string
 }
 
 func (h Hints) BOM() []byte {
@@ -34,6 +35,45 @@ func DetectHintsFromBytes(b []byte) Hints {
 		h.Newline = "\r\n"
 	}
 	return h
+}
+
+// ReadAllWithHints reads all data from r and detects newline and BOM hints.
+// Any BOM present in the input is stripped from the returned data.
+func ReadAllWithHints(r io.Reader) ([]byte, Hints, error) {
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		return nil, Hints{}, err
+	}
+	h := DetectHintsFromBytes(raw)
+	if h.HasBOM {
+		raw = raw[len(utf8BOM):]
+	}
+	return raw, h, nil
+}
+
+// PrepareForParse removes a leading BOM and normalizes CRLF line endings to LF
+// so the returned data is suitable for parsing.
+func PrepareForParse(data []byte, hints Hints) []byte {
+	if bom := hints.BOM(); len(bom) > 0 && bytes.HasPrefix(data, bom) {
+		data = data[len(bom):]
+	}
+	return bytes.ReplaceAll(data, []byte("\r\n"), []byte("\n"))
+}
+
+// IsStdin reports whether r refers to the process standard input.
+func IsStdin(r io.Reader) bool {
+	if f, ok := r.(*os.File); ok {
+		return f.Fd() == os.Stdin.Fd()
+	}
+	return false
+}
+
+// IsStdout reports whether w refers to the process standard output.
+func IsStdout(w io.Writer) bool {
+	if f, ok := w.(*os.File); ok {
+		return f.Fd() == os.Stdout.Fd()
+	}
+	return false
 }
 
 func ReadFileWithHints(ctx context.Context, path string) (data []byte, perm iofs.FileMode, hints Hints, err error) {
@@ -139,4 +179,3 @@ func WriteFileAtomic(ctx context.Context, path string, data []byte, perm iofs.Fi
 	defer func() { _ = dirf.Close() }()
 	return dirf.Sync()
 }
-
