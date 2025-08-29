@@ -9,7 +9,7 @@ GO ?= go
 FMT_PKGS := $(shell $(GO) list $(PKG))
 FMT_DIRS := $(shell $(GO) list -f '{{.Dir}}' $(PKG))
 
-.PHONY: all init tidy fmt lint vet vuln commentcheck test test-race cover cover-html build ci clean
+.PHONY: all init tidy fmt lint vet vuln nocomments test test-race cover cover-html build ci clean
 
 all: build
 
@@ -28,7 +28,7 @@ lint:
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	golangci-lint run --timeout=5m
 
-commentcheck:
+nocomments:
 	$(GO) run ./cmd/commentcheck
 
 vet:
@@ -55,7 +55,7 @@ build:
 vuln:
 	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
 
-ci: tidy fmt lint vuln commentcheck test cover build
+ci: tidy fmt nocomments lint vet vuln test-race cover build
 
 clean:
 	rm -rf $(BUILD_DIR)

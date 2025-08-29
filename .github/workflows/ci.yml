@@ -22,14 +22,16 @@ jobs:
           cache: true
       - run: make tidy
       - run: make fmt
+      - run: make nocomments
       - run: make lint
-      - run: make commentcheck
+      - run: make vet
       - name: Vulnerability check
         run: make vuln
         continue-on-error: true
-      - run: make test
       - run: make test-race
       - run: make cover
+        env:
+          COVER_THRESH: 95
       - run: make build
 
   terraform-fmt:
