@@ -127,7 +127,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		}
 	default:
 		if cfg.Stdout {
-			if _, err := w.Write(styled); err != nil {
+			if err := internalfs.WriteAllWithHints(w, formatted, hints); err != nil {
 				return changed, err
 			}
 		}
