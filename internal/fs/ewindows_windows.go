@@ -1,6 +1,6 @@
-// internal/fs/ewindows_windows.go
 //go:build windows
 
+// internal/fs/ewindows_windows.go
 package fs
 
 import (
