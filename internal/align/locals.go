@@ -11,7 +11,20 @@ type localsStrategy struct{}
 
 func (localsStrategy) Name() string { return "locals" }
 
-func (localsStrategy) Align(block *hclwrite.Block, _ *Options) error {
+func (localsStrategy) Align(block *hclwrite.Block, opts *Options) error {
+	alphabetical := false
+	if opts != nil {
+		for _, o := range opts.Order {
+			if o == "locals=alphabetical" {
+				alphabetical = true
+				break
+			}
+		}
+	}
+	if !alphabetical {
+		return nil
+	}
+
 	attrs := block.Body().Attributes()
 	names := make([]string, 0, len(attrs))
 	for n := range attrs {

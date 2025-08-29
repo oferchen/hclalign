@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"runtime"
+	"strings"
 
 	"github.com/oferchen/hclalign/patternmatching"
 )
@@ -70,7 +71,8 @@ func (c *Config) Validate() error {
 }
 
 func ValidateOrder(order []string, strict bool) error {
-	providedSet := make(map[string]struct{})
+	providedCanonical := make(map[string]struct{})
+	providedFlags := make(map[string]struct{})
 	canonicalSet := make(map[string]struct{}, len(CanonicalOrder))
 	for _, item := range CanonicalOrder {
 		canonicalSet[item] = struct{}{}
@@ -80,20 +82,34 @@ func ValidateOrder(order []string, strict bool) error {
 		if item == "" {
 			return fmt.Errorf("attribute name cannot be empty")
 		}
-		if _, exists := providedSet[item]; exists {
+		if strings.Contains(item, "=") {
+			block, val, ok := strings.Cut(item, "=")
+			if !ok || block == "" || val == "" {
+				return fmt.Errorf("invalid block ordering '%s'", item)
+			}
+			if block != "locals" || val != "alphabetical" {
+				return fmt.Errorf("unknown block ordering '%s'", item)
+			}
+			if _, exists := providedFlags[block]; exists {
+				return fmt.Errorf("duplicate attribute '%s' found in order", item)
+			}
+			providedFlags[block] = struct{}{}
+			continue
+		}
+		if _, exists := providedCanonical[item]; exists {
 			return fmt.Errorf("duplicate attribute '%s' found in order", item)
 		}
-		providedSet[item] = struct{}{}
+		providedCanonical[item] = struct{}{}
 	}
 
 	if strict {
-		for item := range providedSet {
+		for item := range providedCanonical {
 			if _, ok := canonicalSet[item]; !ok {
 				return fmt.Errorf("unknown attribute '%s' in order", item)
 			}
 		}
 		for _, item := range CanonicalOrder {
-			if _, exists := providedSet[item]; !exists {
+			if _, exists := providedCanonical[item]; !exists {
 				return fmt.Errorf("missing expected attribute '%s' in provided order", item)
 			}
 		}

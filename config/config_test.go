@@ -42,6 +42,19 @@ func TestValidateOrder_EmptyAttribute(t *testing.T) {
 	}
 }
 
+func TestValidateOrder_BlockOrderingFlag(t *testing.T) {
+	if err := ValidateOrder([]string{"locals=alphabetical"}, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestValidateOrder_DuplicateBlockOrderingFlag(t *testing.T) {
+	err := ValidateOrder([]string{"locals=alphabetical", "locals=alphabetical"}, false)
+	if err == nil {
+		t.Fatalf("expected error for duplicate block ordering flag")
+	}
+}
+
 func TestCanonicalOrderMatchesBuiltInAttributes(t *testing.T) {
 	expected := []string{"description", "type", "default", "sensitive", "nullable"}
 	if !reflect.DeepEqual(CanonicalOrder, expected) {

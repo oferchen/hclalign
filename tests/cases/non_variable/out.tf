@@ -24,8 +24,8 @@ output "o" {
 }
 
 locals {
-  a = 2
   b = 1
+  a = 2
 }
 
 terraform {
