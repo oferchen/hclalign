@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/oferchen/hclalign/config"
@@ -288,7 +287,7 @@ func TestRunEVerbose(t *testing.T) {
 			cmd := newRootCmd(true)
 			args := []string{path}
 			if tt.verbose {
-				args = append(args, "-v")
+				args = append(args, "--verbose")
 			}
 			cmd.SetArgs(args)
 
@@ -309,11 +308,10 @@ func TestRunEVerbose(t *testing.T) {
 
 			w.Close()
 			got := <-logCh
-			contains := strings.Contains(got, "processed file: ")
 			if tt.wantLog {
-				require.True(t, contains)
+				require.Contains(t, got, "processed file: ")
 			} else {
-				require.False(t, contains)
+				require.Empty(t, got)
 			}
 		})
 	}
