@@ -8,6 +8,16 @@ type Options struct {
 	Order []string
 	// Strict enforces strict ordering rules.
 	Strict bool
+	// Schema provides optional provider schema information used by
+	// resource and data strategies.
+	Schema *Schema
+}
+
+// Schema represents provider attribute schemas grouped by requirement.
+type Schema struct {
+	Required map[string]struct{}
+	Optional map[string]struct{}
+	Computed map[string]struct{}
 }
 
 // Strategy defines alignment behaviour for a particular block type.

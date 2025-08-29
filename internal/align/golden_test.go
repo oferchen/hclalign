@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/hashicorp/hclalign/internal/hclalign"
 )
 
 func TestGolden(t *testing.T) {
@@ -52,7 +51,7 @@ func TestGolden(t *testing.T) {
 				if diags.HasErrors() {
 					t.Fatalf("parse input: %v", diags)
 				}
-				if err := hclalign.ReorderAttributes(file, nil, strict); err != nil {
+				if err := Apply(file, &Options{Strict: strict}); err != nil {
 					if strict {
 						t.Skipf("strict mode error: %v", err)
 						return
@@ -68,7 +67,7 @@ func TestGolden(t *testing.T) {
 				if diags.HasErrors() {
 					t.Fatalf("parse expected: %v", diags)
 				}
-				if err := hclalign.ReorderAttributes(file2, nil, strict); err != nil {
+				if err := Apply(file2, &Options{Strict: strict}); err != nil {
 					if strict {
 						t.Skipf("strict mode error: %v", err)
 						return
@@ -111,7 +110,7 @@ func TestUnknownAttributesAfterCanonical(t *testing.T) {
 		t.Fatalf("parse input: %v", diags)
 	}
 
-	if err := hclalign.ReorderAttributes(file, nil, false); err != nil {
+	if err := Apply(file, &Options{}); err != nil {
 		t.Fatalf("reorder: %v", err)
 	}
 

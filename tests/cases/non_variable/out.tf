@@ -1,36 +1,36 @@
 resource "r" "t" {
-  b = 1
   a = 2
+  b = 1
 }
 
 data "d" "t" {
-  b = 1
   a = 2
+  b = 1
 }
 
 provider "p" {
-  b = 1
   a = 2
+  b = 1
 }
 
 module "m" {
-  b = 1
   a = 2
+  b = 1
 }
 
 output "o" {
-  b = 1
   a = 2
+  b = 1
 }
 
 locals {
-  b = 1
   a = 2
+  b = 1
 }
 
 terraform {
-  b = 1
   a = 2
+  b = 1
 }
 
 moved {
@@ -45,6 +45,7 @@ import {
 
 dynamic "d" {
   for_each = [1]
+
   content {
     b = 1
     a = 2
@@ -52,8 +53,8 @@ dynamic "d" {
 }
 
 lifecycle {
-  prevent_destroy       = false
   create_before_destroy = true
+  prevent_destroy       = false
 
   precondition {
     error_message = "pre"
