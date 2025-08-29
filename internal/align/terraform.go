@@ -1,3 +1,4 @@
+// internal/align/terraform.go
 package align
 
 import (

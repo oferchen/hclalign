@@ -37,8 +37,6 @@ func DetectHintsFromBytes(b []byte) Hints {
 	return h
 }
 
-// ReadAllWithHints reads all data from r and detects newline and BOM hints.
-// Any BOM present in the input is stripped from the returned data.
 func ReadAllWithHints(r io.Reader) ([]byte, Hints, error) {
 	raw, err := io.ReadAll(r)
 	if err != nil {
@@ -51,8 +49,6 @@ func ReadAllWithHints(r io.Reader) ([]byte, Hints, error) {
 	return raw, h, nil
 }
 
-// PrepareForParse removes a leading BOM and normalizes CRLF line endings to LF
-// so the returned data is suitable for parsing.
 func PrepareForParse(data []byte, hints Hints) []byte {
 	if bom := hints.BOM(); len(bom) > 0 && bytes.HasPrefix(data, bom) {
 		data = data[len(bom):]
@@ -60,7 +56,6 @@ func PrepareForParse(data []byte, hints Hints) []byte {
 	return bytes.ReplaceAll(data, []byte("\r\n"), []byte("\n"))
 }
 
-// IsStdin reports whether r refers to the process standard input.
 func IsStdin(r io.Reader) bool {
 	if f, ok := r.(*os.File); ok {
 		return f.Fd() == os.Stdin.Fd()
@@ -68,7 +63,6 @@ func IsStdin(r io.Reader) bool {
 	return false
 }
 
-// IsStdout reports whether w refers to the process standard output.
 func IsStdout(w io.Writer) bool {
 	if f, ok := w.(*os.File); ok {
 		return f.Fd() == os.Stdout.Fd()

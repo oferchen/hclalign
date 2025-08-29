@@ -1,3 +1,4 @@
+// cmd/hclalign/main_test.go
 package main
 
 import (
@@ -11,7 +12,6 @@ import (
 	"github.com/hashicorp/hclalign/cli"
 )
 
-// TestMainExitCode verifies that main uses osExit with the code returned by run.
 func TestMainExitCode(t *testing.T) {
 	oldOsExit := osExit
 	oldArgs := os.Args
@@ -37,7 +37,6 @@ func TestMainExitCode(t *testing.T) {
 	}
 }
 
-// TestRunCheckFlag ensures that flags parsed via rootCmd.SetArgs reach runE.
 func TestRunCheckFlag(t *testing.T) {
 	oldRunE := runE
 	t.Cleanup(func() { runE = oldRunE })
@@ -65,7 +64,6 @@ func TestRunCheckFlag(t *testing.T) {
 	}
 }
 
-// TestRunMutuallyExclusiveFlags validates that mutually exclusive flags cause an error.
 func TestRunMutuallyExclusiveFlags(t *testing.T) {
 	oldRunE := runE
 	t.Cleanup(func() { runE = oldRunE })
@@ -80,7 +78,6 @@ func TestRunMutuallyExclusiveFlags(t *testing.T) {
 	}
 }
 
-// TestRunWrappedExitCode confirms that wrapped ExitCodeError values are unwrapped.
 func TestRunWrappedExitCode(t *testing.T) {
 	oldRunE := runE
 	t.Cleanup(func() { runE = oldRunE })

@@ -1,3 +1,4 @@
+// internal/align/schema/loader.go
 package schema
 
 import (
@@ -13,8 +14,6 @@ import (
 	"github.com/hashicorp/hclalign/internal/align"
 )
 
-// Load reads provider schemas from the given reader and returns a map keyed by
-// resource or data source type.
 func Load(r io.Reader) (map[string]*align.Schema, error) {
 	var root tfSchema
 	dec := json.NewDecoder(r)
@@ -56,7 +55,6 @@ type attribute struct {
 	Computed bool `json:"computed"`
 }
 
-// buildSchema converts a set of attributes to an align.Schema.
 func buildSchema(attrs map[string]attribute) *align.Schema {
 	s := &align.Schema{
 		Required: map[string]struct{}{},
@@ -77,7 +75,6 @@ func buildSchema(attrs map[string]attribute) *align.Schema {
 	return s
 }
 
-// LoadFile loads provider schemas from a JSON file at path.
 func LoadFile(path string) (map[string]*align.Schema, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -87,8 +84,6 @@ func LoadFile(path string) (map[string]*align.Schema, error) {
 	return Load(f)
 }
 
-// FromTerraform invokes `terraform providers schema -json`, writes the output
-// to cachePath and returns the parsed schemas.
 func FromTerraform(ctx context.Context, cachePath string) (map[string]*align.Schema, error) {
 	cmd := exec.CommandContext(ctx, "terraform", "providers", "schema", "-json")
 	out, err := cmd.Output()

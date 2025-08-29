@@ -1,3 +1,4 @@
+// formatter/formatter.go
 package formatter
 
 import (
@@ -11,9 +12,6 @@ import (
 	internalfs "github.com/hashicorp/hclalign/internal/fs"
 )
 
-// Format formats the given HCL source. It preserves a UTF-8 BOM and newline
-// style while ensuring non-empty files end with exactly one newline.
-// Non-UTF-8 input is rejected and parse errors are returned.
 func Format(src []byte, filename string) ([]byte, error) {
 	hints := internalfs.DetectHintsFromBytes(src)
 	if bom := hints.BOM(); len(bom) > 0 {

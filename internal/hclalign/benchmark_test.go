@@ -26,4 +26,3 @@ func BenchmarkReorderAttributes(b *testing.B) {
 		}
 	}
 }
-

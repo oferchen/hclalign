@@ -1,3 +1,4 @@
+// internal/align/phases_test.go
 package align_test
 
 import (

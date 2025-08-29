@@ -1,3 +1,4 @@
+// internal/align/dynamic.go
 package align
 
 import (

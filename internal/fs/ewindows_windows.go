@@ -11,4 +11,3 @@ import (
 func isErrWindows(err error) bool {
 	return errors.Is(err, syscall.EWINDOWS)
 }
-

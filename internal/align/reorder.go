@@ -1,3 +1,4 @@
+// internal/align/reorder.go
 package align
 
 import (
@@ -6,10 +7,6 @@ import (
 	ihcl "github.com/hashicorp/hclalign/internal/hcl"
 )
 
-// reorderBlock reorders attributes in the given block according to order.
-// The order slice should contain all attribute names in their desired final
-// positions. Tokens and comments are preserved using BuildTokens and
-// SetAttributeRaw.
 func reorderBlock(block *hclwrite.Block, order []string) error {
 	body := block.Body()
 	attrs := body.Attributes()
