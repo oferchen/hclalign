@@ -69,6 +69,20 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 			}
 			return fmt.Errorf("variable %q: missing attributes: %s", varName, strings.Join(missing, ", "))
 		}
+		var unknown []string
+		for name := range attrs {
+			if _, ok := canonicalSet[name]; !ok {
+				unknown = append(unknown, name)
+			}
+		}
+		if len(unknown) > 0 {
+			sort.Strings(unknown)
+			varName := ""
+			if labels := block.Labels(); len(labels) > 0 {
+				varName = labels[0]
+			}
+			return fmt.Errorf("variable %q: unknown attributes: %s", varName, strings.Join(unknown, ", "))
+		}
 	}
 
 	allTokens := body.BuildTokens(nil)

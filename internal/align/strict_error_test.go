@@ -40,13 +40,13 @@ func TestStrictOrderErrors(t *testing.T) {
 	}
 }
 
-func TestStrictOrderAllowsUnknownAttributes(t *testing.T) {
+func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
 	src := "variable \"a\" {\n  description = \"desc\"\n  type = string\n  default = 1\n  sensitive = true\n  nullable = false\n  foo = 1\n}"
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	if diags.HasErrors() {
 		t.Fatalf("parse: %v", diags)
 	}
-	if err := hclalign.ReorderAttributes(f, nil, true); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	if err := hclalign.ReorderAttributes(f, nil, true); err == nil {
+		t.Fatalf("expected error")
 	}
 }
