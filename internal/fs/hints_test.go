@@ -96,3 +96,38 @@ func TestReadFileWithHints(t *testing.T) {
 		})
 	}
 }
+
+func TestHintsBOM(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name  string
+		hints Hints
+		want  []byte
+	}{
+		{
+			name:  "with_bom",
+			hints: Hints{HasBOM: true},
+			want:  utf8BOM,
+		},
+		{
+			name:  "without_bom",
+			hints: Hints{HasBOM: false},
+			want:  nil,
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.hints.BOM()
+			if tc.hints.HasBOM {
+				if !bytes.Equal(got, utf8BOM) {
+					t.Fatalf("BOM returned %v, want %v", got, utf8BOM)
+				}
+			} else {
+				if len(got) != 0 {
+					t.Fatalf("BOM returned %v, want empty", got)
+				}
+			}
+		})
+	}
+}
