@@ -52,6 +52,19 @@ func TestProcessReaderModeDiff(t *testing.T) {
 	require.Equal(t, diffText, out.String())
 }
 
+func TestProcessReaderModeDiffNoChange(t *testing.T) {
+	t.Parallel()
+
+	input := "variable \"simple\" {\n  type    = number\n  default = 1\n}"
+
+	var out bytes.Buffer
+	cfg := &config.Config{Mode: config.ModeDiff}
+	changed, err := engine.ProcessReader(context.Background(), strings.NewReader(input), &out, cfg)
+	require.NoError(t, err)
+	require.False(t, changed)
+	require.Empty(t, out.String())
+}
+
 func TestProcessReaderModeCheckNoChange(t *testing.T) {
 	t.Parallel()
 
