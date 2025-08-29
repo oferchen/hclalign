@@ -55,3 +55,19 @@ jobs:
         with:
           name: hclalign-${{ matrix.os }}-${{ matrix.go }}
           path: hclalign
+
+  terraform:
+    runs-on: ubuntu-latest
+    container:
+      image: hashicorp/terraform:1.5.7
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify terraform fmt on golden cases
+        run: |
+          set -euo pipefail
+          for file in $(find tests/cases -type f -name 'out*.tf'); do
+            echo "Checking $file"
+            terraform fmt -check -diff "$file"
+          done
