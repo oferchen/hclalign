@@ -8,8 +8,13 @@ type Options struct {
 	Order []string
 	// Strict enforces strict ordering rules.
 	Strict bool
-	// Schema provides optional provider schema information used by
-	// resource and data strategies.
+	// Schemas maps resource and data types to provider schema
+	// information. When set, Apply will populate Schema for each
+	// block based on its type and first label.
+	Schemas map[string]*Schema
+	// Schema is the schema information for the current block being
+	// processed. It is populated automatically when Schemas is
+	// provided and should not be set directly by callers.
 	Schema *Schema
 }
 
@@ -18,6 +23,7 @@ type Schema struct {
 	Required map[string]struct{}
 	Optional map[string]struct{}
 	Computed map[string]struct{}
+	Meta     map[string]struct{}
 }
 
 // Strategy defines alignment behaviour for a particular block type.
@@ -46,7 +52,14 @@ func Apply(file *hclwrite.File, opts *Options) error {
 func applyBody(body *hclwrite.Body, opts *Options) error {
 	for _, b := range body.Blocks() {
 		if strat, ok := registry[b.Type()]; ok {
-			if err := strat.Align(b, opts); err != nil {
+			sub := *opts
+			sub.Schema = nil
+			if len(b.Labels()) > 0 && opts.Schemas != nil {
+				if s, ok := opts.Schemas[b.Labels()[0]]; ok {
+					sub.Schema = s
+				}
+			}
+			if err := strat.Align(b, &sub); err != nil {
 				return err
 			}
 		}

@@ -19,7 +19,7 @@ func (resourceStrategy) Align(block *hclwrite.Block, opts *Options) error {
 func init() { Register(resourceStrategy{}) }
 
 // schemaAwareOrder orders attributes using provider schema information when
-// available. Attributes are grouped as required, optional, computed and
+// available. Attributes are grouped as required, optional, computed, meta and
 // unknown. Unknown attributes sort alphabetically after known ones. When opts
 // is nil or opts.Schema is nil, attributes are sorted alphabetically.
 func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
@@ -33,7 +33,7 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 		return reorderBlock(block, names)
 	}
 
-	var req, opt, comp, unk []string
+	var req, opt, comp, meta, unk []string
 	for _, name := range names {
 		if _, ok := opts.Schema.Required[name]; ok {
 			req = append(req, name)
@@ -47,11 +47,16 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 			comp = append(comp, name)
 			continue
 		}
+		if _, ok := opts.Schema.Meta[name]; ok {
+			meta = append(meta, name)
+			continue
+		}
 		unk = append(unk, name)
 	}
 	sort.Strings(req)
 	sort.Strings(opt)
 	sort.Strings(comp)
+	sort.Strings(meta)
 	sort.Strings(unk)
 
 	if opts.Strict {
@@ -68,6 +73,7 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 	final := append([]string{}, req...)
 	final = append(final, opt...)
 	final = append(final, comp...)
+	final = append(final, meta...)
 	final = append(final, unk...)
 	return reorderBlock(block, final)
 }

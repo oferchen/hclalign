@@ -13,16 +13,15 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	"github.com/hashicorp/hclalign/config"
+	"github.com/hashicorp/hclalign/internal/align"
 	"github.com/hashicorp/hclalign/internal/diff"
 	terraformfmt "github.com/hashicorp/hclalign/internal/fmt"
 	internalfs "github.com/hashicorp/hclalign/internal/fs"
-	"github.com/hashicorp/hclalign/internal/hclalign"
 )
 
 var (
 	testHookAfterParse   func()
 	testHookAfterReorder func()
-	reorderAttributes    = hclalign.ReorderAttributes
 	WriteFileAtomic      = internalfs.WriteFileAtomic
 )
 
@@ -106,7 +105,11 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		if diags.HasErrors() {
 			return false, fmt.Errorf("parsing error: %v", diags.Errs())
 		}
-		if err := hclalign.ReorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+		schemas, err := loadSchemas(ctx, cfg)
+		if err != nil {
+			return false, err
+		}
+		if err := align.Apply(file, &align.Options{Order: cfg.Order, Strict: cfg.StrictOrder, Schemas: schemas}); err != nil {
 			return false, err
 		}
 		formatted = hclwrite.Format(file.Bytes())

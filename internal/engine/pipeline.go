@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	"github.com/hashicorp/hclalign/config"
+	"github.com/hashicorp/hclalign/internal/align"
 	"github.com/hashicorp/hclalign/internal/diff"
 	terraformfmt "github.com/hashicorp/hclalign/internal/fmt"
 	internalfs "github.com/hashicorp/hclalign/internal/fs"
@@ -21,6 +22,11 @@ import (
 
 func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[string][]byte, bool, []error) {
 	outs := make(map[string][]byte, len(files))
+
+	schemas, err := loadSchemas(ctx, cfg)
+	if err != nil {
+		return outs, false, []error{err}
+	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -59,7 +65,7 @@ func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[s
 					if !ok {
 						return
 					}
-					ch, out, err := processFile(ctx, f, cfg)
+					ch, out, err := processFile(ctx, f, cfg, schemas)
 					if err != nil {
 						if !errors.Is(err, context.Canceled) {
 							errMu.Lock()
@@ -105,7 +111,7 @@ func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[s
 	return outs, changed.Load(), nil
 }
 
-func processFile(ctx context.Context, filePath string, cfg *config.Config) (bool, []byte, error) {
+func processFile(ctx context.Context, filePath string, cfg *config.Config, schemas map[string]*align.Schema) (bool, []byte, error) {
 	if err := ctx.Err(); err != nil {
 		return false, nil, err
 	}
@@ -143,7 +149,7 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config) (bool
 		if testHookAfterParse != nil {
 			testHookAfterParse()
 		}
-		if err := reorderAttributes(file, cfg.Order, cfg.StrictOrder); err != nil {
+		if err := align.Apply(file, &align.Options{Order: cfg.Order, Strict: cfg.StrictOrder, Schemas: schemas}); err != nil {
 			return false, nil, err
 		}
 		if testHookAfterReorder != nil {
