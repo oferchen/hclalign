@@ -1,4 +1,4 @@
-// internal/hclalign/benchmark_test.go
+// /internal/hclalign/benchmark_test.go
 package hclalign
 
 import (
