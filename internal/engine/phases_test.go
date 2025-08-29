@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/hclalign/config"
+	terraformfmt "github.com/hashicorp/hclalign/internal/fmt"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,8 +26,8 @@ func TestPhases(t *testing.T) {
 			alignedExp, err := os.ReadFile(filepath.Join(base, name, "aligned.tf"))
 			require.NoError(t, err)
 
-			cfgFmt := &config.Config{Stdout: true, FmtOnly: true}
-			cfgFull := &config.Config{Stdout: true}
+			cfgFmt := &config.Config{Stdout: true, FmtOnly: true, FmtStrategy: string(terraformfmt.StrategyGo)}
+			cfgFull := &config.Config{Stdout: true, FmtStrategy: string(terraformfmt.StrategyGo)}
 			if name == "resource" || name == "data" {
 				cfgFmt.ProvidersSchema = schemaPath
 				cfgFull.ProvidersSchema = schemaPath
@@ -54,7 +55,7 @@ func TestPhases(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		var out bytes.Buffer
-		cfg := &config.Config{Stdout: true}
+		cfg := &config.Config{Stdout: true, FmtStrategy: string(terraformfmt.StrategyGo)}
 		_, err := ProcessReader(context.Background(), bytes.NewReader([]byte("variable \"a\" {")), &out, cfg)
 		require.Error(t, err)
 	})
