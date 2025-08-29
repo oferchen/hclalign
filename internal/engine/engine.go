@@ -13,8 +13,8 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	"github.com/hashicorp/hclalign/config"
-	"github.com/hashicorp/hclalign/formatter"
 	"github.com/hashicorp/hclalign/internal/diff"
+	terraformfmt "github.com/hashicorp/hclalign/internal/fmt"
 	internalfs "github.com/hashicorp/hclalign/internal/fs"
 	"github.com/hashicorp/hclalign/internal/hclalign"
 )
@@ -87,7 +87,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
 	formatted := data
 	if !cfg.NoFmt {
-		formatted, err = formatter.Format(data, "stdin")
+		formatted, err = terraformfmt.Format(data, "stdin", cfg.FmtStrategy)
 		if err != nil {
 			return false, fmt.Errorf("parsing error: %w", err)
 		}
