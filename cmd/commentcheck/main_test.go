@@ -87,7 +87,7 @@ func TestMainModes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
 	}
-	defer os.Chdir(oldWD)
+	defer func() { _ = os.Chdir(oldWD) }()
 	if err := os.Chdir(dir); err != nil {
 		t.Fatalf("chdir: %v", err)
 	}
@@ -120,10 +120,10 @@ func TestMainModes(t *testing.T) {
 		t.Fatalf("fix via main failed: %q", data)
 	}
 
-       code = 0
-       os.Args = []string{"cmd", "--mode=ci"}
-       main()
-       if code != 0 {
+	code = 0
+	os.Args = []string{"cmd", "--mode=ci"}
+	main()
+	if code != 0 {
 		t.Fatalf("unexpected exit %d", code)
 	}
 }

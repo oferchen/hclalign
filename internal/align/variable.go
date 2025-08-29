@@ -86,7 +86,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	allTokens := body.BuildTokens(nil)
 	newline := ihcl.DetectLineEnding(allTokens)
 	prefixTokens := hclwrite.Tokens{}
-	tailTokens := hclwrite.Tokens{}
+	var tailTokens hclwrite.Tokens
 	blockLeadTokens := make(map[*hclwrite.Block]hclwrite.Tokens)
 	attrLeadTrim := make(map[string]int)
 	attrExtraLead := make(map[string]hclwrite.Tokens)
