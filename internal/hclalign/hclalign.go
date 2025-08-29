@@ -55,32 +55,19 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	nestedBlocks := body.Blocks()
 
 	if strict {
-		var unknown, missing []string
-		for name := range attrs {
-			if _, ok := canonicalSet[name]; !ok {
-				unknown = append(unknown, name)
-			}
-		}
+		var missing []string
 		for name := range canonicalSet {
 			if _, ok := attrs[name]; !ok {
 				missing = append(missing, name)
 			}
 		}
-		if len(unknown) > 0 || len(missing) > 0 {
-			sort.Strings(unknown)
+		if len(missing) > 0 {
 			sort.Strings(missing)
-			var parts []string
-			if len(unknown) > 0 {
-				parts = append(parts, fmt.Sprintf("unknown attributes: %s", strings.Join(unknown, ", ")))
-			}
-			if len(missing) > 0 {
-				parts = append(parts, fmt.Sprintf("missing attributes: %s", strings.Join(missing, ", ")))
-			}
 			varName := ""
 			if labels := block.Labels(); len(labels) > 0 {
 				varName = labels[0]
 			}
-			return fmt.Errorf("variable %q: %s", varName, strings.Join(parts, "; "))
+			return fmt.Errorf("variable %q: missing attributes: %s", varName, strings.Join(missing, ", "))
 		}
 	}
 
