@@ -28,6 +28,7 @@ func Format(src []byte, filename string) ([]byte, error) {
 		return nil, diags
 	}
 	formatted := hclwrite.Format(f.Bytes())
+	formatted = bytes.ReplaceAll(formatted, []byte("\r\n"), []byte("\n"))
 
 	if len(formatted) > 0 {
 		formatted = bytes.TrimRight(formatted, "\n")
