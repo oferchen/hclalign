@@ -11,18 +11,14 @@ import (
 )
 
 type ExitCodeError struct {
-	Err	error
-	Code	int
+	Err  error
+	Code int
 }
 
-func (e *ExitCodeError) Error() string	{ return e.Err.Error() }
+func (e *ExitCodeError) Error() string { return e.Err.Error() }
 
 func RunE(cmd *cobra.Command, args []string) error {
-	if len(args) > 1 {
-		return &ExitCodeError{Err: fmt.Errorf("accepts at most 1 arg(s), received %d", len(args)), Code: 2}
-	}
-
-	target := ""
+	var target string
 	if len(args) == 1 {
 		target = args[0]
 	}
@@ -113,17 +109,17 @@ func RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := &config.Config{
-		Target:		target,
-		Mode:		mode,
-		Stdin:		stdin,
-		Stdout:		stdout,
-		Include:	include,
-		Exclude:	exclude,
-		Order:		order,
-		StrictOrder:	strictOrder,
-		Concurrency:	concurrency,
-		Verbose:	verbose,
-		FollowSymlinks:	followSymlinks,
+		Target:         target,
+		Mode:           mode,
+		Stdin:          stdin,
+		Stdout:         stdout,
+		Include:        include,
+		Exclude:        exclude,
+		Order:          order,
+		StrictOrder:    strictOrder,
+		Concurrency:    concurrency,
+		Verbose:        verbose,
+		FollowSymlinks: followSymlinks,
 	}
 
 	if err := cfg.Validate(); err != nil {
@@ -141,4 +137,3 @@ func RunE(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
-
