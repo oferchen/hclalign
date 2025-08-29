@@ -25,14 +25,14 @@ fmt:
 	$(GO) run mvdan.cc/gofumpt@latest -w $(FMT_DIRS)
 
 lint:
-        $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-        golangci-lint run --timeout=5m
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	golangci-lint run --timeout=5m
 
 commentcheck:
-        $(GO) run ./cmd/commentcheck
+	$(GO) run ./cmd/commentcheck
 
 vet:
-        $(GO) vet $(PKG)
+	$(GO) vet $(PKG)
 
 test:
 	mkdir -p $(BUILD_DIR)
@@ -53,7 +53,7 @@ build:
 	$(GO) build -trimpath -buildvcs=false -ldflags="-s -w" -o $(BUILD_DIR)/$(APP) ./cmd/hclalign
 
 vuln:
-        $(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
+	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
 
 ci: tidy fmt lint vuln commentcheck test cover build
 
