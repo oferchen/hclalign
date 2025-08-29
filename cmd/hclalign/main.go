@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/hashicorp/hclalign/cli"
-	"github.com/hashicorp/hclalign/config"
+	"github.com/oferchen/hclalign/cli"
+	"github.com/oferchen/hclalign/config"
 )
 
 var (

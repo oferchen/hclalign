@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hashicorp/hclalign/config"
-	patternmatching "github.com/hashicorp/hclalign/patternmatching"
+	"github.com/oferchen/hclalign/config"
+	patternmatching "github.com/oferchen/hclalign/patternmatching"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,14 +20,14 @@ func TestMatcherMatches(t *testing.T) {
 	require.NoError(t, os.Chdir(wd))
 	t.Cleanup(func() { _ = os.Chdir(oldwd) })
 
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0644))
-	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "v.tf"), []byte(""), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "note.txt"), []byte(""), 0644))
-	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "included"), 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "included", "in.tf"), []byte(""), 0644))
-	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "excluded"), 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "excluded", "out.tf"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0o644))
+	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "v.tf"), []byte(""), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "note.txt"), []byte(""), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "included"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "included", "in.tf"), []byte(""), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "excluded"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "excluded", "out.tf"), []byte(""), 0o644))
 
 	m, err := patternmatching.NewMatcher([]string{"**/*.tf"}, []string{"**/vendor/**", "nested/excluded/**"}, wd)
 	require.NoError(t, err)
@@ -45,14 +45,14 @@ func TestMatcherMatches(t *testing.T) {
 func TestMatcherMatchesOutsideWorkingDir(t *testing.T) {
 	wd := t.TempDir()
 
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0644))
-	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "v.tf"), []byte(""), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "note.txt"), []byte(""), 0644))
-	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "included"), 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "included", "in.tf"), []byte(""), 0644))
-	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "excluded"), 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "excluded", "out.tf"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0o644))
+	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "v.tf"), []byte(""), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "note.txt"), []byte(""), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "included"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "included", "in.tf"), []byte(""), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "excluded"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "excluded", "out.tf"), []byte(""), 0o644))
 
 	m, err := patternmatching.NewMatcher([]string{"**/*.tf"}, []string{"**/vendor/**", "nested/excluded/**"}, wd)
 	require.NoError(t, err)
@@ -70,13 +70,13 @@ func TestMatcherMatchesOutsideWorkingDir(t *testing.T) {
 func TestMatcherDefaultExclude(t *testing.T) {
 	wd := t.TempDir()
 
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0o644))
 
 	dirs := []string{".terraform", ".git", "node_modules", "vendor"}
 	for _, d := range dirs {
 		dir := filepath.Join(wd, d)
-		require.NoError(t, os.Mkdir(dir, 0755))
-		require.NoError(t, os.WriteFile(filepath.Join(dir, "ignored.tf"), []byte(""), 0644))
+		require.NoError(t, os.Mkdir(dir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "ignored.tf"), []byte(""), 0o644))
 	}
 
 	m, err := patternmatching.NewMatcher(config.DefaultInclude, config.DefaultExclude, wd)
@@ -110,7 +110,7 @@ func TestMatcherMatchesConcurrent(t *testing.T) {
 	t.Parallel()
 
 	wd := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0o644))
 
 	m, err := patternmatching.NewMatcher([]string{"**/*.tf"}, nil, wd)
 	require.NoError(t, err)
@@ -130,9 +130,9 @@ func TestMatcherRejectsOutsideRoot(t *testing.T) {
 	root := t.TempDir()
 	out := t.TempDir()
 
-	require.NoError(t, os.WriteFile(filepath.Join(root, "in.tf"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "in.tf"), []byte(""), 0o644))
 	outsideFile := filepath.Join(out, "out.tf")
-	require.NoError(t, os.WriteFile(outsideFile, []byte(""), 0644))
+	require.NoError(t, os.WriteFile(outsideFile, []byte(""), 0o644))
 
 	m, err := patternmatching.NewMatcher([]string{"**/*.tf"}, nil, root)
 	require.NoError(t, err)

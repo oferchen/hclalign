@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/hclalign/config"
-	"github.com/hashicorp/hclalign/internal/diff"
-	internalfs "github.com/hashicorp/hclalign/internal/fs"
+	"github.com/oferchen/hclalign/config"
+	"github.com/oferchen/hclalign/internal/diff"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,7 +34,6 @@ func TestProcessMissingTarget(t *testing.T) {
 }
 
 func TestProcessContextCancelled(t *testing.T) {
-
 	dir := t.TempDir()
 	data, err := os.ReadFile(filepath.Join("testdata", "idempotent_input.hcl"))
 	require.NoError(t, err)
@@ -57,7 +56,6 @@ func TestProcessContextCancelled(t *testing.T) {
 }
 
 func TestProcessContextCancelledAfterReorder(t *testing.T) {
-
 	dir := t.TempDir()
 	data, err := os.ReadFile(filepath.Join("testdata", "idempotent_input.hcl"))
 	require.NoError(t, err)
@@ -78,6 +76,7 @@ func TestProcessContextCancelledAfterReorder(t *testing.T) {
 	require.ErrorIs(t, err, context.Canceled)
 	require.False(t, changed)
 }
+
 func TestProcessScenarios(t *testing.T) {
 	casesDir := filepath.Join("..", "..", "tests", "cases")
 	tests := []struct {

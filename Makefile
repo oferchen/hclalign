@@ -9,7 +9,7 @@ GO ?= go
 FMT_PKGS := $(shell $(GO) list $(PKG))
 FMT_DIRS := $(shell $(GO) list -f '{{.Dir}}' $(PKG))
 
-.PHONY: all init tidy fmt lint vet vuln test test-race cover cover-html build ci clean commentcheck fix-comments
+.PHONY: all init tidy fmt lint vet vuln test test-race cover cover-html build ci clean
 
 all: build
 
@@ -52,13 +52,7 @@ build:
 vuln:
 	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
 
-commentcheck:
-	$(GO) run ./cmd/commentcheck --mode=ci
-
-fix-comments:
-	$(GO) run ./cmd/commentcheck --mode=fix
-
-ci: tidy fmt lint vuln test cover build commentcheck
+ci: tidy fmt lint vuln test cover build
 
 clean:
 	rm -rf $(BUILD_DIR)

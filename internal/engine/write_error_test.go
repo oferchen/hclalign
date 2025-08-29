@@ -12,10 +12,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/hashicorp/hclalign/cli"
-	"github.com/hashicorp/hclalign/config"
-	enginepkg "github.com/hashicorp/hclalign/internal/engine"
-	internalfs "github.com/hashicorp/hclalign/internal/fs"
+	"github.com/oferchen/hclalign/cli"
+	"github.com/oferchen/hclalign/config"
+	enginepkg "github.com/oferchen/hclalign/internal/engine"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/stretchr/testify/require"
 )
 

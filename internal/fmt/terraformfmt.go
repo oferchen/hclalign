@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"unicode/utf8"
 
-	"github.com/hashicorp/hclalign/formatter"
-	internalfs "github.com/hashicorp/hclalign/internal/fs"
+	"github.com/oferchen/hclalign/formatter"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 )
 
 type Strategy string

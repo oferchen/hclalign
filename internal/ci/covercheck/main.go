@@ -12,7 +12,6 @@ import (
 const threshold = 95.0
 
 var ignore = []string{
-	"cmd/commentcheck/",
 	"internal/ci/",
 	"main.go",
 }

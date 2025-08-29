@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
-	internalfs "github.com/hashicorp/hclalign/internal/fs"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 )
 
 func Format(src []byte, filename string) ([]byte, error) {

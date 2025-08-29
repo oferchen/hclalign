@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/hclalign/config"
+	"github.com/oferchen/hclalign/config"
 	"github.com/stretchr/testify/require"
 )
 

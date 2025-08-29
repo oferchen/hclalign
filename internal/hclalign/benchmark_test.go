@@ -2,9 +2,10 @@
 package hclalign
 
 import (
+	"testing"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"testing"
 )
 
 func BenchmarkReorderAttributes(b *testing.B) {

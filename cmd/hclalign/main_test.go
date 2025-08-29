@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/hashicorp/hclalign/cli"
+	"github.com/oferchen/hclalign/cli"
 )
 
 func TestMainExitCode(t *testing.T) {

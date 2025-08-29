@@ -5,7 +5,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/hashicorp/hclalign/config"
+	"github.com/oferchen/hclalign/config"
 )
 
 func ProcessReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Config) (bool, error) {
