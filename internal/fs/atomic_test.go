@@ -200,7 +200,7 @@ func TestWriteFileAtomicContextCanceledBeforeRename(t *testing.T) {
 		t.Fatalf("prewrite: %v", err)
 	}
 
-	data := bytes.Repeat([]byte{'x'}, 100<<20) // 100MB to slow down write
+       data := bytes.Repeat([]byte{'x'}, 100<<20)
 	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)
 	go func() {
