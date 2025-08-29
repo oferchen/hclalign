@@ -1,3 +1,4 @@
+// hack/stripcomments/main.go
 package main
 
 import (
