@@ -11,7 +11,6 @@ import (
 
 func FuzzProcessReader(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
-
 		const maxBytes = 1 << 12
 		if len(data) > maxBytes {
 			t.Skip()

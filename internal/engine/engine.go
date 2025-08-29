@@ -144,10 +144,13 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	go func() {
 		defer close(fileCh)
 		for _, f := range files {
+			if ctx.Err() != nil {
+				return
+			}
 			select {
+			case fileCh <- f:
 			case <-ctx.Done():
 				return
-			case fileCh <- f:
 			}
 		}
 	}()
@@ -166,15 +169,14 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 					}
 					ch, out, err := processSingleFile(ctx, f, cfg)
 					if err != nil {
-						if errors.Is(err, context.Canceled) {
+						if !errors.Is(err, context.Canceled) {
+							log.Printf("error processing file %s: %v", f, err)
+							errMu.Lock()
+							errs = append(errs, fmt.Errorf("%s: %w", f, err))
+							errMu.Unlock()
 							cancel()
-							return
 						}
-						log.Printf("error processing file %s: %v", f, err)
-						errMu.Lock()
-						errs = append(errs, fmt.Errorf("%s: %w", f, err))
-						errMu.Unlock()
-						continue
+						return
 					}
 					if ch {
 						changed.Store(true)
@@ -195,9 +197,6 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	}
 
 	wg.Wait()
-	if err := ctx.Err(); err != nil {
-		return changed.Load(), err
-	}
 	close(results)
 	for r := range results {
 		outs[r.path] = r.data
@@ -223,6 +222,9 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 			messages[i] = err.Error()
 		}
 		return changed.Load(), errors.New(strings.Join(messages, "\n"))
+	}
+	if err := ctx.Err(); err != nil {
+		return changed.Load(), err
 	}
 
 	return changed.Load(), nil
