@@ -128,7 +128,7 @@ func TestProcessScenarios(t *testing.T) {
 				require.NoError(t, os.WriteFile(f, inb, 0o644))
 
 				hints := internalfs.DetectHintsFromBytes(inb)
-				diffText, err := diff.Unified(f, f, inb, outb, hints.Newline)
+				diffText, err := diff.Unified(f, f, inb, outb, hints)
 				require.NoError(t, err)
 
 				cfg := &config.Config{
