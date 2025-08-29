@@ -3,11 +3,14 @@ package engine
 
 import (
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/oferchen/hclalign/config"
+	"github.com/oferchen/hclalign/internal/diff"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,4 +51,194 @@ func TestProcessContextCancelled(t *testing.T) {
 	changed, err := Process(ctx, cfg)
 	require.ErrorIs(t, err, context.Canceled)
 	require.False(t, changed)
+}
+func TestProcessScenarios(t *testing.T) {
+	casesDir := filepath.Join("..", "..", "tests", "cases")
+	tests := []struct {
+		name  string
+		setup func(t *testing.T) (*config.Config, string, bool, map[string]string)
+	}{
+		{
+			name: "stdout multiple files",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				dir := t.TempDir()
+				in1, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				require.NoError(t, err)
+				out1, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				require.NoError(t, err)
+				f1 := filepath.Join(dir, "a.tf")
+				require.NoError(t, os.WriteFile(f1, in1, 0o644))
+
+				in2, err := os.ReadFile(filepath.Join(casesDir, "trailing_commas", "in.tf"))
+				require.NoError(t, err)
+				out2, err := os.ReadFile(filepath.Join(casesDir, "trailing_commas", "out.tf"))
+				require.NoError(t, err)
+				f2 := filepath.Join(dir, "b.tf")
+				require.NoError(t, os.WriteFile(f2, in2, 0o644))
+
+				cfg := &config.Config{
+					Target:      dir,
+					Include:     []string{"**/*.tf"},
+					Mode:        config.ModeWrite,
+					Stdout:      true,
+					Concurrency: 1,
+				}
+
+				expOut := string(out1) + string(out2)
+				files := map[string]string{f1: string(out1), f2: string(out2)}
+				return cfg, expOut, true, files
+			},
+		},
+		{
+			name: "mode diff",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				dir := t.TempDir()
+				inPath := filepath.Join(casesDir, "simple", "in.tf")
+				outPath := filepath.Join(casesDir, "simple", "out.tf")
+				inb, err := os.ReadFile(inPath)
+				require.NoError(t, err)
+				outb, err := os.ReadFile(outPath)
+				require.NoError(t, err)
+				f := filepath.Join(dir, "diff.tf")
+				require.NoError(t, os.WriteFile(f, inb, 0o644))
+
+				hints := internalfs.DetectHintsFromBytes(inb)
+				diffText, err := diff.Unified(f, f, inb, outb, hints.Newline)
+				require.NoError(t, err)
+
+				cfg := &config.Config{
+					Target:      f,
+					Include:     []string{"**/*.tf"},
+					Mode:        config.ModeDiff,
+					Stdout:      true,
+					Concurrency: 1,
+				}
+				files := map[string]string{f: string(inb)}
+				return cfg, diffText, true, files
+			},
+		},
+		{
+			name: "mode check",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				dir := t.TempDir()
+				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				require.NoError(t, err)
+				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				require.NoError(t, err)
+				f := filepath.Join(dir, "check.tf")
+				require.NoError(t, os.WriteFile(f, inb, 0o644))
+
+				cfg := &config.Config{
+					Target:      f,
+					Include:     []string{"**/*.tf"},
+					Mode:        config.ModeCheck,
+					Stdout:      true,
+					Concurrency: 1,
+				}
+				files := map[string]string{f: string(inb)}
+				return cfg, string(outb), true, files
+			},
+		},
+		{
+			name: "symlink follow",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				base := t.TempDir()
+				target := t.TempDir()
+				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				require.NoError(t, err)
+				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				require.NoError(t, err)
+				realFile := filepath.Join(target, "file.tf")
+				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
+				link := filepath.Join(base, "link")
+				require.NoError(t, os.Symlink(target, link))
+
+				cfg := &config.Config{
+					Target:         base,
+					Include:        []string{"**/*.tf"},
+					Mode:           config.ModeWrite,
+					Stdout:         true,
+					Concurrency:    1,
+					FollowSymlinks: true,
+				}
+				files := map[string]string{realFile: string(outb)}
+				return cfg, string(outb), true, files
+			},
+		},
+		{
+			name: "symlink no follow",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				base := t.TempDir()
+				target := t.TempDir()
+				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				require.NoError(t, err)
+				realFile := filepath.Join(target, "file.tf")
+				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
+				link := filepath.Join(base, "link")
+				require.NoError(t, os.Symlink(target, link))
+
+				cfg := &config.Config{
+					Target:         base,
+					Include:        []string{"**/*.tf"},
+					Mode:           config.ModeWrite,
+					Stdout:         true,
+					Concurrency:    1,
+					FollowSymlinks: false,
+				}
+				files := map[string]string{realFile: string(inb)}
+				return cfg, "", false, files
+			},
+		},
+		{
+			name: "concurrency",
+			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
+				dir := t.TempDir()
+				cases := []string{"simple", "trailing_commas", "comments"}
+				names := []string{"a.tf", "b.tf", "c.tf"}
+				files := make(map[string]string)
+				var expected string
+				for i, c := range cases {
+					inb, err := os.ReadFile(filepath.Join(casesDir, c, "in.tf"))
+					require.NoError(t, err)
+					outb, err := os.ReadFile(filepath.Join(casesDir, c, "out.tf"))
+					require.NoError(t, err)
+					p := filepath.Join(dir, names[i])
+					require.NoError(t, os.WriteFile(p, inb, 0o644))
+					files[p] = string(outb)
+					expected += string(outb)
+				}
+				cfg := &config.Config{
+					Target:      dir,
+					Include:     []string{"**/*.tf"},
+					Mode:        config.ModeWrite,
+					Stdout:      true,
+					Concurrency: 2,
+				}
+				return cfg, expected, true, files
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, wantStdout, wantChanged, files := tt.setup(t)
+			r, w, err := os.Pipe()
+			require.NoError(t, err)
+			stdout := os.Stdout
+			os.Stdout = w
+			t.Cleanup(func() { os.Stdout = stdout })
+			changed, err := Process(context.Background(), cfg)
+			require.NoError(t, err)
+			require.Equal(t, wantChanged, changed)
+			w.Close()
+			out, err := io.ReadAll(r)
+			require.NoError(t, err)
+			require.Equal(t, wantStdout, string(out))
+			for p, exp := range files {
+				got, err := os.ReadFile(p)
+				require.NoError(t, err)
+				require.Equal(t, exp, string(got))
+			}
+		})
+	}
 }
