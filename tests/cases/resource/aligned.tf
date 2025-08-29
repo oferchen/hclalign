@@ -1,8 +1,8 @@
 resource "aws_s3_bucket" "b" {
-  provider   = "aws.us"
+  depends_on = []
   count      = 1
   for_each   = {}
-  depends_on = []
+  provider   = "aws.us"
   bucket     = "b"
   acl        = "private"
   tags       = {}
