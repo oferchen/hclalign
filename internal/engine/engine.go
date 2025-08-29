@@ -24,7 +24,6 @@ import (
 	"github.com/oferchen/hclalign/patternmatching"
 )
 
-// test hooks for simulating context cancellation in unit tests
 var (
 	testHookAfterParse   func()
 	testHookAfterReorder func()
@@ -38,10 +37,6 @@ func Process(ctx context.Context, cfg *config.Config) (bool, error) {
 	return processFiles(ctx, cfg)
 }
 
-// processFiles walks the target path, queuing files that match the include and
-// exclude patterns. Files are processed concurrently by a worker pool which
-// stops dispatching new work after the first error. The provided context
-// cancels both dispatcher and workers to avoid unnecessary processing.
 func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	if _, err := os.Stat(cfg.Target); err != nil {
 		if os.IsNotExist(err) {
@@ -138,7 +133,6 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 	fileCh := make(chan string)
 	results := make(chan result, len(files))
 
-	// Dispatcher goroutine.
 	g.Go(func() error {
 		defer close(fileCh)
 		for _, f := range files {
@@ -151,7 +145,6 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 		return nil
 	})
 
-	// Worker goroutines.
 	for i := 0; i < cfg.Concurrency; i++ {
 		g.Go(func() error {
 			for {
@@ -182,7 +175,7 @@ func processFiles(ctx context.Context, cfg *config.Config) (bool, error) {
 					}
 				case <-gctx.Done():
 					if errors.Is(gctx.Err(), context.Canceled) {
-						// If the channel is closed and we've been canceled, treat it as a successful run.
+
 						select {
 						case _, ok := <-fileCh:
 							if !ok {

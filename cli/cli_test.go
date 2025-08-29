@@ -167,7 +167,6 @@ func TestRunEModes(t *testing.T) {
 				args = tt.flags
 			}
 
-			// capture stdout
 			oldStdout := os.Stdout
 			rOut, wOut, err := os.Pipe()
 			require.NoError(t, err)
@@ -180,7 +179,6 @@ func TestRunEModes(t *testing.T) {
 				outChan <- buf.String()
 			}()
 
-			// set stdin if needed
 			if tt.stdin != "" {
 				oldStdin := os.Stdin
 				rIn, wIn, err := os.Pipe()
