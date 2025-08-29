@@ -2,10 +2,14 @@
 package engine
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/oferchen/hclalign/config"
@@ -364,5 +368,73 @@ func TestProcessScenarios(t *testing.T) {
 				require.Equal(t, exp, string(got))
 			}
 		})
+	}
+}
+
+func TestProcessManyFilesDeterministic(t *testing.T) {
+	t.Parallel()
+
+	casesDir := filepath.Join("..", "..", "tests", "cases")
+	caseDirs := []string{"simple", "trailing_commas", "comments", "complex", "whitespace"}
+
+	const numFiles = 100
+	dir := t.TempDir()
+	files := make(map[string]string, numFiles)
+	var expectedChanged bool
+	for i := 0; i < numFiles; i++ {
+		c := caseDirs[i%len(caseDirs)]
+		inPath := filepath.Join(casesDir, c, "in.tf")
+		outPath := filepath.Join(casesDir, c, "out.tf")
+		inb, err := os.ReadFile(inPath)
+		require.NoError(t, err)
+		outb, err := os.ReadFile(outPath)
+		require.NoError(t, err)
+		p := filepath.Join(dir, fmt.Sprintf("file%03d.tf", i))
+		require.NoError(t, os.WriteFile(p, inb, 0o644))
+		files[p] = string(outb)
+		if !bytes.Equal(inb, outb) {
+			expectedChanged = true
+		}
+	}
+
+	cfg := &config.Config{
+		Target:      dir,
+		Include:     []string{"**/*.tf"},
+		Mode:        config.ModeWrite,
+		Stdout:      true,
+		Concurrency: 4,
+	}
+
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	stdout := os.Stdout
+	os.Stdout = w
+	t.Cleanup(func() { os.Stdout = stdout })
+
+	changed, err := Process(context.Background(), cfg)
+	require.NoError(t, err)
+	require.Equal(t, expectedChanged, changed)
+
+	w.Close()
+	out, err := io.ReadAll(r)
+	require.NoError(t, err)
+
+	paths := make([]string, 0, len(files))
+	for p := range files {
+		paths = append(paths, p)
+	}
+	sort.Strings(paths)
+	var wantStdout strings.Builder
+	for _, p := range paths {
+		b, err := os.ReadFile(p)
+		require.NoError(t, err)
+		wantStdout.Write(b)
+	}
+	require.Equal(t, wantStdout.String(), string(out))
+
+	for p, exp := range files {
+		got, err := os.ReadFile(p)
+		require.NoError(t, err)
+		require.Equal(t, exp, string(got))
 	}
 }
