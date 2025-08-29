@@ -40,12 +40,52 @@ func TestStrictOrderErrors(t *testing.T) {
 }
 
 func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
-	src := "variable \"a\" {\n  description = \"desc\"\n  type = string\n  default = 1\n  sensitive = true\n  nullable = false\n  foo = 1\n}"
-	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
-	if diags.HasErrors() {
-		t.Fatalf("parse: %v", diags)
+	cases := []struct {
+		name string
+		src  string
+	}{
+		{
+			name: "variable",
+			src:  "variable \"a\" {\n  description = \"desc\"\n  type = string\n  default = 1\n  sensitive = true\n  nullable = false\n  foo = 1\n}",
+		},
+		{
+			name: "provider",
+			src:  "provider \"aws\" {\n  alias = \"a\"\n  foo   = 1\n}",
+		},
+		{
+			name: "output",
+			src:  "output \"o\" {\n  value = 1\n  foo   = 1\n}",
+		},
+		{
+			name: "module",
+			src:  "module \"m\" {\n  source = \"./m\"\n  foo    = 1\n}",
+		},
+		{
+			name: "terraform",
+			src:  "terraform {\n  required_version = \"1.0\"\n  required_providers {}\n  experiments       = []\n  cloud {}\n  backend \"local\" {}\n  foo = 1\n}",
+		},
+		{
+			name: "dynamic",
+			src:  "dynamic \"d\" {\n  for_each = []\n  content {}\n  foo = 1\n}",
+		},
+		{
+			name: "lifecycle",
+			src:  "lifecycle {\n  create_before_destroy = true\n  foo = 1\n}",
+		},
+		{
+			name: "provisioner",
+			src:  "provisioner \"local-exec\" {\n  when = \"create\"\n  foo  = 1\n}",
+		},
 	}
-	if err := Apply(f, &Options{Strict: true}); err == nil {
-		t.Fatalf("expected error")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			f, diags := hclwrite.ParseConfig([]byte(tc.src), "test.hcl", hcl.InitialPos)
+			if diags.HasErrors() {
+				t.Fatalf("parse: %v", diags)
+			}
+			if err := Apply(f, &Options{Strict: true}); err == nil {
+				t.Fatalf("expected error")
+			}
+		})
 	}
 }
