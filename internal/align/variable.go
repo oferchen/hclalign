@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/hclalign/config"
+	ihcl "github.com/hashicorp/hclalign/internal/hcl"
 )
 
 // variableStrategy implements alignment for `variable` blocks.
@@ -83,6 +84,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	}
 
 	allTokens := body.BuildTokens(nil)
+	newline := ihcl.DetectLineEnding(allTokens)
 	prefixTokens := hclwrite.Tokens{}
 	tailTokens := hclwrite.Tokens{}
 	blockLeadTokens := make(map[*hclwrite.Block]hclwrite.Tokens)
@@ -96,10 +98,10 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		tok := allTokens[i]
 		if tok.Type == hclsyntax.TokenComment && !prefixCaptured {
 			cpy := *tok
-			if n := len(cpy.Bytes); n > 0 && cpy.Bytes[n-1] == '\n' {
-				cpy.Bytes = cpy.Bytes[:n-1]
+			if bytes.HasSuffix(cpy.Bytes, newline) {
+				cpy.Bytes = cpy.Bytes[:len(cpy.Bytes)-len(newline)]
 				prefixTokens = append(prefixTokens, &cpy)
-				prefixTokens = append(prefixTokens, &hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: []byte{'\n'}})
+				prefixTokens = append(prefixTokens, &hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline})
 			} else {
 				prefixTokens = append(prefixTokens, &cpy)
 			}
@@ -159,43 +161,33 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	}
 	tailTokens = currentTokens
 
-	normalizeTokens := func(toks hclwrite.Tokens) {
-		for _, t := range toks {
-			b := t.Bytes
-			if bytes.Contains(b, []byte{'\r'}) {
-				b = bytes.ReplaceAll(b, []byte{'\r', '\n'}, []byte{'\n'})
-				b = bytes.ReplaceAll(b, []byte{'\r'}, nil)
-				t.Bytes = b
-			}
-		}
-	}
-	normalizeTokens(prefixTokens)
+	ihcl.NormalizeTokens(prefixTokens)
 	for _, lead := range blockLeadTokens {
-		normalizeTokens(lead)
+		ihcl.NormalizeTokens(lead)
 	}
-	normalizeTokens(tailTokens)
+	ihcl.NormalizeTokens(tailTokens)
 
 	for _, nb := range nestedBlocks {
 		body.RemoveBlock(nb)
 	}
 
-	attrTokensMap := make(map[string]attrTokens)
+	attrTokensMap := make(map[string]ihcl.AttrTokens)
 	for name, attr := range attrs {
-		at := extractAttrTokens(attr)
+		at := ihcl.ExtractAttrTokens(attr)
 		if extra, ok := attrExtraLead[name]; ok {
-			at.leadTokens = append(extra, at.leadTokens...)
+			at.LeadTokens = append(extra, at.LeadTokens...)
 		}
 		if trim := attrLeadTrim[name]; trim > 0 {
-			if trim < len(at.leadTokens) {
-				at.leadTokens = at.leadTokens[trim:]
+			if trim < len(at.LeadTokens) {
+				at.LeadTokens = at.LeadTokens[trim:]
 			} else {
-				at.leadTokens = nil
+				at.LeadTokens = nil
 			}
 		}
 		attrTokensMap[name] = at
 	}
 
-	originalOrder := attributeOrder(body, attrs)
+	originalOrder := ihcl.AttributeOrder(body, attrs)
 
 	for name := range attrs {
 		body.RemoveAttribute(name)
@@ -225,8 +217,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	if strict {
 		for _, name := range orderedKnown {
 			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.leadTokens)
-				body.SetAttributeRaw(name, tok.exprTokens)
+				body.AppendUnstructuredTokens(tok.LeadTokens)
+				body.SetAttributeRaw(name, tok.ExprTokens)
 			}
 		}
 		for _, name := range originalOrder {
@@ -234,8 +226,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 				continue
 			}
 			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.leadTokens)
-				body.SetAttributeRaw(name, tok.exprTokens)
+				body.AppendUnstructuredTokens(tok.LeadTokens)
+				body.SetAttributeRaw(name, tok.ExprTokens)
 			}
 		}
 	} else {
@@ -250,8 +242,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 
 		for _, name := range finalOrder {
 			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.leadTokens)
-				body.SetAttributeRaw(name, tok.exprTokens)
+				body.AppendUnstructuredTokens(tok.LeadTokens)
+				body.SetAttributeRaw(name, tok.ExprTokens)
 			}
 		}
 	}

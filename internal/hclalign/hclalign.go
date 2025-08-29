@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/hashicorp/hclalign/config"
+	ihcl "github.com/hashicorp/hclalign/internal/hcl"
 )
 
 func ReorderAttributes(file *hclwrite.File, order []string, strict bool) error {
@@ -86,6 +87,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	}
 
 	allTokens := body.BuildTokens(nil)
+	newline := ihcl.DetectLineEnding(allTokens)
 	prefixTokens := hclwrite.Tokens{}
 	tailTokens := hclwrite.Tokens{}
 	blockLeadTokens := make(map[*hclwrite.Block]hclwrite.Tokens)
@@ -98,10 +100,10 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		tok := allTokens[i]
 		if tok.Type == hclsyntax.TokenComment && !prefixCaptured {
 			cpy := *tok
-			if n := len(cpy.Bytes); n > 0 && cpy.Bytes[n-1] == '\n' {
-				cpy.Bytes = cpy.Bytes[:n-1]
+			if bytes.HasSuffix(cpy.Bytes, newline) {
+				cpy.Bytes = cpy.Bytes[:len(cpy.Bytes)-len(newline)]
 				prefixTokens = append(prefixTokens, &cpy)
-				prefixTokens = append(prefixTokens, &hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: []byte{'\n'}})
+				prefixTokens = append(prefixTokens, &hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline})
 			} else {
 				prefixTokens = append(prefixTokens, &cpy)
 			}
@@ -159,40 +161,30 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	}
 	tailTokens = currentTokens
 
-	normalizeTokens := func(toks hclwrite.Tokens) {
-		for _, t := range toks {
-			b := t.Bytes
-			if bytes.Contains(b, []byte{'\r'}) {
-				b = bytes.ReplaceAll(b, []byte{'\r', '\n'}, []byte{'\n'})
-				b = bytes.ReplaceAll(b, []byte{'\r'}, nil)
-				t.Bytes = b
-			}
-		}
-	}
-	normalizeTokens(prefixTokens)
+	ihcl.NormalizeTokens(prefixTokens)
 	for _, lead := range blockLeadTokens {
-		normalizeTokens(lead)
+		ihcl.NormalizeTokens(lead)
 	}
-	normalizeTokens(tailTokens)
+	ihcl.NormalizeTokens(tailTokens)
 
 	for _, nb := range nestedBlocks {
 		body.RemoveBlock(nb)
 	}
 
-	attrTokensMap := make(map[string]attrTokens)
+	attrTokensMap := make(map[string]ihcl.AttrTokens)
 	for name, attr := range attrs {
-		at := extractAttrTokens(attr)
+		at := ihcl.ExtractAttrTokens(attr)
 		if trim := attrLeadTrim[name]; trim > 0 {
-			if trim < len(at.leadTokens) {
-				at.leadTokens = at.leadTokens[trim:]
+			if trim < len(at.LeadTokens) {
+				at.LeadTokens = at.LeadTokens[trim:]
 			} else {
-				at.leadTokens = nil
+				at.LeadTokens = nil
 			}
 		}
 		attrTokensMap[name] = at
 	}
 
-	originalOrder := attributeOrder(body, attrs)
+	originalOrder := ihcl.AttributeOrder(body, attrs)
 
 	for name := range attrs {
 		body.RemoveAttribute(name)
@@ -223,8 +215,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 
 		for _, name := range orderedKnown {
 			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.leadTokens)
-				body.SetAttributeRaw(name, tok.exprTokens)
+				body.AppendUnstructuredTokens(tok.LeadTokens)
+				body.SetAttributeRaw(name, tok.ExprTokens)
 			}
 		}
 		for _, name := range originalOrder {
@@ -232,8 +224,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 				continue
 			}
 			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.leadTokens)
-				body.SetAttributeRaw(name, tok.exprTokens)
+				body.AppendUnstructuredTokens(tok.LeadTokens)
+				body.SetAttributeRaw(name, tok.ExprTokens)
 			}
 		}
 	} else {
@@ -249,8 +241,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 
 		for _, name := range finalOrder {
 			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.leadTokens)
-				body.SetAttributeRaw(name, tok.exprTokens)
+				body.AppendUnstructuredTokens(tok.LeadTokens)
+				body.SetAttributeRaw(name, tok.ExprTokens)
 			}
 		}
 	}
@@ -279,57 +271,4 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	body.AppendUnstructuredTokens(tailTokens)
 
 	return nil
-}
-
-type attrTokens struct {
-	leadTokens hclwrite.Tokens
-	exprTokens hclwrite.Tokens
-}
-
-func extractAttrTokens(attr *hclwrite.Attribute) attrTokens {
-	toks := attr.BuildTokens(nil)
-	i := 0
-	for i < len(toks) && toks[i].Type == hclsyntax.TokenComment {
-		i++
-	}
-	lead := toks[:i]
-	expr := toks[i+2:]
-	if n := len(expr); n > 0 {
-		last := expr[n-1]
-		if last.Type == hclsyntax.TokenNewline {
-			expr = expr[:n-1]
-		} else if last.Type == hclsyntax.TokenComment {
-			b := last.Bytes
-			if len(b) > 0 && b[len(b)-1] == '\n' {
-				expr[n-1].Bytes = b[:len(b)-1]
-			}
-		}
-	}
-	return attrTokens{leadTokens: lead, exprTokens: expr}
-}
-
-func attributeOrder(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) []string {
-	tokens := body.BuildTokens(nil)
-	order := make([]string, 0, len(attrs))
-	depth := 0
-	for i := 0; i < len(tokens)-1; i++ {
-		tok := tokens[i]
-		switch tok.Type {
-		case hclsyntax.TokenOBrace, hclsyntax.TokenOParen:
-			depth++
-			continue
-		case hclsyntax.TokenCBrace, hclsyntax.TokenCParen:
-			if depth > 0 {
-				depth--
-			}
-			continue
-		}
-		if depth == 0 && tok.Type == hclsyntax.TokenIdent {
-			name := string(tok.Bytes)
-			if _, ok := attrs[name]; ok && tokens[i+1].Type == hclsyntax.TokenEqual {
-				order = append(order, name)
-			}
-		}
-	}
-	return order
 }
