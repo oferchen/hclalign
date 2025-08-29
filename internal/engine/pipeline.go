@@ -133,13 +133,7 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config, schem
 		}
 	}
 
-	parseData := formatted
-	if !cfg.NoFmt {
-		if bom := hints.BOM(); len(bom) > 0 && bytes.HasPrefix(parseData, bom) {
-			parseData = parseData[len(bom):]
-		}
-	}
-	parseData = bytes.ReplaceAll(parseData, []byte("\r\n"), []byte("\n"))
+	parseData := internalfs.PrepareForParse(formatted, hints)
 
 	if !cfg.FmtOnly {
 		file, diags := hclwrite.ParseConfig(parseData, filePath, hcl.InitialPos)

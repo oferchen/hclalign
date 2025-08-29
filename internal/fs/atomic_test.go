@@ -19,18 +19,18 @@ type validateFunc func(t *testing.T, dir, path string, ctx any)
 func TestWriteFileAtomic(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name		string
-		data		[]byte
-		perm		os.FileMode
-		hints		Hints
-		setup		setupFunc
-		validate	validateFunc
+		name     string
+		data     []byte
+		perm     os.FileMode
+		hints    Hints
+		setup    setupFunc
+		validate validateFunc
 	}{
 		{
-			name:	"bom and crlf",
-			data:	[]byte("one\ntwo\n"),
-			perm:	0o644,
-			hints:	Hints{HasBOM: true, Newline: "\r\n"},
+			name:  "bom and crlf",
+			data:  []byte("one\ntwo\n"),
+			perm:  0o644,
+			hints: Hints{HasBOM: true, Newline: "\r\n"},
 			validate: func(t *testing.T, dir, path string, _ any) {
 				got, err := os.ReadFile(path)
 				if err != nil {
@@ -50,9 +50,9 @@ func TestWriteFileAtomic(t *testing.T) {
 			},
 		},
 		{
-			name:	"same dir temp",
-			data:	[]byte("x"),
-			perm:	0o600,
+			name: "same dir temp",
+			data: []byte("x"),
+			perm: 0o600,
 			setup: func(t *testing.T, dir, path string) any {
 				entries, err := os.ReadDir(os.TempDir())
 				if err != nil {
@@ -87,9 +87,9 @@ func TestWriteFileAtomic(t *testing.T) {
 			},
 		},
 		{
-			name:	"permission retained",
-			data:	[]byte("secret"),
-			perm:	0o751,
+			name: "permission retained",
+			data: []byte("secret"),
+			perm: 0o751,
 			validate: func(t *testing.T, dir, path string, _ any) {
 				info, err := os.Stat(path)
 				if err != nil {
@@ -108,9 +108,9 @@ func TestWriteFileAtomic(t *testing.T) {
 			},
 		},
 		{
-			name:	"ownership retained",
-			data:	[]byte("new"),
-			perm:	0o600,
+			name: "ownership retained",
+			data: []byte("new"),
+			perm: 0o600,
 			setup: func(t *testing.T, dir, path string) any {
 				if err := os.WriteFile(path, []byte("old"), 0o600); err != nil {
 					t.Fatalf("prewrite: %v", err)
@@ -144,9 +144,9 @@ func TestWriteFileAtomic(t *testing.T) {
 			},
 		},
 		{
-			name:	"rename semantics",
-			data:	[]byte("new"),
-			perm:	0o644,
+			name: "rename semantics",
+			data: []byte("new"),
+			perm: 0o644,
 			setup: func(t *testing.T, dir, path string) any {
 				if err := os.WriteFile(path, []byte("old"), 0o644); err != nil {
 					t.Fatalf("prewrite: %v", err)
@@ -264,3 +264,41 @@ func BenchmarkApplyHints(b *testing.B) {
 	}
 }
 
+func TestReadAllWithHints(t *testing.T) {
+	input := append(append([]byte{}, utf8BOM...), []byte("one\r\ntwo\r\n")...)
+	data, hints, err := ReadAllWithHints(bytes.NewReader(input))
+	if err != nil {
+		t.Fatalf("ReadAllWithHints: %v", err)
+	}
+	if !hints.HasBOM || hints.Newline != "\r\n" {
+		t.Fatalf("unexpected hints: %+v", hints)
+	}
+	if !bytes.Equal(data, []byte("one\r\ntwo\r\n")) {
+		t.Fatalf("data mismatch: %q", data)
+	}
+}
+
+func TestPrepareForParse(t *testing.T) {
+	hints := Hints{HasBOM: true, Newline: "\r\n"}
+	input := append(append([]byte{}, utf8BOM...), []byte("a\r\nb\r\n")...)
+	got := PrepareForParse(input, hints)
+	want := []byte("a\nb\n")
+	if !bytes.Equal(got, want) {
+		t.Fatalf("prepare mismatch: %q != %q", got, want)
+	}
+}
+
+func TestStdioDetection(t *testing.T) {
+	if !IsStdin(os.Stdin) {
+		t.Fatalf("os.Stdin not detected")
+	}
+	if !IsStdout(os.Stdout) {
+		t.Fatalf("os.Stdout not detected")
+	}
+	if IsStdin(&bytes.Buffer{}) {
+		t.Fatalf("buffer detected as stdin")
+	}
+	if IsStdout(&bytes.Buffer{}) {
+		t.Fatalf("buffer detected as stdout")
+	}
+}
