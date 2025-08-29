@@ -28,6 +28,7 @@ var (
 	testHookAfterParse   func()
 	testHookAfterReorder func()
 	reorderAttributes    = hclalign.ReorderAttributes
+	WriteFileAtomic      = internalfs.WriteFileAtomic
 )
 
 func Process(ctx context.Context, cfg *config.Config) (bool, error) {
@@ -266,7 +267,7 @@ func processSingleFile(ctx context.Context, filePath string, cfg *config.Config)
 			}
 			return false, out, nil
 		}
-		if err := internalfs.WriteFileAtomic(ctx, filePath, formatted, perm, hints); err != nil {
+		if err := WriteFileAtomic(ctx, filePath, formatted, perm, hints); err != nil {
 			return false, nil, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
 		}
 		if cfg.Stdout {
