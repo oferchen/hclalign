@@ -2,7 +2,9 @@
 package align
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
@@ -11,7 +13,7 @@ type moduleStrategy struct{}
 
 func (moduleStrategy) Name() string { return "module" }
 
-func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
+func (moduleStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	attrs := block.Body().Attributes()
 
 	order := make([]string, 0, len(attrs))
@@ -49,6 +51,11 @@ func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 		}
 	}
 	sort.Strings(vars)
+
+	if opts != nil && opts.Strict && len(vars) > 0 {
+		return fmt.Errorf("module: unknown attributes: %s", strings.Join(vars, ", "))
+	}
+
 	order = append(order, vars...)
 
 	return reorderBlock(block, order)

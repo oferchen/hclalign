@@ -2,7 +2,9 @@
 package align
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
@@ -11,7 +13,7 @@ type providerStrategy struct{}
 
 func (providerStrategy) Name() string { return "provider" }
 
-func (providerStrategy) Align(block *hclwrite.Block, _ *Options) error {
+func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	attrs := block.Body().Attributes()
 	names := make([]string, 0, len(attrs))
 
@@ -28,6 +30,11 @@ func (providerStrategy) Align(block *hclwrite.Block, _ *Options) error {
 		others = append(others, name)
 	}
 	sort.Strings(others)
+
+	if opts != nil && opts.Strict && len(others) > 0 {
+		return fmt.Errorf("provider: unknown attributes: %s", strings.Join(others, ", "))
+	}
+
 	names = append(names, others...)
 
 	return reorderBlock(block, names)
