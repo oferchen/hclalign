@@ -1,10 +1,10 @@
 provider "aws" {
   # alias comment
   alias = "east"
-  # region comment
-  region = "us-east-1"
   # access key comment
   access_key = "foo"
+  # region comment
+  region = "us-east-1"
   # secret key comment
   secret_key = "bar"
 

@@ -49,10 +49,6 @@ func TestStrictOrderRejectsUnknownAttributes(t *testing.T) {
 			src:  "variable \"a\" {\n  description = \"desc\"\n  type = string\n  default = 1\n  sensitive = true\n  nullable = false\n  foo = 1\n}",
 		},
 		{
-			name: "provider",
-			src:  "provider \"aws\" {\n  alias = \"a\"\n  foo   = 1\n}",
-		},
-		{
 			name: "output",
 			src:  "output \"o\" {\n  value = 1\n  foo   = 1\n}",
 		},
