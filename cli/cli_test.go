@@ -181,6 +181,13 @@ func TestRunEModes(t *testing.T) {
 			wantStdout: formatted,
 		},
 		{
+			name:     "write",
+			flags:    []string{"--write"},
+			wantCode: 0,
+			withFile: true,
+			wantFile: formatted,
+		},
+		{
 			name:       "stdout",
 			flags:      []string{"--stdout"},
 			wantCode:   0,
