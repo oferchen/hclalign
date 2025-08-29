@@ -13,8 +13,8 @@ import (
 var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
 
 type Hints struct {
-	HasBOM	bool
-	Newline	string
+	HasBOM  bool
+	Newline string
 }
 
 func (h Hints) BOM() []byte {
@@ -97,8 +97,10 @@ func WriteFileAtomic(ctx context.Context, path string, data []byte, perm iofs.Fi
 	}
 	if uid != -1 || gid != -1 {
 		if err := os.Chown(tmpName, uid, gid); err != nil {
-			_ = tmp.Close()
-			return err
+			if !isErrWindows(err) && !os.IsPermission(err) {
+				_ = tmp.Close()
+				return err
+			}
 		}
 	}
 	if err := ctx.Err(); err != nil {
@@ -137,4 +139,3 @@ func WriteFileAtomic(ctx context.Context, path string, data []byte, perm iofs.Fi
 	defer func() { _ = dirf.Close() }()
 	return dirf.Sync()
 }
-
