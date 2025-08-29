@@ -15,10 +15,6 @@ type terraformStrategy struct{}
 
 func (terraformStrategy) Name() string { return "terraform" }
 
-// Align orders attributes and nested blocks within a terraform block. Attributes
-// are sorted alphabetically. Nested blocks are sorted by type and labels while
-// preserving the ordering of their contents. If a required_providers block is
-// present, the provider entries inside it are also sorted alphabetically.
 func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	body := block.Body()
 

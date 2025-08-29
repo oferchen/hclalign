@@ -2,6 +2,10 @@
 package schema
 
 import (
+	"context"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -55,4 +59,26 @@ func TestLoad(t *testing.T) {
 	require.True(t, ok)
 	_, comp2 := ds.Computed["id"]
 	require.True(t, comp2)
+}
+
+func TestFromTerraformCaching(t *testing.T) {
+	dir := t.TempDir()
+	cache := filepath.Join(dir, "schema.json")
+	samplePath := filepath.Join(dir, "sample.json")
+	require.NoError(t, os.WriteFile(samplePath, []byte(sample), 0o644))
+
+	var calls int
+	orig := execCommandContext
+	execCommandContext = func(ctx context.Context, name string, args ...string) *exec.Cmd {
+		calls++
+		return exec.CommandContext(ctx, "cat", samplePath)
+	}
+	defer func() { execCommandContext = orig }()
+
+	ctx := context.Background()
+	_, err := FromTerraform(ctx, cache)
+	require.NoError(t, err)
+	_, err = FromTerraform(ctx, cache)
+	require.NoError(t, err)
+	require.Equal(t, 1, calls)
 }

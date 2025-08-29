@@ -37,7 +37,6 @@ func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	attrs := body.Attributes()
 	names := make([]string, 0, len(attrs))
 
-	// Ensure alias is first if present
 	if _, ok := attrs["alias"]; ok {
 		names = append(names, "alias")
 	}
