@@ -7,7 +7,6 @@ resource "null_resource" "example" {
   }
 
   provisioner "local-exec" {
-
     connection {
       host    = "127.0.0.1"
       timeout = "1m"

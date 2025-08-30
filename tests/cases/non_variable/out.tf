@@ -45,7 +45,6 @@ import {
 
 dynamic "d" {
   for_each = [1]
-
   content {
     b = 1
     a = 2
@@ -53,8 +52,8 @@ dynamic "d" {
 }
 
 lifecycle {
-  create_before_destroy = true
   prevent_destroy       = false
+  create_before_destroy = true
 
   precondition {
     error_message = "pre"
