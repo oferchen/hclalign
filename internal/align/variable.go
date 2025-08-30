@@ -3,6 +3,7 @@ package align
 
 import (
 	"bytes"
+	"sort"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -154,8 +155,6 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		attrTokensMap[name] = at
 	}
 
-	originalOrder := ihcl.AttributeOrder(body, attrs)
-
 	for name := range attrs {
 		body.RemoveAttribute(name)
 	}
@@ -184,14 +183,17 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		}
 	}
 
-	finalOrder := make([]string, 0, len(originalOrder))
-
-	finalOrder = append(finalOrder, orderedKnown...)
-	for _, name := range originalOrder {
+	unknown := make([]string, 0)
+	for name := range attrTokensMap {
 		if _, isKnown := canonicalSet[name]; !isKnown {
-			finalOrder = append(finalOrder, name)
+			unknown = append(unknown, name)
 		}
 	}
+	sort.Strings(unknown)
+
+	finalOrder := make([]string, 0, len(orderedKnown)+len(unknown))
+	finalOrder = append(finalOrder, orderedKnown...)
+	finalOrder = append(finalOrder, unknown...)
 
 	for _, name := range finalOrder {
 		if tok, ok := attrTokensMap[name]; ok {

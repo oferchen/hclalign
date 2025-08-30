@@ -4,6 +4,6 @@ variable "example" {
   default     = 1
   sensitive   = true
   nullable    = false
-  foo         = "foo"
   bar         = "bar"
+  foo         = "foo"
 }

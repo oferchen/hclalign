@@ -2,10 +2,11 @@ variable "example" {
   description = "example"
   type        = number
   default     = 1
-  sensitive   = true
-  nullable    = false
   bar         = "bar"
-  baz         = "baz"
   foo         = "foo"
-  qux         = "qux"
+
+  validation {
+    condition     = length(var.example) > 0
+    error_message = "not empty"
+  }
 }
