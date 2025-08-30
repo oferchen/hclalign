@@ -26,7 +26,14 @@ func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	}
 	knownOrder := make([]string, 0, len(order))
 	seen := make(map[string]struct{}, len(order))
+	validationPos := -1
 	for _, name := range order {
+		if name == "validation" {
+			if validationPos == -1 {
+				validationPos = len(knownOrder)
+			}
+			continue
+		}
 		if _, ok := canonicalSet[name]; ok {
 			if _, dup := seen[name]; dup {
 				continue
@@ -38,14 +45,14 @@ func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if len(knownOrder) == 0 {
 		knownOrder = config.CanonicalOrder
 	}
-	return reorderVariableBlock(block, knownOrder, canonicalSet)
+	return reorderVariableBlock(block, knownOrder, canonicalSet, validationPos)
 }
 
 func init() {
 	Register(variableStrategy{})
 }
 
-func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}) error {
+func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}, validationPos int) error {
 	body := block.Body()
 
 	attrs := body.Attributes()
@@ -200,10 +207,38 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	}
 	sort.Strings(unknown)
 
-	for _, name := range orderedKnown {
+	insertedValidation := false
+	for i, name := range orderedKnown {
+		if !insertedValidation && validationPos != -1 && i == validationPos {
+			for _, nb := range validationBlocks {
+				if lead, ok := blockLeadTokens[nb]; ok {
+					body.AppendUnstructuredTokens(lead)
+				}
+				body.AppendBlock(nb)
+			}
+			insertedValidation = true
+		}
 		if tok, ok := attrTokensMap[name]; ok {
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
+		}
+	}
+	if !insertedValidation && validationPos != -1 {
+		for _, nb := range validationBlocks {
+			if lead, ok := blockLeadTokens[nb]; ok {
+				body.AppendUnstructuredTokens(lead)
+			}
+			body.AppendBlock(nb)
+		}
+		insertedValidation = true
+	}
+
+	if !insertedValidation {
+		for _, nb := range validationBlocks {
+			if lead, ok := blockLeadTokens[nb]; ok {
+				body.AppendUnstructuredTokens(lead)
+			}
+			body.AppendBlock(nb)
 		}
 	}
 
@@ -220,13 +255,6 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 			body.Clear()
 			body.AppendUnstructuredTokens(toks[:n-1])
 		}
-	}
-
-	for _, nb := range validationBlocks {
-		if lead, ok := blockLeadTokens[nb]; ok {
-			body.AppendUnstructuredTokens(lead)
-		}
-		body.AppendBlock(nb)
 	}
 
 	for _, name := range unknown {
