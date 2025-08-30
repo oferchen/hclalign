@@ -143,6 +143,15 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	}
 
 	file, diags := hclwrite.ParseConfig(formatted, filePath, hcl.InitialPos)
+
+        formatted, _, err := terraformfmt.Run(ctx, data)
+        if err != nil {
+                return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
+        }
+
+        parseData := internalfs.PrepareForParse(formatted, hints)
+
+	file, diags := hclwrite.ParseConfig(parseData, filePath, hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
@@ -166,6 +175,11 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	if err != nil {
 		return false, nil, err
 	}
+
+        formatted, _, err = terraformfmt.Run(ctx, file.Bytes())
+        if err != nil {
+                return false, nil, err
+        }
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
 		formatted = formatted[:len(formatted)-1]

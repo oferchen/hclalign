@@ -22,10 +22,10 @@ func TestProvisionerAttributeOrderAndComments(t *testing.T) {
 	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
 	got := string(file.Bytes())
 	exp := `provisioner "local-exec" {
-  when       = "destroy" // when inline
+  bar        = "bar"      // bar inline
+  foo        = "foo"      // foo inline
+  when       = "destroy"  // when inline
   on_failure = "continue" // on_failure inline
-  bar        = "bar" // bar inline
-  foo        = "foo" // foo inline
 }`
 	require.Equal(t, exp, got)
 	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))

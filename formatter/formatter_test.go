@@ -6,6 +6,11 @@ import (
 	"testing"
 
 	internalfs "github.com/oferchen/hclalign/internal/fs"
+
+        "bytes"
+        "testing"
+
+        internalfs "github.com/oferchen/hclalign/internal/fs"
 )
 
 func TestFormatHints(t *testing.T) {
@@ -46,6 +51,17 @@ func TestFormatHints(t *testing.T) {
 			}
 		})
 	}
+
+                        got, hints, err := Format(tc.input, "test.hcl")
+                        if err != nil {
+                                t.Fatalf("Format returned error: %v", err)
+                        }
+                        styled := internalfs.ApplyHints(got, hints)
+                        if !bytes.Equal(styled, tc.want) {
+                                t.Fatalf("unexpected output\nwant: %q\n got: %q", tc.want, styled)
+                        }
+                })
+        }
 }
 
 func TestFormatTrailingNewline(t *testing.T) {
@@ -91,6 +107,17 @@ func TestFormatTrailingNewline(t *testing.T) {
 			}
 		})
 	}
+
+                        got, hints, err := Format(tc.input, "test.hcl")
+                        if err != nil {
+                                t.Fatalf("Format returned error: %v", err)
+                        }
+                        styled := internalfs.ApplyHints(got, hints)
+                        if !bytes.Equal(styled, tc.want) {
+                                t.Fatalf("unexpected output\nwant: %q\n got: %q", tc.want, styled)
+                        }
+                })
+        }
 }
 
 func TestFormatRejectsInvalidUTF8(t *testing.T) {
@@ -98,4 +125,8 @@ func TestFormatRejectsInvalidUTF8(t *testing.T) {
 	if _, _, err := Format(invalid, "test.hcl"); err == nil {
 		t.Fatalf("expected error for invalid UTF-8 input")
 	}
+
+        if _, _, err := Format(invalid, "test.hcl"); err == nil {
+                t.Fatalf("expected error for invalid UTF-8 input")
+        }
 }

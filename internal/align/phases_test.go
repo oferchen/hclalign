@@ -34,12 +34,19 @@ func TestPhases(t *testing.T) {
 
 			fmtBytes, _, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
 			require.NoError(t, err)
+
+                        fmtBytes, _, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
+                        require.NoError(t, err)
+
 			hadNewline := len(inBytes) > 0 && inBytes[len(inBytes)-1] == '\n'
 			if !hadNewline && len(fmtBytes) > 0 && fmtBytes[len(fmtBytes)-1] == '\n' {
 				fmtBytes = fmtBytes[:len(fmtBytes)-1]
 			}
 			againFmt, _, err := terraformfmt.Format(fmtBytes, inPath, string(terraformfmt.StrategyGo))
 			require.NoError(t, err)
+
+                        againFmt, _, err := terraformfmt.Format(fmtBytes, inPath, string(terraformfmt.StrategyGo))
+                        require.NoError(t, err)
 			hadFmtNewline := len(fmtBytes) > 0 && fmtBytes[len(fmtBytes)-1] == '\n'
 			if !hadFmtNewline && len(againFmt) > 0 && againFmt[len(againFmt)-1] == '\n' {
 				againFmt = againFmt[:len(againFmt)-1]
@@ -71,4 +78,8 @@ func TestPhases(t *testing.T) {
 		_, _, err := terraformfmt.Format([]byte("variable \"a\" {"), "bad.hcl", string(terraformfmt.StrategyGo))
 		require.Error(t, err)
 	})
+
+                _, _, err := terraformfmt.Format([]byte("variable \"a\" {"), "bad.hcl", string(terraformfmt.StrategyGo))
+                require.Error(t, err)
+        })
 }
