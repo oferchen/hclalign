@@ -22,10 +22,40 @@ The default schema orders variable attributes as `description → type → defau
 - **output:** `description`, `value`, `sensitive`, `depends_on`
 - **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically
 - **provider:** `alias` followed by other attributes alphabetically
-- **terraform:** `required_version`, `experiments`, `required_providers`, `backend`, `cloud`, then remaining attributes and blocks in their original order
+- **terraform:** `required_version`, `experiments`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then remaining attributes and blocks in their original order
 - **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical)
 
 Validation blocks are placed immediately after canonical attributes. Attributes not in the canonical list or provider schema are appended in their original order. Use `--prefix-order` to sort them alphabetically.
+
+Entries within `required_providers` are sorted alphabetically by provider name. Other `terraform` attributes follow `required_version`, `experiments`, `backend`, and `cloud` in that order.
+
+### `required_providers` sorting
+
+```hcl
+# before
+terraform {
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+    }
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
+
+# after
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+    azurerm = {
+      source = "hashicorp/azurerm"
+    }
+  }
+}
+```
 
 ### Flag interactions
 
