@@ -24,8 +24,8 @@ func TestOutputEphemeralAttributeOrder(t *testing.T) {
 	exp := `output "ephemeral" {
   value      = var.v
   sensitive  = false
-  ephemeral  = true
   depends_on = [var.x]
+  ephemeral  = true
 }`
 	require.Equal(t, exp, got)
 }
