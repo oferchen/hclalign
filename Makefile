@@ -36,16 +36,15 @@ vet: ## vet code
 	$(GO) vet $(PKG)
 
 test: ## run tests
-	mkdir -p $(BUILD_DIR)
-	$(GO) test -race -shuffle=on -coverprofile=$(COVERPROFILE) $(PKG)
+	$(GO) test -shuffle=on -cover $(PKG)
 
 test-race: ## run tests with race detector
-	$(GO) test $(PKG) -race -shuffle=on
+	$(GO) test -race -shuffle=on $(PKG)
 
 cover: export COVER_THRESH ?= 95
 cover: ## run coverage check
 	mkdir -p $(BUILD_DIR)
-	$(GO) test -race -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...
+	$(GO) test -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...
 	$(GO) tool cover -func=$(COVERPROFILE) | awk -v thresh=$(COVER_THRESH) '/^total:/ { sub(/%/, "", $$3); if ($$3+0 < thresh) { printf "coverage %.1f%% is below %d%%\n", $$3, thresh; exit 1 } }'
 
 build: ## build binary

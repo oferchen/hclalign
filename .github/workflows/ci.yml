@@ -32,6 +32,7 @@ jobs:
       - name: Vulnerability check
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
         continue-on-error: true
+      - run: make test
       - run: make test-race
       - run: make cover
         env:
