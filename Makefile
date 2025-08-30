@@ -6,7 +6,7 @@ COVERPROFILE := $(BUILD_DIR)/coverage.out
 
 GO ?= go
 
-.PHONY: init tidy fmt strip lint vet test test-race cover build clean
+.PHONY: init tidy fmt strip lint vet test test-race fuzz cover build clean
 
 init: ## download and verify modules
 	$(GO) mod download
@@ -15,9 +15,8 @@ init: ## download and verify modules
 tidy: ## tidy modules
 	$(GO) mod tidy
 
-fmt: ## format code
+fmt: ## format code and regenerate test fixtures
 	$(GO) run mvdan.cc/gofumpt@v0.6.0 -w .
-	gofmt -s -w .
 	$(MAKE) strip
 	@if command -v terraform >/dev/null 2>&1; then \
 	terraform fmt -recursive tests/cases; \
@@ -39,6 +38,11 @@ test: ## run tests
 
 test-race: ## run tests with race detector
 	$(GO) test -race -shuffle=on $(PKG)
+
+fuzz: ## run fuzz tests
+	$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/align
+	$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/engine
+	$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/hcl
 
 cover: export COVER_THRESH ?= 95
 cover: ## run coverage check
