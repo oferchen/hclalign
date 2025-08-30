@@ -20,7 +20,7 @@ const (
 	StrategyGo     Strategy = "go"
 )
 
-func Format(src []byte, filename, strategy string) ([]byte, error) {
+func Format(src []byte, filename, strategy string) ([]byte, internalfs.Hints, error) {
 	switch Strategy(strategy) {
 	case StrategyGo:
 		return formatter.Format(src, filename)
@@ -29,15 +29,15 @@ func Format(src []byte, filename, strategy string) ([]byte, error) {
 	case StrategyAuto, "":
 		return Run(context.Background(), src)
 	default:
-		return nil, fmt.Errorf("unknown fmt strategy %q", strategy)
+		return nil, internalfs.Hints{}, fmt.Errorf("unknown fmt strategy %q", strategy)
 	}
 }
 
-func formatBinary(ctx context.Context, src []byte) ([]byte, error) {
+func formatBinary(ctx context.Context, src []byte) ([]byte, internalfs.Hints, error) {
 	hints := internalfs.DetectHintsFromBytes(src)
 	src = internalfs.PrepareForParse(src, hints)
 	if len(src) > 0 && !utf8.Valid(src) {
-		return nil, fmt.Errorf("input is not valid UTF-8")
+		return nil, hints, fmt.Errorf("input is not valid UTF-8")
 	}
 	cmd := exec.CommandContext(ctx, "terraform", "fmt", "-no-color", "-list=false", "-write=false", "-")
 	cmd.Stdin = bytes.NewReader(src)
@@ -47,9 +47,9 @@ func formatBinary(ctx context.Context, src []byte) ([]byte, error) {
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		if stderrStr := stderr.String(); stderrStr != "" {
-			return nil, fmt.Errorf("terraform fmt failed: %w: %s", err, stderrStr)
+			return nil, hints, fmt.Errorf("terraform fmt failed: %w: %s", err, stderrStr)
 		}
-		return nil, fmt.Errorf("terraform fmt failed: %w", err)
+		return nil, hints, fmt.Errorf("terraform fmt failed: %w", err)
 	}
 	formatted := stdout.Bytes()
 
@@ -57,6 +57,5 @@ func formatBinary(ctx context.Context, src []byte) ([]byte, error) {
 		formatted = bytes.TrimRight(formatted, "\n")
 		formatted = append(formatted, '\n')
 	}
-	formatted = internalfs.ApplyHints(formatted, hints)
-	return formatted, nil
+	return formatted, hints, nil
 }

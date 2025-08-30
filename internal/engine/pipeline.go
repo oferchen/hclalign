@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"sync/atomic"
 
@@ -118,7 +119,15 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	if err := ctx.Err(); err != nil {
 		return false, nil, err
 	}
-	data, perm, hints, err := internalfs.ReadFileWithHints(ctx, filePath)
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return false, nil, fmt.Errorf("error reading file %s: %w", filePath, err)
+	}
+	perm := info.Mode()
+	if err := ctx.Err(); err != nil {
+		return false, nil, err
+	}
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return false, nil, fmt.Errorf("error reading file %s: %w", filePath, err)
 	}
@@ -126,16 +135,14 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 		return false, nil, err
 	}
 
-	original := data
+	original := append([]byte(nil), data...)
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
-	formatted, err := terraformfmt.Run(ctx, data)
+	formatted, hints, err := terraformfmt.Run(ctx, data)
 	if err != nil {
 		return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
 	}
 
-	parseData := internalfs.PrepareForParse(formatted, hints)
-
-	file, diags := hclwrite.ParseConfig(parseData, filePath, hcl.InitialPos)
+	file, diags := hclwrite.ParseConfig(formatted, filePath, hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
@@ -155,7 +162,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	if testHookAfterReorder != nil {
 		testHookAfterReorder()
 	}
-	formatted, err = terraformfmt.Run(ctx, file.Bytes())
+	formatted, _, err = terraformfmt.Run(ctx, file.Bytes())
 	if err != nil {
 		return false, nil, err
 	}
@@ -165,9 +172,6 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	}
 
 	styled := internalfs.ApplyHints(formatted, hints)
-	if bom := hints.BOM(); len(bom) > 0 {
-		original = append(append([]byte{}, bom...), original...)
-	}
 	changed := !bytes.Equal(original, styled)
 
 	var out []byte
@@ -191,7 +195,18 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 		}
 	case config.ModeDiff:
 		if changed {
-			text, err := diff.Unified(diff.UnifiedOpts{FromFile: filePath, ToFile: filePath, Original: original, Styled: styled, Hints: hints})
+			styledForDiff := styled
+			originalForDiff := original
+			if hints.HasBOM {
+				bom := hints.BOM()
+				if len(styledForDiff) >= len(bom) {
+					styledForDiff = styledForDiff[len(bom):]
+				}
+				if len(originalForDiff) >= len(bom) {
+					originalForDiff = originalForDiff[len(bom):]
+				}
+			}
+			text, err := diff.Unified(diff.UnifiedOpts{FromFile: filePath, ToFile: filePath, Original: originalForDiff, Styled: styledForDiff, Hints: hints})
 			if err != nil {
 				return false, nil, err
 			}

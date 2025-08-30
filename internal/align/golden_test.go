@@ -57,7 +57,7 @@ func TestGolden(t *testing.T) {
 				t.Fatalf("read out: %v", err)
 			}
 
-			fmtBytes, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
+			fmtBytes, _, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
 			if err != nil {
 				t.Fatalf("format input: %v", err)
 			}
@@ -65,7 +65,7 @@ func TestGolden(t *testing.T) {
 			if !hadNewline && len(fmtBytes) > 0 && fmtBytes[len(fmtBytes)-1] == '\n' {
 				fmtBytes = fmtBytes[:len(fmtBytes)-1]
 			}
-			againFmt, err := terraformfmt.Format(fmtBytes, inPath, string(terraformfmt.StrategyGo))
+			againFmt, _, err := terraformfmt.Format(fmtBytes, inPath, string(terraformfmt.StrategyGo))
 			if err != nil {
 				t.Fatalf("format fmt: %v", err)
 			}

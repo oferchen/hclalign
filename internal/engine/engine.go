@@ -72,21 +72,19 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		w = os.Stdout
 	}
 
-	data, hints, err := internalfs.ReadAllWithHints(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return false, err
 	}
 
 	original := append([]byte(nil), data...)
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
-	formatted, err := terraformfmt.Format(data, "stdin", "")
+	formatted, hints, err := terraformfmt.Format(data, "stdin", "")
 	if err != nil {
 		return false, fmt.Errorf("parsing error: %w", err)
 	}
 
-	parseData := internalfs.PrepareForParse(formatted, hints)
-
-	file, diags := hclwrite.ParseConfig(parseData, "stdin", hcl.InitialPos)
+	file, diags := hclwrite.ParseConfig(formatted, "stdin", hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, fmt.Errorf("parsing error: %v", diags.Errs())
 	}
@@ -104,7 +102,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	if err := align.Apply(file, &align.Options{Order: cfg.Order, Schemas: schemas, Types: typesMap, PrefixOrder: cfg.PrefixOrder}); err != nil {
 		return false, err
 	}
-	formatted, err = terraformfmt.Format(file.Bytes(), "stdin", "")
+	formatted, _, err = terraformfmt.Format(file.Bytes(), "stdin", "")
 	if err != nil {
 		return false, err
 	}
@@ -114,14 +112,13 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	}
 
 	styled := internalfs.ApplyHints(formatted, hints)
-	originalStyled := internalfs.ApplyHints(internalfs.PrepareForParse(original, hints), hints)
-	changed := !bytes.Equal(originalStyled, styled)
+	changed := !bytes.Equal(original, styled)
 
 	switch cfg.Mode {
 	case config.ModeDiff:
 		if changed {
 			styledForDiff := styled
-			originalForDiff := originalStyled
+			originalForDiff := original
 			if hints.HasBOM {
 				bom := hints.BOM()
 				if len(styledForDiff) >= len(bom) {
