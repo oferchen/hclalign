@@ -11,6 +11,11 @@ GO ?= go
 init: ## download and verify modules
 	$(GO) mod download
 	$(GO) mod verify
+	$(GO) version
+	@if command -v terraform >/dev/null 2>&1; then \
+	terraform version; \
+	fi
+	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 version
 
 tidy: ## tidy modules
 	$(GO) mod tidy
@@ -18,7 +23,6 @@ tidy: ## tidy modules
 fmt: ## format code and regenerate test fixtures
 	$(GO) run mvdan.cc/gofumpt@v0.6.0 -w .
 	gofmt -s -w .
-	$(MAKE) strip
 	@if command -v terraform >/dev/null 2>&1; then \
 	terraform fmt -recursive; \
 	fi
@@ -65,10 +69,13 @@ check: ## check Terraform files for alignment
 
 
 ci: ## run full CI pipeline
+	$(MAKE) init
 	$(MAKE) tidy
 	$(MAKE) fmt
+	$(MAKE) strip
 	$(MAKE) lint
-	$(MAKE) test
+	$(MAKE) vet
+	$(MAKE) test-race
 	$(MAKE) cover
 	$(MAKE) build
 
