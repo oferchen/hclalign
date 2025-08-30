@@ -2,6 +2,7 @@
 package terraformfmt
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,7 +29,7 @@ func TestAutoPrefersTerraformBinary(t *testing.T) {
 	tmpDir := t.TempDir()
 	argsOut := filepath.Join(tmpDir, "args.txt")
 	script := filepath.Join(tmpDir, "terraform")
-	content := "#!/bin/sh\n" + "echo \"$@\" > \"$MOCK_TF_ARGS_OUT\"\n"
+	content := "#!/bin/sh\n" + "cat -\n" + "echo \"$@\" > \"$MOCK_TF_ARGS_OUT\"\n"
 	require.NoError(t, os.WriteFile(script, []byte(content), 0o755))
 	oldPath := os.Getenv("PATH")
 	require.NoError(t, os.Setenv("PATH", tmpDir+string(os.PathListSeparator)+oldPath))
@@ -42,7 +43,7 @@ func TestAutoPrefersTerraformBinary(t *testing.T) {
 	require.NoError(t, err)
 	fields := strings.Fields(string(argsBytes))
 	require.Greater(t, len(fields), 0)
-	require.NotEqual(t, "-", fields[len(fields)-1])
+	require.Equal(t, "-", fields[len(fields)-1])
 }
 
 func TestIdempotent(t *testing.T) {
@@ -66,6 +67,18 @@ func TestBinaryPreservesHints(t *testing.T) {
 	require.Equal(t, "\r\n", hints.Newline)
 }
 
+func TestRunPreservesHints(t *testing.T) {
+	if _, err := exec.LookPath("terraform"); err != nil {
+		t.Skip("terraform binary not found")
+	}
+	src := append([]byte{0xef, 0xbb, 0xbf}, []byte("variable \"a\" {\r\n  type = string\r\n}\r\n")...)
+	formatted, err := Run(context.Background(), src)
+	require.NoError(t, err)
+	hints := internalfs.DetectHintsFromBytes(formatted)
+	require.True(t, hints.HasBOM)
+	require.Equal(t, "\r\n", hints.Newline)
+}
+
 func TestUnknownStrategy(t *testing.T) {
 	_, err := Format([]byte("{}"), "test.tf", "bogus")
 	require.Error(t, err)
@@ -82,6 +95,18 @@ func TestBinaryMissingTerraform(t *testing.T) {
 	os.Setenv("PATH", "")
 	_, err := Format([]byte("variable \"a\" {}\n"), "test.tf", string(StrategyBinary))
 	require.Error(t, err)
+}
+
+func TestRunMissingTerraform(t *testing.T) {
+	oldPath := os.Getenv("PATH")
+	defer os.Setenv("PATH", oldPath)
+	os.Setenv("PATH", "")
+	src := []byte("variable \"a\" {\n  type = string\n}\n")
+	formatted, err := Run(context.Background(), src)
+	require.NoError(t, err)
+	goFmt, err := Format(src, "test.tf", string(StrategyGo))
+	require.NoError(t, err)
+	require.Equal(t, string(goFmt), string(formatted))
 }
 
 func TestAutoFallsBackToGo(t *testing.T) {

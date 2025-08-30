@@ -25,21 +25,20 @@ func Format(src []byte, filename, strategy string) ([]byte, error) {
 	case StrategyGo:
 		return formatter.Format(src, filename)
 	case StrategyBinary:
-		return formatBinary(src)
+		return formatBinary(context.Background(), src)
 	case StrategyAuto, "":
-		return Run(context.Background(), filename, src)
+		return Run(context.Background(), src)
 	default:
 		return nil, fmt.Errorf("unknown fmt strategy %q", strategy)
 	}
 }
 
-func formatBinary(src []byte) ([]byte, error) {
+func formatBinary(ctx context.Context, src []byte) ([]byte, error) {
 	hints := internalfs.DetectHintsFromBytes(src)
 	src = internalfs.PrepareForParse(src, hints)
 	if len(src) > 0 && !utf8.Valid(src) {
 		return nil, fmt.Errorf("input is not valid UTF-8")
 	}
-	ctx := context.Background()
 	cmd := exec.CommandContext(ctx, "terraform", "fmt", "-no-color", "-list=false", "-write=false", "-")
 	cmd.Stdin = bytes.NewReader(src)
 	var stdout bytes.Buffer
