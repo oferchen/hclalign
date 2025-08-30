@@ -41,20 +41,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		return nil, &ExitCodeError{Err: err, Code: 2}
 	}
 
-	modeCount := 0
-	if writeMode {
-		modeCount++
-	}
-	if checkMode {
-		modeCount++
-	}
-	if diffMode {
-		modeCount++
-	}
-	if modeCount > 1 {
-		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify more than one of --write, --check, or --diff"), Code: 2}
-	}
-
 	if !stdin && target == "" {
 		return nil, &ExitCodeError{Err: fmt.Errorf(config.ErrMissingTarget), Code: 2}
 	}
