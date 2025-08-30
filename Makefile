@@ -6,7 +6,7 @@ COVERPROFILE := $(BUILD_DIR)/coverage.out
 
 GO ?= go
 
-.PHONY: init tidy fmt strip lint vet test test-race fuzz cover build clean
+.PHONY: init tidy fmt strip lint vet test test-race fuzz cover build clean align check ci
 
 init: ## download and verify modules
 	$(GO) mod download
@@ -54,6 +54,23 @@ cover: ## run coverage check
 build: ## build binary
 	mkdir -p $(BUILD_DIR)
 	$(GO) build -trimpath -ldflags="-s -w" -buildvcs=false -o $(BUILD_DIR)/$(APP) ./cmd/hclalign
+
+align: ## align Terraform files in place
+	$(GO) run ./cmd/hclalign --write .
+
+
+check: ## check Terraform files for alignment
+	$(GO) run ./cmd/hclalign --check .
+
+
+ci: ## run full CI pipeline
+	$(MAKE) tidy
+	$(MAKE) fmt
+	$(MAKE) lint
+	$(MAKE) test
+	$(MAKE) cover
+	$(MAKE) build
+
 
 clean: ## remove build artifacts
 	rm -rf $(BUILD_DIR) $(COVERPROFILE)
