@@ -23,6 +23,7 @@ func TestGolden(t *testing.T) {
 		"terraform": {},
 		"resource":  {},
 		"data":      {},
+		"variable":  {},
 	}
 	schemaPath := filepath.Join("..", "..", "tests", "testdata", "providers-schema.json")
 	schemas, err := alignschema.LoadFile(schemaPath)

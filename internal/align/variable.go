@@ -233,15 +233,6 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		insertedValidation = true
 	}
 
-	if !insertedValidation {
-		for _, nb := range validationBlocks {
-			if lead, ok := blockLeadTokens[nb]; ok {
-				body.AppendUnstructuredTokens(lead)
-			}
-			body.AppendBlock(nb)
-		}
-	}
-
 	hasLeadingNewline := false
 	for _, t := range prefixTokens {
 		if t.Type == hclsyntax.TokenNewline {
@@ -261,6 +252,15 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		if tok, ok := attrTokensMap[name]; ok {
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
+		}
+	}
+
+	if !insertedValidation {
+		for _, nb := range validationBlocks {
+			if lead, ok := blockLeadTokens[nb]; ok {
+				body.AppendUnstructuredTokens(lead)
+			}
+			body.AppendBlock(nb)
 		}
 	}
 
