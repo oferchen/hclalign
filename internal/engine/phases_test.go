@@ -67,4 +67,21 @@ func TestTemplatesIdempotent(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, changed)
 	require.Equal(t, string(first), out.String())
+
+func TestTemplatesProcessReaderTwice(t *testing.T) {
+	base := filepath.Join("..", "..", "tests", "cases", "templates")
+	inBytes, err := os.ReadFile(filepath.Join(base, "in.tf"))
+	require.NoError(t, err)
+
+	cfg := &config.Config{Stdout: true}
+	var first bytes.Buffer
+	_, err = ProcessReader(context.Background(), bytes.NewReader(inBytes), &first, cfg)
+	require.NoError(t, err)
+
+	var second bytes.Buffer
+	changed, err := ProcessReader(context.Background(), bytes.NewReader(first.Bytes()), &second, cfg)
+	require.NoError(t, err)
+	require.False(t, changed)
+	require.Equal(t, first.String(), second.String())
+
 }

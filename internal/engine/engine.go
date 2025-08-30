@@ -120,6 +120,13 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	switch cfg.Mode {
 	case config.ModeDiff:
 		if changed {
+			styledForDiff := styled
+			if hints.HasBOM {
+				bom := hints.BOM()
+				if len(styledForDiff) >= len(bom) {
+					styledForDiff = styledForDiff[len(bom):]
+				}
+			}
 			text, err := diff.Unified(diff.UnifiedOpts{FromFile: "stdin", ToFile: "stdin", Original: originalStyled, Styled: styled, Hints: hints})
 			if err != nil {
 				return false, err

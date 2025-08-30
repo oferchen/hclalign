@@ -51,7 +51,18 @@ func TestProcessReaderModeDiff(t *testing.T) {
 	require.True(t, changed)
 
 	hints := internalfs.DetectHintsFromBytes([]byte(input))
-	diffText, err := diff.Unified(diff.UnifiedOpts{FromFile: "stdin", ToFile: "stdin", Original: []byte(input), Styled: []byte(styled), Hints: hints})
+	orig := []byte(input)
+	styledBytes := []byte(styled)
+	if hints.HasBOM {
+		bom := hints.BOM()
+		if len(orig) >= len(bom) {
+			orig = orig[len(bom):]
+		}
+		if len(styledBytes) >= len(bom) {
+			styledBytes = styledBytes[len(bom):]
+		}
+	}
+	diffText, err := diff.Unified(diff.UnifiedOpts{FromFile: "stdin", ToFile: "stdin", Original: orig, Styled: styledBytes, Hints: hints})
 	require.NoError(t, err)
 	require.Equal(t, diffText, out.String())
 }
