@@ -138,6 +138,15 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	for _, nb := range nestedBlocks {
 		body.RemoveBlock(nb)
 	}
+	validationBlocks := make([]*hclwrite.Block, 0)
+	otherBlocks := make([]*hclwrite.Block, 0)
+	for _, nb := range nestedBlocks {
+		if nb.Type() == "validation" {
+			validationBlocks = append(validationBlocks, nb)
+		} else {
+			otherBlocks = append(otherBlocks, nb)
+		}
+	}
 
 	attrTokensMap := make(map[string]ihcl.AttrTokens)
 	for name, attr := range attrs {
@@ -191,11 +200,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	}
 	sort.Strings(unknown)
 
-	finalOrder := make([]string, 0, len(orderedKnown)+len(unknown))
-	finalOrder = append(finalOrder, orderedKnown...)
-	finalOrder = append(finalOrder, unknown...)
-
-	for _, name := range finalOrder {
+	for _, name := range orderedKnown {
 		if tok, ok := attrTokensMap[name]; ok {
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
@@ -217,7 +222,21 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		}
 	}
 
-	for _, nb := range nestedBlocks {
+	for _, nb := range validationBlocks {
+		if lead, ok := blockLeadTokens[nb]; ok {
+			body.AppendUnstructuredTokens(lead)
+		}
+		body.AppendBlock(nb)
+	}
+
+	for _, name := range unknown {
+		if tok, ok := attrTokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.LeadTokens)
+			body.SetAttributeRaw(name, tok.ExprTokens)
+		}
+	}
+
+	for _, nb := range otherBlocks {
 		if lead, ok := blockLeadTokens[nb]; ok {
 			body.AppendUnstructuredTokens(lead)
 		}
