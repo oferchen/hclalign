@@ -1,6 +1,6 @@
 variable "vc" {
-  default = ""
   type    = string
+  default = ""
 
   # ensure non-empty
   validation {

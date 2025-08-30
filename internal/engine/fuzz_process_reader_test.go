@@ -1,4 +1,4 @@
-// internal/engine/fuzz_process_reader_test.go
+// filename: internal/engine/fuzz_process_reader_test.go
 package engine
 
 import (

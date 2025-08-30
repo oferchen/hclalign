@@ -1,4 +1,4 @@
-// internal/fs/hints_test.go
+// filename: internal/fs/hints_test.go
 package fs
 
 import (

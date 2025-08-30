@@ -1,4 +1,4 @@
-// internal/align/prefix_order_test.go
+// filename: internal/align/prefix_order_test.go
 package align_test
 
 import (

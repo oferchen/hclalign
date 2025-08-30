@@ -1,4 +1,4 @@
-// internal/align/benchmark_test.go
+// filename: internal/align/benchmark_test.go
 package align
 
 import (

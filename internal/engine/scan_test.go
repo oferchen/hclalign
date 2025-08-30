@@ -1,4 +1,4 @@
-// internal/engine/scan_test.go
+// filename: internal/engine/scan_test.go
 package engine
 
 import (

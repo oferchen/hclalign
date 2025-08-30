@@ -1,4 +1,4 @@
-// internal/engine/non_variable_test.go
+// filename: internal/engine/non_variable_test.go
 package engine
 
 import (

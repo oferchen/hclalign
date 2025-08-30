@@ -4,9 +4,9 @@ variable "complex" {
   default     = ["a", "b"]
   sensitive   = true
   nullable    = false
+  custom      = true
   validation {
     condition     = true
     error_message = "msg"
   }
-  custom = true
 }

@@ -1,4 +1,4 @@
-// internal/align/reorder.go
+// filename: internal/align/reorder.go
 package align
 
 import (

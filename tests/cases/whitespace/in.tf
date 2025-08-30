@@ -1,5 +1,5 @@
 variable "w" {
-  default = 1
   type    = number
+  default = 1
 
 }

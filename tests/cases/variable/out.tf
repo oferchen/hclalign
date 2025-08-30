@@ -7,6 +7,8 @@ variable "example" {
   ]
   sensitive = true
   nullable  = true
+  bar       = "bar"
+  foo       = "foo"
   validation {
     condition     = var.example != ""
     error_message = "first"
@@ -15,6 +17,4 @@ variable "example" {
     condition     = length(var.example) > 1
     error_message = "second"
   }
-  bar = "bar"
-  foo = "foo"
 }

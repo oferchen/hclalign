@@ -1,4 +1,4 @@
-// formatter/formatter.go
+// filename: formatter/formatter.go
 package formatter
 
 import (

@@ -1,4 +1,4 @@
-// internal/align/variable.go
+// filename: internal/align/variable.go
 package align
 
 import (

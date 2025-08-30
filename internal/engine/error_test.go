@@ -1,4 +1,4 @@
-// internal/engine/error_test.go
+// filename: internal/engine/error_test.go
 package engine
 
 import (

@@ -1,4 +1,4 @@
-// internal/align/phases_test.go
+// filename: internal/align/phases_test.go
 package align_test
 
 import (

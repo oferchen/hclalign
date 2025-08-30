@@ -1,9 +1,9 @@
 variable "a" {
-  type = string
   description = "d"
+  type        = string
 }
 
 output "o" {
-  value = "v"
+  value       = "v"
   description = "d"
 }

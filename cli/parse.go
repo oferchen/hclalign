@@ -1,4 +1,4 @@
-// cli/parse.go
+// filename: cli/parse.go
 package cli
 
 import (

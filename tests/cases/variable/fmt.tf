@@ -1,20 +1,20 @@
 variable "example" {
+  description = "example"
+  type        = list(number)
   default = [
     1,
     2,
   ]
+  sensitive = true
+  nullable  = true
+  foo       = "foo"
+  bar       = "bar"
   validation {
     condition     = var.example != ""
     error_message = "first"
   }
-  nullable    = true
-  description = "example"
   validation {
     condition     = length(var.example) > 1
     error_message = "second"
   }
-  sensitive = true
-  type      = list(number)
-  foo       = "foo"
-  bar       = "bar"
 }
