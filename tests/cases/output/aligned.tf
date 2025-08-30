@@ -13,12 +13,14 @@ output "unknown" {
 
 output "depends" {
   value      = var.c
-  foo        = "bar"
+  sensitive  = false
   depends_on = [var.x]
+  foo        = "bar"
 }
 
 output "already" {
   description = "foo"
   value       = var.foo
   sensitive   = false
+  depends_on  = [var.dep]
 }
