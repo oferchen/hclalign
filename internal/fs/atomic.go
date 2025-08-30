@@ -104,10 +104,21 @@ func ApplyHints(data []byte, hints Hints) []byte {
 	return out
 }
 
-func WriteFileAtomic(ctx context.Context, path string, data []byte, perm iofs.FileMode, hints Hints) error {
+type WriteOpts struct {
+	Path  string
+	Data  []byte
+	Perm  iofs.FileMode
+	Hints Hints
+}
+
+func WriteFileAtomic(ctx context.Context, opts WriteOpts) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	path := opts.Path
+	data := opts.Data
+	perm := opts.Perm
+	hints := opts.Hints
 	dir := filepath.Dir(path)
 	uid, gid := -1, -1
 	if info, err := os.Stat(path); err == nil {

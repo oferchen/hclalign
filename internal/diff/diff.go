@@ -10,7 +10,18 @@ import (
 
 const diffContext = 3
 
-func Unified(fromFile, toFile string, original, styled []byte, hints internalfs.Hints) (string, error) {
+type UnifiedOpts struct {
+	FromFile string
+	ToFile   string
+	Original []byte
+	Styled   []byte
+	Hints    internalfs.Hints
+}
+
+func Unified(opts UnifiedOpts) (string, error) {
+	original := opts.Original
+	styled := opts.Styled
+	hints := opts.Hints
 	if bom := hints.BOM(); len(bom) > 0 {
 		original = append(append([]byte{}, bom...), original...)
 		styled = append(append([]byte{}, bom...), styled...)
@@ -18,8 +29,8 @@ func Unified(fromFile, toFile string, original, styled []byte, hints internalfs.
 	ud := difflib.UnifiedDiff{
 		A:        difflib.SplitLines(string(original)),
 		B:        difflib.SplitLines(string(styled)),
-		FromFile: fromFile,
-		ToFile:   toFile,
+		FromFile: opts.FromFile,
+		ToFile:   opts.ToFile,
 		Context:  diffContext,
 		Eol:      hints.Newline,
 	}

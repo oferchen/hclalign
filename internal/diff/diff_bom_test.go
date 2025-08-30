@@ -11,7 +11,7 @@ import (
 func TestUnifiedDiffWithBOM(t *testing.T) {
 	a := []byte("line1\n")
 	b := []byte("line2\n")
-	diffStr, err := Unified("a", "a", a, b, internalfs.Hints{HasBOM: true, Newline: "\n"})
+	diffStr, err := Unified(UnifiedOpts{FromFile: "a", ToFile: "a", Original: a, Styled: b, Hints: internalfs.Hints{HasBOM: true, Newline: "\n"}})
 	if err != nil {
 		t.Fatalf("Unified returned error: %v", err)
 	}
@@ -23,7 +23,7 @@ func TestUnifiedDiffWithBOM(t *testing.T) {
 func TestUnifiedDiffWithBOMCRLF(t *testing.T) {
 	a := []byte("line1\r\n")
 	b := []byte("line2\r\n")
-	diffStr, err := Unified("a", "a", a, b, internalfs.Hints{HasBOM: true, Newline: "\r\n"})
+	diffStr, err := Unified(UnifiedOpts{FromFile: "a", ToFile: "a", Original: a, Styled: b, Hints: internalfs.Hints{HasBOM: true, Newline: "\r\n"}})
 	if err != nil {
 		t.Fatalf("Unified returned error: %v", err)
 	}

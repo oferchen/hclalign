@@ -26,7 +26,7 @@ func TestWriteFileAtomicChownIgnored(t *testing.T) {
 		t.Fatalf("unexpected chown error: %v", err)
 	}
 
-	if err := WriteFileAtomic(context.Background(), path, []byte("new"), 0o644, Hints{}); err != nil {
+	if err := WriteFileAtomic(context.Background(), WriteOpts{Path: path, Data: []byte("new"), Perm: 0o644, Hints: Hints{}}); err != nil {
 		t.Fatalf("WriteFileAtomic: %v", err)
 	}
 }
