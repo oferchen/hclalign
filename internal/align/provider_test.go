@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestProviderNestedBlockOrder(t *testing.T) {
+func TestProviderNestedBlocksPreserveOrder(t *testing.T) {
 	src := []byte(`provider "aws" {
   nested "b" {}
   assume_role {}

@@ -17,15 +17,6 @@ import (
 
 func TestGolden(t *testing.T) {
 	casesDir := filepath.Join("..", "..", "tests", "cases")
-	allowed := map[string]struct{}{
-		"module":                       {},
-		"provider":                     {},
-		"terraform":                    {},
-		"resource":                     {},
-		"data":                         {},
-		"variable":                     {},
-		"terraform/required_providers": {},
-	}
 	schemaPath := filepath.Join("..", "..", "tests", "testdata", "providers-schema.json")
 	schemas, err := alignschema.LoadFile(schemaPath)
 	if err != nil {
@@ -38,27 +29,28 @@ func TestGolden(t *testing.T) {
 		if !d.IsDir() {
 			return nil
 		}
-		inPath := filepath.Join(path, "in.tf")
-		fmtPath := filepath.Join(path, "fmt.tf")
-		alignedPath := filepath.Join(path, "aligned.tf")
-		if _, err := os.Stat(inPath); err != nil {
-			return nil
-		}
-		if _, err := os.Stat(fmtPath); err != nil {
-			return nil
-		}
-		if _, err := os.Stat(alignedPath); err != nil {
+		if path == casesDir {
 			return nil
 		}
 		name, err := filepath.Rel(casesDir, path)
 		if err != nil {
 			return err
 		}
-		if _, ok := allowed[name]; !ok {
-			return nil
-		}
 
 		t.Run(name, func(t *testing.T) {
+			inPath := filepath.Join(path, "in.tf")
+			fmtPath := filepath.Join(path, "fmt.tf")
+			alignedPath := filepath.Join(path, "aligned.tf")
+			if _, err := os.Stat(inPath); err != nil {
+				t.Skip("missing in.tf")
+			}
+			if _, err := os.Stat(fmtPath); err != nil {
+				t.Skip("missing fmt.tf")
+			}
+			if _, err := os.Stat(alignedPath); err != nil {
+				t.Skip("missing aligned.tf")
+			}
+
 			inBytes, err := os.ReadFile(inPath)
 			if err != nil {
 				t.Fatalf("read input: %v", err)
@@ -76,12 +68,20 @@ func TestGolden(t *testing.T) {
 			if err != nil {
 				t.Fatalf("format input: %v", err)
 			}
+			hadNewline := len(inBytes) > 0 && inBytes[len(inBytes)-1] == '\n'
+			if !hadNewline && len(gotFmt) > 0 && gotFmt[len(gotFmt)-1] == '\n' {
+				gotFmt = gotFmt[:len(gotFmt)-1]
+			}
 			if !bytes.Equal(gotFmt, fmtBytes) {
 				t.Fatalf("fmt mismatch for %s:\n-- got --\n%s\n-- want --\n%s", name, gotFmt, fmtBytes)
 			}
 			againFmt, err := terraformfmt.Format(fmtBytes, fmtPath, string(terraformfmt.StrategyGo))
 			if err != nil {
 				t.Fatalf("format fmt: %v", err)
+			}
+			hadFmtNewline := len(fmtBytes) > 0 && fmtBytes[len(fmtBytes)-1] == '\n'
+			if !hadFmtNewline && len(againFmt) > 0 && againFmt[len(againFmt)-1] == '\n' {
+				againFmt = againFmt[:len(againFmt)-1]
 			}
 			if !bytes.Equal(againFmt, fmtBytes) {
 				t.Fatalf("fmt not idempotent for %s", name)

@@ -101,7 +101,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 			typesMap[t] = struct{}{}
 		}
 	}
-	if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Schemas: schemas, Types: typesMap, PrefixOrder: cfg.PrefixOrder}); err != nil {
+	if err := align.Apply(file, &align.Options{Order: cfg.Order, Schemas: schemas, Types: typesMap, PrefixOrder: cfg.PrefixOrder}); err != nil {
 		return false, err
 	}
 	formatted, err = terraformfmt.Format(file.Bytes(), "stdin", "")

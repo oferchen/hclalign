@@ -29,6 +29,9 @@ strip: ## remove comments and enforce policy
 lint: ## run linters
 	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 run --timeout=5m
 
+strip: ## normalize Go file comments
+	$(GO) run ./tools/stripcomments --repo-root "$(PWD)"
+
 vet: ## vet code
 	$(GO) vet $(PKG)
 

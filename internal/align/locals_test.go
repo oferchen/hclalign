@@ -27,21 +27,3 @@ func TestLocalsPreservesAttributeOrder(t *testing.T) {
 }`
 	require.Equal(t, exp, got)
 }
-
-func TestLocalsAlphabeticalOrderFlag(t *testing.T) {
-	src := []byte(`locals {
-  z = 3
-  a = 1
-  m = 2
-}`)
-	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
-	require.False(t, diags.HasErrors())
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{BlockOrder: map[string]string{"locals": "alphabetical"}}))
-	got := string(file.Bytes())
-	exp := `locals {
-  a = 1
-  m = 2
-  z = 3
-}`
-	require.Equal(t, exp, got)
-}

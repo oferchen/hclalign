@@ -128,7 +128,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 
 	original := data
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
-	formatted, err := terraformfmt.Format(data, filePath, "")
+	formatted, err := terraformfmt.Run(ctx, filePath, data)
 	if err != nil {
 		return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
 	}
@@ -149,13 +149,13 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 			typesMap[t] = struct{}{}
 		}
 	}
-	if err := align.Apply(file, &align.Options{Order: p.cfg.Order, BlockOrder: p.cfg.BlockOrder, Schemas: p.schemas, Types: typesMap, PrefixOrder: p.cfg.PrefixOrder}); err != nil {
+	if err := align.Apply(file, &align.Options{Order: p.cfg.Order, Schemas: p.schemas, Types: typesMap, PrefixOrder: p.cfg.PrefixOrder}); err != nil {
 		return false, nil, err
 	}
 	if testHookAfterReorder != nil {
 		testHookAfterReorder()
 	}
-	formatted, err = terraformfmt.Format(file.Bytes(), filePath, "")
+	formatted, err = terraformfmt.Run(ctx, filePath, file.Bytes())
 	if err != nil {
 		return false, nil, err
 	}
