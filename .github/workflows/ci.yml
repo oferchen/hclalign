@@ -22,6 +22,8 @@ jobs:
           cache: true
       - run: make tidy
       - run: make fmt
+      - run: make sanitize
+      - run: make align
       - run: make lint
       - name: Fuzz tests
         run: go test ./... -run=^$ -fuzz=Fuzz -fuzztime=5s
