@@ -43,7 +43,11 @@ func newRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	cmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
+	cmd.Flags().Bool("all", false, "align all block types")
+	cmd.Flags().Bool("sort-unknown", false, "lexicographically sort unknown attributes")
 	cmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
+	cmd.MarkFlagsMutuallyExclusive("types", "all")
 	if exclusive {
 		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 	}

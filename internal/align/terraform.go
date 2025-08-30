@@ -117,14 +117,14 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if _, ok := attrTokens["experiments"]; ok {
 		items = append(items, item{name: "experiments", isAttr: true})
 	}
-	if cloudBlock != nil {
-		items = append(items, item{block: cloudBlock})
-	}
 	if backendBlock != nil {
 		items = append(items, item{block: backendBlock})
 	}
 	if requiredProviders != nil {
 		items = append(items, item{block: requiredProviders})
+	}
+	if cloudBlock != nil {
+		items = append(items, item{block: cloudBlock})
 	}
 	for _, name := range otherAttrs {
 		items = append(items, item{name: name, isAttr: true})

@@ -98,7 +98,14 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		if err != nil {
 			return false, err
 		}
-		if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Strict: cfg.StrictOrder, Schemas: schemas}); err != nil {
+		var typesMap map[string]struct{}
+		if cfg.Types != nil {
+			typesMap = make(map[string]struct{}, len(cfg.Types))
+			for _, t := range cfg.Types {
+				typesMap[t] = struct{}{}
+			}
+		}
+		if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Strict: cfg.StrictOrder, Schemas: schemas, Types: typesMap, SortUnknown: cfg.SortUnknown}); err != nil {
 			return false, err
 		}
 		formatted = hclwrite.Format(file.Bytes())

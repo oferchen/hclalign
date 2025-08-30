@@ -95,6 +95,18 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	types, err := cmd.Flags().GetStringSlice("types")
+	if err != nil {
+		return err
+	}
+	all, err := cmd.Flags().GetBool("all")
+	if err != nil {
+		return err
+	}
+	sortUnknown, err := cmd.Flags().GetBool("sort-unknown")
+	if err != nil {
+		return err
+	}
 
 	modeCount := 0
 	if writeMode {
@@ -135,6 +147,13 @@ func RunE(cmd *cobra.Command, args []string) error {
 		mode = config.ModeWrite
 	}
 
+	var cfgTypes []string
+	if all {
+		cfgTypes = nil
+	} else {
+		cfgTypes = types
+	}
+
 	cfg := &config.Config{
 		Target:             target,
 		Mode:               mode,
@@ -153,6 +172,8 @@ func RunE(cmd *cobra.Command, args []string) error {
 		Concurrency:        concurrency,
 		Verbose:            verbose,
 		FollowSymlinks:     followSymlinks,
+		Types:              cfgTypes,
+		SortUnknown:        sortUnknown,
 	}
 
 	if err := cfg.Validate(); err != nil {

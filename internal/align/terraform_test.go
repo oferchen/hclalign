@@ -54,12 +54,12 @@ func TestTerraformRequiredProvidersSorting(t *testing.T) {
 
   backend "s3" {}
 
-  cloud {}
-
   required_providers {
     a = {}
     b = {}
   }
+
+  cloud {}
 }`
 		require.Equal(t, exp, string(file.Bytes()))
 	})

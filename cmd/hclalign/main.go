@@ -46,7 +46,11 @@ func run(args []string) int {
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
+	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
+	rootCmd.Flags().Bool("all", false, "align all block types")
+	rootCmd.Flags().Bool("sort-unknown", false, "lexicographically sort unknown attributes")
 	rootCmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
+	rootCmd.MarkFlagsMutuallyExclusive("types", "all")
 
 	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
