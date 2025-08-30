@@ -18,12 +18,13 @@ import (
 func TestGolden(t *testing.T) {
 	casesDir := filepath.Join("..", "..", "tests", "cases")
 	allowed := map[string]struct{}{
-		"module":    {},
-		"provider":  {},
-		"terraform": {},
-		"resource":  {},
-		"data":      {},
-		"variable":  {},
+		"module":                       {},
+		"provider":                     {},
+		"terraform":                    {},
+		"resource":                     {},
+		"data":                         {},
+		"variable":                     {},
+		"terraform/required_providers": {},
 	}
 	schemaPath := filepath.Join("..", "..", "tests", "testdata", "providers-schema.json")
 	schemas, err := alignschema.LoadFile(schemaPath)

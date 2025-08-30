@@ -2,6 +2,8 @@
 package align
 
 import (
+	"sort"
+
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
@@ -51,6 +53,17 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 			cloudBlock = b
 		default:
 			otherBlocks = append(otherBlocks, b)
+		}
+	}
+	if requiredProviders != nil {
+		rpAttrs := requiredProviders.Body().Attributes()
+		names := make([]string, 0, len(rpAttrs))
+		for name := range rpAttrs {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		if err := reorderBlock(requiredProviders, names); err != nil {
+			return err
 		}
 	}
 
