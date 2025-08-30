@@ -39,6 +39,9 @@ fall back to alphabetical order.
 - `-v, --verbose`: enable verbose logging
 - `--providers-schema`: path to a provider schema JSON file
 - `--use-terraform-schema`: derive schema via `terraform providers schema -json`
+- `--types`: comma-separated list of block types to align (defaults to `variable`)
+- `--all`: align all supported block types (mutually exclusive with `--types`)
+- `--sort-unknown`: lexicographically sort attributes not covered by the schema
 
 ## Atomic Writes and BOM Preservation
 
