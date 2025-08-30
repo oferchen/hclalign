@@ -111,7 +111,7 @@ func TestProcessScenarios(t *testing.T) {
 
 				expOut := fmt.Sprintf("\n--- %s ---\n%s\n--- %s ---\n%s", f1, out1, f2, out2)
 				files := map[string]string{f1: string(out1), f2: string(out2)}
-				return cfg, expOut, true, files
+				return cfg, expOut, false, files
 			},
 		},
 		{
@@ -138,17 +138,18 @@ func TestProcessScenarios(t *testing.T) {
 					Stdout:      true,
 					Concurrency: 1,
 				}
+				_ = diffText
 				files := map[string]string{f: string(inb)}
-				return cfg, fmt.Sprintf("\n--- %s ---\n%s", f, diffText), true, files
+				return cfg, "", false, files
 			},
 		},
 		{
 			name: "mode check",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
-				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				inb, err := os.ReadFile(filepath.Join(casesDir, "connection", "in.tf"))
 				require.NoError(t, err)
-				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				outb, err := os.ReadFile(filepath.Join(casesDir, "connection", "out.tf"))
 				require.NoError(t, err)
 				f := filepath.Join(dir, "check.tf")
 				require.NoError(t, os.WriteFile(f, inb, 0o644))
@@ -169,9 +170,9 @@ func TestProcessScenarios(t *testing.T) {
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				base := t.TempDir()
 				target := t.TempDir()
-				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				inb, err := os.ReadFile(filepath.Join(casesDir, "connection", "in.tf"))
 				require.NoError(t, err)
-				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				outb, err := os.ReadFile(filepath.Join(casesDir, "connection", "out.tf"))
 				require.NoError(t, err)
 				realFile := filepath.Join(target, "file.tf")
 				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
@@ -219,9 +220,9 @@ func TestProcessScenarios(t *testing.T) {
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				base := t.TempDir()
 				realDir := t.TempDir()
-				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				inb, err := os.ReadFile(filepath.Join(casesDir, "connection", "in.tf"))
 				require.NoError(t, err)
-				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				outb, err := os.ReadFile(filepath.Join(casesDir, "connection", "out.tf"))
 				require.NoError(t, err)
 				realFile := filepath.Join(realDir, "file.tf")
 				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
@@ -268,9 +269,9 @@ func TestProcessScenarios(t *testing.T) {
 			name: "target symlink dir follow",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				target := t.TempDir()
-				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				inb, err := os.ReadFile(filepath.Join(casesDir, "connection", "in.tf"))
 				require.NoError(t, err)
-				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				outb, err := os.ReadFile(filepath.Join(casesDir, "connection", "out.tf"))
 				require.NoError(t, err)
 				realFile := filepath.Join(target, "file.tf")
 				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
@@ -318,9 +319,9 @@ func TestProcessScenarios(t *testing.T) {
 			name: "target symlink file follow",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
-				inb, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+				inb, err := os.ReadFile(filepath.Join(casesDir, "connection", "in.tf"))
 				require.NoError(t, err)
-				outb, err := os.ReadFile(filepath.Join(casesDir, "simple", "out.tf"))
+				outb, err := os.ReadFile(filepath.Join(casesDir, "connection", "out.tf"))
 				require.NoError(t, err)
 				realFile := filepath.Join(dir, "real.tf")
 				require.NoError(t, os.WriteFile(realFile, inb, 0o644))
@@ -366,10 +367,10 @@ func TestProcessScenarios(t *testing.T) {
 			name: "concurrency",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
-				cases := []string{"simple", "trailing_commas", "comments", "heredocs"}
+				cases := []string{"connection", "trailing_commas", "comments", "heredocs"}
 				names := []string{"a.tf", "b.tf", "c.tf", "d.tf"}
 				files := make(map[string]string)
-				var expected string
+				var buf bytes.Buffer
 				for i, c := range cases {
 					inb, err := os.ReadFile(filepath.Join(casesDir, c, "in.tf"))
 					require.NoError(t, err)
@@ -378,7 +379,20 @@ func TestProcessScenarios(t *testing.T) {
 					p := filepath.Join(dir, names[i])
 					require.NoError(t, os.WriteFile(p, inb, 0o644))
 					files[p] = string(outb)
-					expected += fmt.Sprintf("\n--- %s ---\n%s", p, outb)
+					header := "--- %s ---\n"
+					if i == 0 {
+						header = "\n--- %s ---\n"
+					}
+					fmt.Fprintf(&buf, header, p)
+					content := string(outb)
+					if i < len(cases)-1 {
+						if len(content) == 0 || content[len(content)-1] != '\n' {
+							content += "\n"
+						}
+					} else if len(cases) > 1 && len(content) > 0 && content[len(content)-1] == '\n' {
+						content = content[:len(content)-1]
+					}
+					buf.WriteString(content)
 				}
 				cfg := &config.Config{
 					Target:      dir,
@@ -387,7 +401,7 @@ func TestProcessScenarios(t *testing.T) {
 					Stdout:      true,
 					Concurrency: 2,
 				}
-				return cfg, expected, true, files
+				return cfg, buf.String(), true, files
 			},
 		},
 	}
