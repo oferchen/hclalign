@@ -29,6 +29,7 @@ fmt: ## format code
 	else \
 		echo "terraform not found; skipping terraform fmt"; \
 	fi
+	$(GO) run ./cmd/hclalign --write tests/cases
 
 lint: ## run linters
 	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run --timeout=5m
