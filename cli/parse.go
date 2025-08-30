@@ -15,73 +15,30 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		target = args[0]
 	}
 
-	writeMode, err := cmd.Flags().GetBool("write")
+	var err error
+	writeMode := getBool(cmd, "write", &err)
+	checkMode := getBool(cmd, "check", &err)
+	diffMode := getBool(cmd, "diff", &err)
+	stdin := getBool(cmd, "stdin", &err)
+	stdout := getBool(cmd, "stdout", &err)
+	include := getStringSlice(cmd, "include", &err)
+	exclude := getStringSlice(cmd, "exclude", &err)
+	orderRaw := getStringSlice(cmd, "order", &err)
+	providersSchema := getString(cmd, "providers-schema", &err)
+	useTerraformSchema := getBool(cmd, "use-terraform-schema", &err)
+	concurrency := getInt(cmd, "concurrency", &err)
+	verbose := getBool(cmd, "verbose", &err)
+	followSymlinks := getBool(cmd, "follow-symlinks", &err)
+	types := getStringSlice(cmd, "types", &err)
+	all := getBool(cmd, "all", &err)
+	sortUnknown := getBool(cmd, "sort-unknown", &err)
 	if err != nil {
 		return nil, err
 	}
-	checkMode, err := cmd.Flags().GetBool("check")
-	if err != nil {
-		return nil, err
-	}
-	diffMode, err := cmd.Flags().GetBool("diff")
-	if err != nil {
-		return nil, err
-	}
-	stdin, err := cmd.Flags().GetBool("stdin")
-	if err != nil {
-		return nil, err
-	}
-	stdout, err := cmd.Flags().GetBool("stdout")
-	if err != nil {
-		return nil, err
-	}
-	include, err := cmd.Flags().GetStringSlice("include")
-	if err != nil {
-		return nil, err
-	}
-	exclude, err := cmd.Flags().GetStringSlice("exclude")
-	if err != nil {
-		return nil, err
-	}
-	orderRaw, err := cmd.Flags().GetStringSlice("order")
-	if err != nil {
-		return nil, err
-	}
+
 	attrOrder, blockOrder, err := config.ParseOrder(orderRaw)
 	if err != nil {
 		return nil, &ExitCodeError{Err: err, Code: 2}
-	}
-	providersSchema, err := cmd.Flags().GetString("providers-schema")
-	if err != nil {
-		return nil, err
-	}
-	useTerraformSchema, err := cmd.Flags().GetBool("use-terraform-schema")
-	if err != nil {
-		return nil, err
-	}
-	concurrency, err := cmd.Flags().GetInt("concurrency")
-	if err != nil {
-		return nil, err
-	}
-	verbose, err := cmd.Flags().GetBool("verbose")
-	if err != nil {
-		return nil, err
-	}
-	followSymlinks, err := cmd.Flags().GetBool("follow-symlinks")
-	if err != nil {
-		return nil, err
-	}
-	types, err := cmd.Flags().GetStringSlice("types")
-	if err != nil {
-		return nil, err
-	}
-	all, err := cmd.Flags().GetBool("all")
-	if err != nil {
-		return nil, err
-	}
-	sortUnknown, err := cmd.Flags().GetBool("sort-unknown")
-	if err != nil {
-		return nil, err
 	}
 
 	modeCount := 0
@@ -150,4 +107,40 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func getBool(cmd *cobra.Command, name string, err *error) bool {
+	if *err != nil {
+		return false
+	}
+	var v bool
+	v, *err = cmd.Flags().GetBool(name)
+	return v
+}
+
+func getStringSlice(cmd *cobra.Command, name string, err *error) []string {
+	if *err != nil {
+		return nil
+	}
+	var v []string
+	v, *err = cmd.Flags().GetStringSlice(name)
+	return v
+}
+
+func getString(cmd *cobra.Command, name string, err *error) string {
+	if *err != nil {
+		return ""
+	}
+	var v string
+	v, *err = cmd.Flags().GetString(name)
+	return v
+}
+
+func getInt(cmd *cobra.Command, name string, err *error) int {
+	if *err != nil {
+		return 0
+	}
+	var v int
+	v, *err = cmd.Flags().GetInt(name)
+	return v
 }
