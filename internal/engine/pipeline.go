@@ -20,6 +20,11 @@ import (
 	internalfs "github.com/oferchen/hclalign/internal/fs"
 )
 
+type Processor struct {
+	cfg     *config.Config
+	schemas map[string]*align.Schema
+}
+
 func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[string][]byte, bool, []error) {
 	outs := make(map[string][]byte, len(files))
 
@@ -27,6 +32,7 @@ func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[s
 	if err != nil {
 		return outs, false, []error{err}
 	}
+	p := &Processor{cfg: cfg, schemas: schemas}
 
 	fileCh := make(chan string)
 	results := make(chan struct {
@@ -62,7 +68,7 @@ func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[s
 					if !ok {
 						return
 					}
-					ch, out, err := processFile(ctx, f, cfg, schemas)
+					ch, out, err := p.processFile(ctx, f)
 					if err != nil {
 						if errors.Is(err, context.Canceled) {
 							return
@@ -108,7 +114,7 @@ func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[s
 	return outs, changed.Load(), nil
 }
 
-func processFile(ctx context.Context, filePath string, cfg *config.Config, schemas map[string]*align.Schema) (bool, []byte, error) {
+func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []byte, error) {
 	if err := ctx.Err(); err != nil {
 		return false, nil, err
 	}
@@ -137,13 +143,13 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config, schem
 		testHookAfterParse()
 	}
 	var typesMap map[string]struct{}
-	if cfg.Types != nil {
-		typesMap = make(map[string]struct{}, len(cfg.Types))
-		for _, t := range cfg.Types {
+	if p.cfg.Types != nil {
+		typesMap = make(map[string]struct{}, len(p.cfg.Types))
+		for _, t := range p.cfg.Types {
 			typesMap[t] = struct{}{}
 		}
 	}
-	if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Schemas: schemas, Types: typesMap, SortUnknown: cfg.SortUnknown}); err != nil {
+	if err := align.Apply(file, &align.Options{Order: p.cfg.Order, BlockOrder: p.cfg.BlockOrder, Schemas: p.schemas, Types: typesMap, SortUnknown: p.cfg.SortUnknown}); err != nil {
 		return false, nil, err
 	}
 	if testHookAfterReorder != nil {
@@ -165,10 +171,10 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config, schem
 	changed := !bytes.Equal(original, styled)
 
 	var out []byte
-	switch cfg.Mode {
+	switch p.cfg.Mode {
 	case config.ModeWrite:
 		if !changed {
-			if cfg.Stdout {
+			if p.cfg.Stdout {
 				out = styled
 			}
 			return false, out, nil
@@ -176,11 +182,11 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config, schem
 		if err := WriteFileAtomic(ctx, filePath, formatted, perm, hints); err != nil {
 			return false, nil, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
 		}
-		if cfg.Stdout {
+		if p.cfg.Stdout {
 			out = styled
 		}
 	case config.ModeCheck:
-		if cfg.Stdout {
+		if p.cfg.Stdout {
 			out = styled
 		}
 	case config.ModeDiff:
