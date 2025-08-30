@@ -21,9 +21,9 @@ func TestDynamicAttributeOrderAndComments(t *testing.T) {
 	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
 	got := string(file.Bytes())
 	exp := `dynamic "x" {
+  foo      = 1        // foo inline
+  iterator = "it"     // iterator inline
   for_each = var.list // for_each inline
-  iterator = "it" // iterator inline
-  foo      = 1 // foo inline
 }`
 	require.Equal(t, exp, got)
 	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))

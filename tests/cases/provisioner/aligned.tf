@@ -1,13 +1,11 @@
 resource "null_resource" "example" {
-
   provisioner "local-exec" {
-    when       = "destroy"
-    on_failure = "continue"
-    bar        = "b"
-
+    bar  = "b"
+    when = "destroy"
     connection {
       host = "example.com"
     }
-    foo = "f"
+    foo        = "f"
+    on_failure = "continue"
   }
 }
