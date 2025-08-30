@@ -24,7 +24,11 @@ tidy: ## tidy modules
 fmt: ## format code
 	gofumpt -l -w $(FMT_DIRS)
 	$(GOFMT) -s -w $(FMT_DIRS)
-	-terraform fmt -recursive tests/cases
+	@if command -v terraform >/dev/null 2>&1; then \
+		terraform fmt -recursive tests/cases; \
+	else \
+		echo "terraform not found; skipping terraform fmt"; \
+	fi
 
 lint: ## run linters
 	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run --timeout=5m
