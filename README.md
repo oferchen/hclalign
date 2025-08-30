@@ -25,7 +25,7 @@ The default schema orders variable attributes as `description → type → defau
 - **terraform:** `required_version`, `experiments`, `required_providers`, `backend`, `cloud`, then remaining attributes and blocks in their original order
 - **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical)
 
-Validation blocks are placed immediately after canonical attributes. Any attributes not in the canonical list or provider schema are appended alphabetically after these blocks.
+Validation blocks are placed immediately after canonical attributes. Attributes not in the canonical list or provider schema are appended in their original order. Use `--prefix-order` to sort them alphabetically.
 
 ### Flag interactions
 
@@ -47,7 +47,7 @@ hclalign . --types module --order value,description,type
 Resource and data blocks can be ordered according to provider schemas. Supply a
 schema file via `--providers-schema` or let `hclalign` invoke `terraform
 providers schema -json` by passing `--use-terraform-schema`. Unknown attributes
-fall back to alphabetical order.
+keep their original order unless `--prefix-order` is used.
 
 ## CLI Flags
 
@@ -64,7 +64,7 @@ fall back to alphabetical order.
 - `--use-terraform-schema`: derive schema via `terraform providers schema -json`
 - `--types`: comma-separated list of block types to align (defaults to `variable`)
 - `--all`: align all supported block types (mutually exclusive with `--types`)
-- `--prefix-order`: lexicographically sort attributes not covered by the schema
+- `--prefix-order`: lexicographically sort attributes not covered by the schema; by default, unknown attributes preserve their input order
 
 ## Atomic Writes and BOM Preservation
 

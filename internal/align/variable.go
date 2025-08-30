@@ -45,17 +45,18 @@ func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if len(knownOrder) == 0 {
 		knownOrder = config.CanonicalOrder
 	}
-	return reorderVariableBlock(block, knownOrder, canonicalSet, validationPos)
+	return reorderVariableBlock(block, knownOrder, canonicalSet, validationPos, opts.PrefixOrder)
 }
 
 func init() {
 	Register(variableStrategy{})
 }
 
-func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}, validationPos int) error {
+func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}, validationPos int, prefixOrder bool) error {
 	body := block.Body()
 
 	attrs := body.Attributes()
+	attrOrder := make([]string, 0, len(attrs))
 	nestedBlocks := body.Blocks()
 
 	allTokens := body.BuildTokens(nil)
@@ -87,6 +88,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		if tok.Type == hclsyntax.TokenIdent {
 			name := string(tok.Bytes)
 			if attr, ok := attrs[name]; ok && i+1 < len(allTokens) && allTokens[i+1].Type == hclsyntax.TokenEqual {
+				attrOrder = append(attrOrder, name)
 				attrToks := attr.BuildTokens(nil)
 				leadCount := 0
 				for leadCount < len(attrToks) && attrToks[leadCount].Type == hclsyntax.TokenComment {
@@ -200,12 +202,19 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	}
 
 	unknown := make([]string, 0)
-	for name := range attrTokensMap {
+	seenUnknown := make(map[string]struct{})
+	for _, name := range attrOrder {
 		if _, isKnown := canonicalSet[name]; !isKnown {
+			if _, dup := seenUnknown[name]; dup {
+				continue
+			}
 			unknown = append(unknown, name)
+			seenUnknown[name] = struct{}{}
 		}
 	}
-	sort.Strings(unknown)
+	if prefixOrder {
+		sort.Strings(unknown)
+	}
 
 	insertedValidation := false
 	for i, name := range orderedKnown {
