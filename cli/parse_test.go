@@ -59,7 +59,6 @@ func TestParseConfigNoTarget(t *testing.T) {
 	require.Equal(t, 2, exitErr.Code)
 }
 
-// Ensure helper continues to accept concurrency constraints from config.Validate
 func TestParseConfigConcurrencyValidation(t *testing.T) {
 	cmd := newRootCmd(true)
 	bad := runtime.GOMAXPROCS(0) + 1
