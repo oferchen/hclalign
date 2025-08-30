@@ -27,7 +27,7 @@ func Format(src []byte, filename, strategy string) ([]byte, error) {
 	case StrategyBinary:
 		return formatBinary(src)
 	case StrategyAuto, "":
-		return formatter.Format(src, filename)
+		return Run(context.Background(), filename, src)
 	default:
 		return nil, fmt.Errorf("unknown fmt strategy %q", strategy)
 	}
