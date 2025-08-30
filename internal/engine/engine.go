@@ -114,15 +114,20 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	}
 
 	styled := internalfs.ApplyHints(formatted, hints)
-	if bom := hints.BOM(); len(bom) > 0 {
-		original = append(append([]byte{}, bom...), original...)
-	}
-	changed := !bytes.Equal(original, styled)
+	originalStyled := internalfs.ApplyHints(internalfs.PrepareForParse(original, hints), hints)
+	changed := !bytes.Equal(originalStyled, styled)
 
 	switch cfg.Mode {
 	case config.ModeDiff:
 		if changed {
-			text, err := diff.Unified(diff.UnifiedOpts{FromFile: "stdin", ToFile: "stdin", Original: original, Styled: styled, Hints: hints})
+			styledForDiff := styled
+			if hints.HasBOM {
+				bom := hints.BOM()
+				if len(styledForDiff) >= len(bom) {
+					styledForDiff = styledForDiff[len(bom):]
+				}
+			}
+			text, err := diff.Unified(diff.UnifiedOpts{FromFile: "stdin", ToFile: "stdin", Original: original, Styled: styledForDiff, Hints: hints})
 			if err != nil {
 				return false, err
 			}
