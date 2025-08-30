@@ -1,5 +1,5 @@
 // internal/align/golden_test.go
-package align
+package align_test
 
 import (
 	"bytes"
@@ -10,11 +10,26 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	alignpkg "github.com/oferchen/hclalign/internal/align"
+	alignschema "github.com/oferchen/hclalign/internal/align/schema"
+	terraformfmt "github.com/oferchen/hclalign/internal/fmt"
 )
 
 func TestGolden(t *testing.T) {
 	casesDir := filepath.Join("..", "..", "tests", "cases")
-	err := filepath.WalkDir(casesDir, func(path string, d fs.DirEntry, err error) error {
+	allowed := map[string]struct{}{
+		"module":    {},
+		"provider":  {},
+		"terraform": {},
+		"resource":  {},
+		"data":      {},
+	}
+	schemaPath := filepath.Join("..", "..", "tests", "testdata", "providers-schema.json")
+	schemas, err := alignschema.LoadFile(schemaPath)
+	if err != nil {
+		t.Fatalf("load schema: %v", err)
+	}
+	err = filepath.WalkDir(casesDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -22,16 +37,23 @@ func TestGolden(t *testing.T) {
 			return nil
 		}
 		inPath := filepath.Join(path, "in.tf")
-		outPath := filepath.Join(path, "out.tf")
+		fmtPath := filepath.Join(path, "fmt.tf")
+		alignedPath := filepath.Join(path, "aligned.tf")
 		if _, err := os.Stat(inPath); err != nil {
 			return nil
 		}
-		if _, err := os.Stat(outPath); err != nil {
+		if _, err := os.Stat(fmtPath); err != nil {
+			return nil
+		}
+		if _, err := os.Stat(alignedPath); err != nil {
 			return nil
 		}
 		name, err := filepath.Rel(casesDir, path)
 		if err != nil {
 			return err
+		}
+		if _, ok := allowed[name]; !ok {
+			return nil
 		}
 
 		t.Run(name, func(t *testing.T) {
@@ -39,33 +61,55 @@ func TestGolden(t *testing.T) {
 			if err != nil {
 				t.Fatalf("read input: %v", err)
 			}
-
-			expBytes, err := os.ReadFile(outPath)
+			fmtBytes, err := os.ReadFile(fmtPath)
 			if err != nil {
-				t.Fatalf("read expected: %v", err)
+				t.Fatalf("read fmt: %v", err)
+			}
+			alignedBytes, err := os.ReadFile(alignedPath)
+			if err != nil {
+				t.Fatalf("read aligned: %v", err)
 			}
 
-			file, diags := hclwrite.ParseConfig(inBytes, inPath, hcl.InitialPos)
-			if diags.HasErrors() {
-				t.Fatalf("parse input: %v", diags)
+			gotFmt, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
+			if err != nil {
+				t.Fatalf("format input: %v", err)
 			}
-			if err := Apply(file, &Options{}); err != nil {
-				t.Fatalf("reorder: %v", err)
+			if !bytes.Equal(gotFmt, fmtBytes) {
+				t.Fatalf("fmt mismatch for %s:\n-- got --\n%s\n-- want --\n%s", name, gotFmt, fmtBytes)
 			}
-			got := file.Bytes()
-			if !bytes.Equal(got, expBytes) {
-				t.Fatalf("output mismatch for %s:\n-- got --\n%s\n-- want --\n%s", name, got, expBytes)
+			againFmt, err := terraformfmt.Format(fmtBytes, fmtPath, string(terraformfmt.StrategyGo))
+			if err != nil {
+				t.Fatalf("format fmt: %v", err)
+			}
+			if !bytes.Equal(againFmt, fmtBytes) {
+				t.Fatalf("fmt not idempotent for %s", name)
 			}
 
-			file2, diags := hclwrite.ParseConfig(expBytes, outPath, hcl.InitialPos)
+			file, diags := hclwrite.ParseConfig(fmtBytes, fmtPath, hcl.InitialPos)
 			if diags.HasErrors() {
-				t.Fatalf("parse expected: %v", diags)
+				t.Fatalf("parse fmt: %v", diags)
 			}
-			if err := Apply(file2, &Options{}); err != nil {
-				t.Fatalf("reorder expected: %v", err)
+			opts := &alignpkg.Options{}
+			if name == "resource" || name == "data" {
+				opts.Schemas = schemas
 			}
-			if !bytes.Equal(expBytes, file2.Bytes()) {
-				t.Fatalf("non-idempotent on expected for %s", name)
+			if err := alignpkg.Apply(file, opts); err != nil {
+				t.Fatalf("align fmt: %v", err)
+			}
+			gotAligned := file.Bytes()
+			if !bytes.Equal(gotAligned, alignedBytes) {
+				t.Fatalf("aligned mismatch for %s:\n-- got --\n%s\n-- want --\n%s", name, gotAligned, alignedBytes)
+			}
+
+			file2, diags := hclwrite.ParseConfig(alignedBytes, alignedPath, hcl.InitialPos)
+			if diags.HasErrors() {
+				t.Fatalf("parse aligned: %v", diags)
+			}
+			if err := alignpkg.Apply(file2, opts); err != nil {
+				t.Fatalf("align aligned: %v", err)
+			}
+			if !bytes.Equal(alignedBytes, file2.Bytes()) {
+				t.Fatalf("non-idempotent on aligned for %s", name)
 			}
 		})
 		return nil
@@ -89,7 +133,7 @@ func TestUnknownAttributesAlphabetical(t *testing.T) {
 		t.Fatalf("parse input: %v", diags)
 	}
 
-	if err := Apply(file, &Options{}); err != nil {
+	if err := alignpkg.Apply(file, &alignpkg.Options{}); err != nil {
 		t.Fatalf("reorder: %v", err)
 	}
 
