@@ -43,8 +43,8 @@ func TestProviderAttributeOrder(t *testing.T) {
 	got := string(file.Bytes())
 	exp := `provider "aws" {
   alias   = "west"
-  region  = "us-east-1"
   profile = "default"
+  region  = "us-east-1"
 }`
 	require.Equal(t, exp, got)
 }
