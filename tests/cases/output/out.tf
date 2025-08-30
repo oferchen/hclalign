@@ -14,6 +14,7 @@ output "unknown" {
 output "depends" {
   value      = var.c
   sensitive  = false
+  ephemeral  = true
   depends_on = [var.x]
   foo        = "bar"
 }

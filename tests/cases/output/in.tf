@@ -13,6 +13,7 @@ output "unknown" {
 
 output "depends" {
   foo        = "bar"
+  ephemeral  = true
   sensitive  = false
   depends_on = [var.x]
   value      = var.c
