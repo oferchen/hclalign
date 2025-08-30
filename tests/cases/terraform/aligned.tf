@@ -1,10 +1,6 @@
 terraform {
   required_version = ">= 1.0"
 
-  backend "s3" {
-    region = "us-east-1"
-  }
-
   required_providers {
     random = {
       source  = "hashicorp/random"
@@ -14,6 +10,10 @@ terraform {
       version = "~> 4.0"
       source  = "hashicorp/aws"
     }
+  }
+
+  backend "s3" {
+    region = "us-east-1"
   }
 
   cloud {

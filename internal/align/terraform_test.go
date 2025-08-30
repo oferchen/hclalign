@@ -16,6 +16,7 @@ func TestTerraformAttributeOrderAndBlocks(t *testing.T) {
   required_providers {}
   experiments = ["test"]
   required_version = ">= 1.2.0"
+  other = 1
   cloud {}
 }`)
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
@@ -26,11 +27,12 @@ func TestTerraformAttributeOrderAndBlocks(t *testing.T) {
   required_version = ">= 1.2.0"
   experiments      = ["test"]
 
-  backend "s3" {}
-
   required_providers {}
 
+  backend "s3" {}
+
   cloud {}
+  other = 1
 }`
 	require.Equal(t, exp, got)
 }
@@ -51,6 +53,27 @@ func TestTerraformRequiredProvidersSorting(t *testing.T) {
     b = {}
     a = {}
   }
+}`
+	require.Equal(t, exp, string(file.Bytes()))
+}
+
+func TestTerraformBlockOrderWithoutExperiments(t *testing.T) {
+	src := []byte(`terraform {
+  backend "s3" {}
+  required_providers {}
+  required_version = ">= 1.2.0"
+  other = 1
+}`)
+	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
+	exp := `terraform {
+  required_version = ">= 1.2.0"
+
+  required_providers {}
+
+  backend "s3" {}
+  other = 1
 }`
 	require.Equal(t, exp, string(file.Bytes()))
 }
