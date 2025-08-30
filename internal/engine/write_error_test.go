@@ -71,11 +71,6 @@ func TestProcessWriteFileError(t *testing.T) {
 	cmd.SetErr(io.MultiWriter(io.Discard, &stderr))
 	cmd.SetArgs([]string{filePath, "--write", "--prefix-order"})
 
-	var stderr bytes.Buffer
-	cmd.SetErr(io.MultiWriter(io.Discard, &stderr))
-	cmd.SetOut(io.Discard)
-	cmd.SilenceErrors = true
-
 	_, err = cmd.ExecuteC()
 	require.Error(t, err)
 	var exitErr *cli.ExitCodeError

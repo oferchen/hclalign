@@ -67,6 +67,7 @@ func TestTemplatesIdempotent(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, changed)
 	require.Equal(t, string(first), out.String())
+}
 
 func TestTemplatesProcessReaderTwice(t *testing.T) {
 	base := filepath.Join("..", "..", "tests", "cases", "templates")
