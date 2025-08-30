@@ -55,6 +55,7 @@ test-race: ## run tests with race detector
 fuzz-short: ## short fuzzing run
 	$(GO) test $(PKG) -run=^$ -fuzz=Fuzz -fuzztime=5s
 
+cover: export COVER_THRESH ?= 95
 cover: ## run coverage check
 	mkdir -p $(BUILD_DIR)
 	$(GO) test -race -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...

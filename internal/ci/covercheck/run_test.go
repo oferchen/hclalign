@@ -56,3 +56,15 @@ func TestRunErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestRunEnvThreshold(t *testing.T) {
+	dir := t.TempDir()
+	profile := filepath.Join(dir, "cov.out")
+	os.WriteFile(profile, []byte("mode: set\nfile.go:1.1,1.2 1 0\n"), 0o644)
+	t.Setenv("COVER_THRESH", "0")
+	var out, errBuf bytes.Buffer
+	code := run([]string{"covercheck", profile}, &out, &errBuf)
+	if code != 0 {
+		t.Fatalf("exit %d: %s", code, errBuf.String())
+	}
+}

@@ -10,7 +10,19 @@ import (
 	"strings"
 )
 
-const threshold = 95.0
+const defaultThreshold = 95.0
+
+func threshold() float64 {
+	v := os.Getenv("COVER_THRESH")
+	if v == "" {
+		return defaultThreshold
+	}
+	t, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return defaultThreshold
+	}
+	return t
+}
 
 var ignore = []string{
 	"internal/ci/",
@@ -77,8 +89,9 @@ func run(args []string, out, errOut io.Writer) int {
 
 	pct := covered / total * 100
 	fmt.Fprintf(out, "Total coverage: %.1f%%\n", pct)
-	if pct < threshold {
-		fmt.Fprintf(errOut, "Coverage %.1f%% is below %.1f%%\n", pct, threshold)
+	th := threshold()
+	if pct < th {
+		fmt.Fprintf(errOut, "Coverage %.1f%% is below %.1f%%\n", pct, th)
 		return 1
 	}
 	return 0
