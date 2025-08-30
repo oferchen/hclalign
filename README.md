@@ -6,18 +6,18 @@
 
 ## Pipeline
 
-1. **fmt** – parses the file with `hclwrite` to produce canonical formatting.
+1. **fmt** – uses `terraform fmt` when the binary is present, falling back to the internal Go formatter.
 2. **align** – reorders attributes to match a configurable schema.
 
 This process is idempotent: running the tool multiple times yields the same result.
 
 ## Supported Blocks
 
-`hclalign` aligns attributes inside Terraform blocks including `variable`, `output`, `locals`, `module`, `provider`, `terraform`, `resource`, `data`, `dynamic`, `lifecycle`, and `provisioner`.
+`hclalign` aligns attributes inside Terraform blocks including `variable`, `output`, `locals`, `module`, `provider`, `terraform`, `resource`, `data`, `dynamic`, `lifecycle`, and `provisioner`. By default, only variable blocks are processed (`--types=variable`).
 
 ## Schema Options
 
-The default schema orders variable attributes as `description → type → default → sensitive → nullable → validation`. Additional block types have their own canonical order:
+Variable attributes follow the canonical set `description → type → default → sensitive → nullable`, then any unknown attributes in their original order, and finally `validation` blocks. Additional block types have their own canonical order:
 
 - **output:** `description`, `value`, `sensitive`, `depends_on`
 - **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically
@@ -25,7 +25,7 @@ The default schema orders variable attributes as `description → type → defau
 - **terraform:** `required_version`, `experiments`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then remaining attributes and blocks in their original order
 - **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical)
 
-Validation blocks are placed immediately after canonical attributes. Attributes not in the canonical list or provider schema are appended in their original order. Use `--prefix-order` to sort them alphabetically.
+Unknown attributes preserve their input order unless `--prefix-order` is used. Validation blocks are appended after canonical and unknown attributes.
 
 Entries within `required_providers` are sorted alphabetically by provider name. Other `terraform` attributes follow `required_version`, `experiments`, `backend`, and `cloud` in that order.
 

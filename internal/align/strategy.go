@@ -4,8 +4,7 @@ package align
 import "github.com/hashicorp/hcl/v2/hclwrite"
 
 type Options struct {
-	Order      []string
-	BlockOrder map[string]string
+	Order []string
 
 	Schemas map[string]*Schema
 
