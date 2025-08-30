@@ -26,7 +26,7 @@ Non-negotiables:
 
 * Language: Go ≥ 1.21
 * HCL engine: `hcl/v2/hclwrite` with **SetAttributeRaw** + **BuildTokens** only
-* CLI: `--fmt-only`, `--no-fmt`, `--fmt-strategy {auto,binary,go}`, `--providers-schema`, `--use-terraform-schema`, `--check`, `--diff`
+* CLI: `--providers-schema`, `--use-terraform-schema`, `--check`, `--diff`
 * Defaults: include `**/*.tf`; exclude `**/.terraform/**`, `**/vendor/**`, `**/.git/**`, `**/node_modules/**`
 * Structure (target):
 
@@ -222,8 +222,8 @@ make build
 
 **Parity mismatch (FMT):**
 
-1. Confirm binary present; switch `--fmt-strategy=binary`.
-2. If still mismatched, update Go strategy and add failing fixture to `tests/cases/`.
+1. Confirm Terraform binary is present.
+2. If mismatched, update formatter and add failing fixture to `tests/cases/`.
 
 **Unexpected reordering:**
 

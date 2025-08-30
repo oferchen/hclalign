@@ -51,18 +51,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	if err != nil {
 		return nil, &ExitCodeError{Err: err, Code: 2}
 	}
-	fmtOnly, err := cmd.Flags().GetBool("fmt-only")
-	if err != nil {
-		return nil, err
-	}
-	noFmt, err := cmd.Flags().GetBool("no-fmt")
-	if err != nil {
-		return nil, err
-	}
-	fmtStrategy, err := cmd.Flags().GetString("fmt-strategy")
-	if err != nil {
-		return nil, err
-	}
 	providersSchema, err := cmd.Flags().GetString("providers-schema")
 	if err != nil {
 		return nil, err
@@ -109,9 +97,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	if modeCount > 1 {
 		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify more than one of --write, --check, or --diff"), Code: 2}
 	}
-	if fmtOnly && noFmt {
-		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify both --fmt-only and --no-fmt"), Code: 2}
-	}
 
 	if !stdin && target == "" {
 		return nil, &ExitCodeError{Err: fmt.Errorf(config.ErrMissingTarget), Code: 2}
@@ -151,9 +136,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		Exclude:            exclude,
 		Order:              attrOrder,
 		BlockOrder:         blockOrder,
-		FmtOnly:            fmtOnly,
-		NoFmt:              noFmt,
-		FmtStrategy:        fmtStrategy,
 		ProvidersSchema:    providersSchema,
 		UseTerraformSchema: useTerraformSchema,
 		Concurrency:        concurrency,
