@@ -17,7 +17,30 @@ This process is idempotent: running the tool multiple times yields the same resu
 
 ## Schema Options
 
-The default schema orders variable attributes as `description → type → default → sensitive → nullable → validation`. Override it with `--order`.
+The default schema orders variable attributes as `description → type → default → sensitive → nullable → validation`. Additional block types have their own canonical order:
+
+- **output:** `description`, `value`, `sensitive`, `depends_on`
+- **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically
+- **provider:** `alias` followed by other attributes alphabetically
+- **terraform:** `required_version`, `experiments`, `required_providers`, `backend`, `cloud`, then remaining attributes and blocks in their original order
+- **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical)
+
+Validation blocks are placed immediately after canonical attributes. Any attributes not in the canonical list or provider schema are appended alphabetically after these blocks.
+
+### Flag interactions
+
+Use `--types` to select which block types to align and `--order` to customize the variable schema:
+
+```sh
+# align module and output blocks using their default order
+hclalign . --types module,output
+
+# override variable attribute order while still aligning modules with defaults
+hclalign . --types variable,module --order value,description,type
+
+# --order is ignored when variable blocks are not selected
+hclalign . --types module --order value,description,type
+```
 
 ## Provider Schema Integration
 
