@@ -39,19 +39,23 @@ func TestTerraformAttributeOrderAndBlocks(t *testing.T) {
 
 func TestTerraformRequiredProvidersSorting(t *testing.T) {
 	src := []byte(`terraform {
-    required_providers {
-      b = {}
-      a = {}
-    }
-  }`)
+  required_providers {
+    # provider b
+    b = {}
+    # provider a
+    a = {}
+  }
+}`)
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
 	exp := `terraform {
 
   required_providers {
-    b = {}
+    # provider a
     a = {}
+    # provider b
+    b = {}
   }
 }`
 	require.Equal(t, exp, string(file.Bytes()))
