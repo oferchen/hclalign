@@ -20,8 +20,10 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
           cache: true
+      - run: make init
       - run: make tidy
       - run: make fmt
+      - run: make strip
       - run: go run ./cmd/hclalign --check tests/cases
       - run: make lint
       - run: make vet
@@ -31,7 +33,6 @@ jobs:
       - name: Vulnerability check
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
         continue-on-error: true
-      - run: make test
       - run: make test-race
       - run: make cover
         env:
