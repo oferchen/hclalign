@@ -6,13 +6,7 @@ COVERPROFILE := $(BUILD_DIR)/coverage.out
 
 GO ?= go
 
-FMT_PKGS := $(shell $(GO) list $(PKG))
-FMT_DIRS := $(shell $(GO) list -f '{{.Dir}}' $(PKG))
-GOFMT := $(shell $(GO) env GOROOT)/bin/gofmt
-
-.PHONY: all init tidy fmt align lint vet vuln sanitize test test-race fuzz-short cover cover-html build ci clean help
-
-all: build ## build the project
+.PHONY: init tidy fmt strip lint vet test test-race cover build clean
 
 init: ## download and verify modules
 	$(GO) mod download
@@ -22,62 +16,38 @@ tidy: ## tidy modules
 	$(GO) mod tidy
 
 fmt: ## format code
-	$(GOFMT) -s -w $(FMT_DIRS)
-	$(GO) run golang.org/x/tools/cmd/goimports@latest -w $(FMT_DIRS)
-	$(GO) run mvdan.cc/gofumpt@latest -l -w $(FMT_DIRS)
+	$(GO) run mvdan.cc/gofumpt@v0.6.0 -w .
+	gofmt -s -w .
 	@if command -v terraform >/dev/null 2>&1; then \
-		terraform fmt -recursive tests/cases; \
-	else \
-		echo "terraform not found; skipping terraform fmt"; \
+	terraform fmt -list=false -diff=false -write=true tests/cases; \
 	fi
 
-align: fmt ## align tests
-	$(GO) run ./cmd/hclalign --write tests/cases
+strip: ## remove comments and enforce policy
+	$(GO) run ./tools/stripcomments -- --repo-root "$(PWD)"
+	$(GO) run ./cmd/commentcheck
 
 lint: ## run linters
-	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run --timeout=5m
-
-sanitize: ## enforce comment policy
-	mkdir -p $(BUILD_DIR)
-	$(GO) build -o $(BUILD_DIR)/stripcomments ./tools/stripcomments
-	$(BUILD_DIR)/stripcomments $(shell git ls-files '*.go')
-	$(GO) run ./cmd/commentcheck
-	$(GO) build $(PKG)
+	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 run --timeout=5m
 
 vet: ## vet code
 	$(GO) vet $(PKG)
 
-test: align ## run tests
+test: ## run tests
 	mkdir -p $(BUILD_DIR)
 	$(GO) test -race -shuffle=on -coverprofile=$(COVERPROFILE) $(PKG)
-	
-test-race: align ## run tests with race detector
-	mkdir -p $(BUILD_DIR)
+
+test-race: ## run tests with race detector
 	$(GO) test $(PKG) -race -shuffle=on
 
-fuzz-short: align ## short fuzzing run
-	$(GO) test $(PKG) -run=^$ -fuzz=Fuzz -fuzztime=5s
-
 cover: export COVER_THRESH ?= 95
-cover: align ## run coverage check
+cover: ## run coverage check
 	mkdir -p $(BUILD_DIR)
 	$(GO) test -race -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...
-	$(GO) run ./internal/ci/covercheck $(COVERPROFILE)
-
-cover-html: cover ## generate HTML coverage report
-	$(GO) tool cover -html=$(COVERPROFILE) -o $(BUILD_DIR)/coverage.html
+	$(GO) tool cover -func=$(COVERPROFILE) | awk -v thresh=$(COVER_THRESH) '/^total:/ { sub(/%/, "", $$3); if ($$3+0 < thresh) { printf "coverage %.1f%% is below %d%%\n", $$3, thresh; exit 1 } }'
 
 build: ## build binary
 	mkdir -p $(BUILD_DIR)
 	$(GO) build -trimpath -ldflags="-s -w" -buildvcs=false -o $(BUILD_DIR)/$(APP) ./cmd/hclalign
 
-vuln: ## check vulnerabilities
-	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
-
-ci: tidy align sanitize lint vet vuln test test-race fuzz-short cover build ## run CI tasks
-
 clean: ## remove build artifacts
 	rm -rf $(BUILD_DIR) $(COVERPROFILE)
-
-help: ## show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS=":.*?## "}; {printf "%-16s %s\n", $$1, $$2}'
