@@ -3,3 +3,11 @@ resource "aws_s3_bucket" "r" {
   foo    = 1
   bar    = 2
 }
+
+module "m" {
+  source = "./m"
+  providers = {
+    azurerm = azurerm
+    aws     = aws.us
+  }
+}
