@@ -19,7 +19,7 @@ This process is idempotent: running the tool multiple times yields the same resu
 
 The default schema orders variable attributes as `description → type → default → sensitive → nullable → validation`. Additional block types have their own canonical order:
 
-- **output:** `description`, `value`, `sensitive`, `ephemeral`, `depends_on`
+- **output:** `description`, `value`, `sensitive`, `depends_on`
 - **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically
 - **provider:** `alias` followed by other attributes alphabetically
 - **terraform:** `required_version`, `experiments`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then remaining attributes and blocks in their original order
