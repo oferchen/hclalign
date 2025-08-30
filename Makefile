@@ -52,7 +52,7 @@ fuzz-short: ## short fuzzing run
 
 cover: ## run coverage check
 	mkdir -p $(BUILD_DIR)
-	$(GO) test -race -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...
+	$(GO) test -race -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...
 	$(GO) run ./internal/ci/covercheck $(COVERPROFILE)
 
 cover-html: cover ## generate HTML coverage report
