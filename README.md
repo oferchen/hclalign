@@ -17,7 +17,7 @@ This process is idempotent: running the tool multiple times yields the same resu
 
 ## Schema Options
 
-The default schema orders variable attributes as `description`, `type`, `default`, `sensitive`, `nullable`. Override it with `--order` and enforce that only those attributes appear by adding `--strict-order`.
+The default schema orders variable attributes as `description`, `type`, `default`, `sensitive`, `nullable`. Override it with `--order`.
 
 ## Formatting Strategies
 
@@ -41,7 +41,7 @@ fall back to alphabetical order.
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
 - `--include`, `--exclude`: glob patterns controlling which files are processed
 - `--follow-symlinks`: traverse symbolic links
-- `--order`, `--strict-order`: control schema ordering; `--strict-order` applies globally to all blocks
+- `--order`: control schema ordering
 - `--concurrency`: maximum parallel file processing
 - `-v, --verbose`: enable verbose logging
 - `--fmt-only`: run only the formatting phase

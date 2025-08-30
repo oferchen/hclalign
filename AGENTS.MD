@@ -26,7 +26,7 @@ Non-negotiables:
 
 * Language: Go ≥ 1.21
 * HCL engine: `hcl/v2/hclwrite` with **SetAttributeRaw** + **BuildTokens** only
-* CLI: `--fmt-only`, `--no-fmt`, `--fmt-strategy {auto,binary,go}`, `--providers-schema`, `--use-terraform-schema`, `--strict-order`, `--check`, `--diff`
+* CLI: `--fmt-only`, `--no-fmt`, `--fmt-strategy {auto,binary,go}`, `--providers-schema`, `--use-terraform-schema`, `--check`, `--diff`
 * Defaults: include `**/*.tf`; exclude `**/.terraform/**`, `**/vendor/**`, `**/.git/**`, `**/node_modules/**`
 * Structure (target):
 
