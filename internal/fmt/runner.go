@@ -1,4 +1,4 @@
-// filename: internal/fmt/runner.go
+// internal/fmt/runner.go
 package terraformfmt
 
 import (

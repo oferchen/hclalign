@@ -1,4 +1,4 @@
-// filename: internal/fs/stdio.go
+// internal/fs/stdio.go
 package fs
 
 import "io"

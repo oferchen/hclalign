@@ -1,4 +1,4 @@
-// filename: internal/engine/engine.go
+// internal/engine/engine.go
 package engine
 
 import (

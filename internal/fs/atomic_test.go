@@ -1,4 +1,4 @@
-// filename: internal/fs/atomic_test.go
+// internal/fs/atomic_test.go
 package fs
 
 import (

@@ -1,4 +1,4 @@
-// filename: internal/align/connection_test.go
+// internal/align/connection_test.go
 package align_test
 
 import (

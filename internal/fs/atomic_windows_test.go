@@ -1,6 +1,6 @@
 //go:build windows
 
-// filename: internal/fs/atomic_windows_test.go
+// internal/fs/atomic_windows_test.go
 package fs
 
 import (

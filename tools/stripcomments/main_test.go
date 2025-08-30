@@ -1,4 +1,4 @@
-// filename: tools/stripcomments/main_test.go
+// tools/stripcomments/main_test.go
 package main
 
 import (
@@ -35,7 +35,7 @@ func TestProcess(t *testing.T) {
 	expected := strings.Join([]string{
 		"//go:build tag",
 		"",
-		"// filename: x.go",
+		"// x.go",
 		"package main",
 		"",
 		"import \"fmt\"",
@@ -85,7 +85,7 @@ func TestMainRepoRoot(t *testing.T) {
 	expected := strings.Join([]string{
 		"//go:build tag",
 		"",
-		"// filename: x.go",
+		"// x.go",
 		"package main",
 		"",
 		"import \"fmt\"",

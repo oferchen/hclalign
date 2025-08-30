@@ -1,4 +1,4 @@
-// filename: internal/hcl/tokens.go
+// internal/hcl/tokens.go
 package hcl
 
 import (
