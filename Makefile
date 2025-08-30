@@ -10,7 +10,7 @@ FMT_PKGS := $(shell $(GO) list $(PKG))
 FMT_DIRS := $(shell $(GO) list -f '{{.Dir}}' $(PKG))
 GOFMT := $(shell $(GO) env GOROOT)/bin/gofmt
 
-.PHONY: all init tidy fmt lint vet vuln sanitize test test-race fuzz-short cover cover-html build ci clean help
+.PHONY: all init tidy fmt align lint vet vuln sanitize test test-race fuzz-short cover cover-html build ci clean help
 
 all: build ## build the project
 
@@ -22,13 +22,16 @@ tidy: ## tidy modules
 	$(GO) mod tidy
 
 fmt: ## format code
-	$(GO) run mvdan.cc/gofumpt@latest -l -w $(FMT_DIRS)
 	$(GOFMT) -s -w $(FMT_DIRS)
+	$(GO) run golang.org/x/tools/cmd/goimports@latest -w $(FMT_DIRS)
+	$(GO) run mvdan.cc/gofumpt@latest -l -w $(FMT_DIRS)
 	@if command -v terraform >/dev/null 2>&1; then \
 		terraform fmt -recursive tests/cases; \
 	else \
 		echo "terraform not found; skipping terraform fmt"; \
 	fi
+
+align: fmt ## align tests
 	$(GO) run ./cmd/hclalign --write tests/cases
 
 lint: ## run linters
@@ -44,19 +47,19 @@ sanitize: ## enforce comment policy
 vet: ## vet code
 	$(GO) vet $(PKG)
 
-test: ## run tests
+test: align ## run tests
 	mkdir -p $(BUILD_DIR)
 	$(GO) test -race -shuffle=on -coverprofile=$(COVERPROFILE) $(PKG)
-
-test-race: ## run tests with race detector
+	
+test-race: align ## run tests with race detector
 	mkdir -p $(BUILD_DIR)
 	$(GO) test $(PKG) -race -shuffle=on
 
-fuzz-short: ## short fuzzing run
+fuzz-short: align ## short fuzzing run
 	$(GO) test $(PKG) -run=^$ -fuzz=Fuzz -fuzztime=5s
 
 cover: export COVER_THRESH ?= 95
-cover: ## run coverage check
+cover: align ## run coverage check
 	mkdir -p $(BUILD_DIR)
 	$(GO) test -race -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...
 	$(GO) run ./internal/ci/covercheck $(COVERPROFILE)
@@ -71,7 +74,7 @@ build: ## build binary
 vuln: ## check vulnerabilities
 	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
 
-ci: tidy fmt sanitize lint vet vuln test test-race fuzz-short cover build ## run CI tasks
+ci: tidy align sanitize lint vet vuln test test-race fuzz-short cover build ## run CI tasks
 
 clean: ## remove build artifacts
 	rm -rf $(BUILD_DIR) $(COVERPROFILE)
