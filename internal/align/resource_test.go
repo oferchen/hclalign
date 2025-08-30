@@ -1,4 +1,4 @@
-// filename: internal/align/resource_test.go
+// internal/align/resource_test.go
 package align_test
 
 import (

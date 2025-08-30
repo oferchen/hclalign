@@ -1,4 +1,4 @@
-// filename: patternmatching/patternmatching_test.go
+// patternmatching/patternmatching_test.go
 package patternmatching_test
 
 import (
@@ -71,22 +71,27 @@ func TestMatcherDefaultExclude(t *testing.T) {
 	wd := t.TempDir()
 
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "main.tf"), []byte(""), 0o644))
-
-	dirs := []string{".terraform", ".git", "node_modules", "vendor"}
-	for _, d := range dirs {
-		dir := filepath.Join(wd, d)
-		require.NoError(t, os.Mkdir(dir, 0o755))
-		require.NoError(t, os.WriteFile(filepath.Join(dir, "ignored.tf"), []byte(""), 0o644))
-	}
+	require.NoError(t, os.Mkdir(filepath.Join(wd, ".terraform"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, ".terraform", "ignored.tf"), []byte(""), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", ".terraform"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", ".terraform", "ignored.tf"), []byte(""), 0o644))
+	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "ignored.tf"), []byte(""), 0o644))
 
 	m, err := patternmatching.NewMatcher(config.DefaultInclude, config.DefaultExclude, wd)
 	require.NoError(t, err)
 
 	assert.True(t, m.Matches(filepath.Join(wd, "main.tf")))
-	for _, d := range dirs {
-		dir := filepath.Join(wd, d)
-		assert.False(t, m.Matches(dir))
-		assert.False(t, m.Matches(filepath.Join(dir, "ignored.tf")))
+	paths := []string{
+		filepath.Join(wd, ".terraform"),
+		filepath.Join(wd, ".terraform", "ignored.tf"),
+		filepath.Join(wd, "nested", ".terraform"),
+		filepath.Join(wd, "nested", ".terraform", "ignored.tf"),
+		filepath.Join(wd, "vendor"),
+		filepath.Join(wd, "vendor", "ignored.tf"),
+	}
+	for _, p := range paths {
+		assert.False(t, m.Matches(p))
 	}
 }
 

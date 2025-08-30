@@ -1,4 +1,4 @@
-// filename: internal/align/schema/loader_test.go
+// internal/align/schema/loader_test.go
 package schema
 
 import (

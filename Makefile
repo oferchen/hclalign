@@ -37,7 +37,10 @@ test: ## run tests
 	$(GO) test -shuffle=on -cover $(PKG)
 
 test-race: ## run tests with race detector
-	$(GO) test -race -shuffle=on $(PKG)
+        $(GO) test -race -shuffle=on $(PKG)
+
+fuzz: ## run fuzz tests
+        $(GO) test ./... -run=^$ -fuzz=Fuzz -fuzztime=5s
 
 fuzz: ## run fuzz tests
 	$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/align

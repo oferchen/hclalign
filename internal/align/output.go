@@ -1,4 +1,4 @@
-// filename: internal/align/output.go
+// internal/align/output.go
 package align
 
 import (

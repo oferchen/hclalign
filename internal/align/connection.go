@@ -1,4 +1,4 @@
-// filename: internal/align/connection.go
+// internal/align/connection.go
 package align
 
 import (

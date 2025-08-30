@@ -1,4 +1,4 @@
-// filename: internal/align/data.go
+// internal/align/data.go
 package align
 
 import "github.com/hashicorp/hcl/v2/hclwrite"

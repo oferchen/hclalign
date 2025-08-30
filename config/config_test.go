@@ -1,4 +1,4 @@
-// filename: config/config_test.go
+// config/config_test.go
 package config
 
 import (
@@ -38,7 +38,7 @@ func TestValidateOrder_EmptyAttributeName(t *testing.T) {
 }
 
 func TestDefaultExcludeMatchesExpected(t *testing.T) {
-	expected := []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
+	expected := []string{".terraform/**", "**/.terraform/**", "vendor/**"}
 	if !reflect.DeepEqual(DefaultExclude, expected) {
 		t.Fatalf("expected DefaultExclude to be %v, got %v", expected, DefaultExclude)
 	}

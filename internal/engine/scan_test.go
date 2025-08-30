@@ -1,9 +1,8 @@
-// filename: internal/engine/scan_test.go
+// internal/engine/scan_test.go
 package engine
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -15,10 +14,6 @@ func TestScanDefaultExcludeDirectories(t *testing.T) {
 	t.Parallel()
 
 	dir := filepath.Join("..", "..", "tests", "cases", "default_excludes")
-
-	gitDir := filepath.Join(dir, ".git")
-	require.NoError(t, os.MkdirAll(gitDir, 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(gitDir, "ignored.tf"), []byte(""), 0o644))
 
 	cfg := &config.Config{
 		Target:  dir,

@@ -1,4 +1,4 @@
-// filename: config/config.go
+// config/config.go
 package config
 
 import (
@@ -37,7 +37,7 @@ type Config struct {
 
 var (
 	DefaultInclude = []string{"**/*.tf"}
-	DefaultExclude = []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
+	DefaultExclude = []string{".terraform/**", "**/.terraform/**", "vendor/**"}
 	CanonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 )
 
