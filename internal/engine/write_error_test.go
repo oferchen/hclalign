@@ -65,6 +65,10 @@ func TestProcessWriteFileError(t *testing.T) {
 	defer func() { enginepkg.WriteFileAtomic = original }()
 
 	cmd := newRootCmd(true)
+	cmd.SilenceErrors = true
+	cmd.SetOut(io.Discard)
+	var stderr bytes.Buffer
+	cmd.SetErr(io.MultiWriter(io.Discard, &stderr))
 	cmd.SetArgs([]string{filePath, "--write", "--prefix-order"})
 
 	var stderr bytes.Buffer
