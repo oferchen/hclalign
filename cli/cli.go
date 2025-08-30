@@ -18,161 +18,9 @@ type ExitCodeError struct {
 func (e *ExitCodeError) Error() string { return e.Err.Error() }
 
 func RunE(cmd *cobra.Command, args []string) error {
-	var target string
-	if len(args) == 1 {
-		target = args[0]
-	}
-
-	writeMode, err := cmd.Flags().GetBool("write")
+	cfg, err := parseConfig(cmd, args)
 	if err != nil {
 		return err
-	}
-	checkMode, err := cmd.Flags().GetBool("check")
-	if err != nil {
-		return err
-	}
-	diffMode, err := cmd.Flags().GetBool("diff")
-	if err != nil {
-		return err
-	}
-	stdin, err := cmd.Flags().GetBool("stdin")
-	if err != nil {
-		return err
-	}
-	stdout, err := cmd.Flags().GetBool("stdout")
-	if err != nil {
-		return err
-	}
-	include, err := cmd.Flags().GetStringSlice("include")
-	if err != nil {
-		return err
-	}
-	exclude, err := cmd.Flags().GetStringSlice("exclude")
-	if err != nil {
-		return err
-	}
-	orderRaw, err := cmd.Flags().GetStringSlice("order")
-	if err != nil {
-		return err
-	}
-	attrOrder, blockOrder, err := config.ParseOrder(orderRaw)
-	if err != nil {
-		return err
-	}
-	fmtOnly, err := cmd.Flags().GetBool("fmt-only")
-	if err != nil {
-		return err
-	}
-	noFmt, err := cmd.Flags().GetBool("no-fmt")
-	if err != nil {
-		return err
-	}
-	fmtStrategy, err := cmd.Flags().GetString("fmt-strategy")
-	if err != nil {
-		return err
-	}
-	providersSchema, err := cmd.Flags().GetString("providers-schema")
-	if err != nil {
-		return err
-	}
-	useTerraformSchema, err := cmd.Flags().GetBool("use-terraform-schema")
-	if err != nil {
-		return err
-	}
-	concurrency, err := cmd.Flags().GetInt("concurrency")
-	if err != nil {
-		return err
-	}
-	verbose, err := cmd.Flags().GetBool("verbose")
-	if err != nil {
-		return err
-	}
-	followSymlinks, err := cmd.Flags().GetBool("follow-symlinks")
-	if err != nil {
-		return err
-	}
-	types, err := cmd.Flags().GetStringSlice("types")
-	if err != nil {
-		return err
-	}
-	all, err := cmd.Flags().GetBool("all")
-	if err != nil {
-		return err
-	}
-	sortUnknown, err := cmd.Flags().GetBool("sort-unknown")
-	if err != nil {
-		return err
-	}
-
-	modeCount := 0
-	if writeMode {
-		modeCount++
-	}
-	if checkMode {
-		modeCount++
-	}
-	if diffMode {
-		modeCount++
-	}
-	if modeCount > 1 {
-		return &ExitCodeError{Err: fmt.Errorf("cannot specify more than one of --write, --check, or --diff"), Code: 2}
-	}
-	if fmtOnly && noFmt {
-		return &ExitCodeError{Err: fmt.Errorf("cannot specify both --fmt-only and --no-fmt"), Code: 2}
-	}
-
-	if !stdin && target == "" {
-		return &ExitCodeError{Err: fmt.Errorf(config.ErrMissingTarget), Code: 2}
-	}
-	if stdin && target != "" {
-		return &ExitCodeError{Err: fmt.Errorf("cannot specify target when --stdin is used"), Code: 2}
-	}
-	if stdin && !stdout {
-		return &ExitCodeError{Err: fmt.Errorf("--stdout is required when --stdin is used"), Code: 2}
-	}
-
-	var mode config.Mode
-	switch {
-	case writeMode:
-		mode = config.ModeWrite
-	case checkMode:
-		mode = config.ModeCheck
-	case diffMode:
-		mode = config.ModeDiff
-	default:
-		mode = config.ModeWrite
-	}
-
-	var cfgTypes []string
-	if all {
-		cfgTypes = nil
-	} else {
-		cfgTypes = types
-	}
-
-	cfg := &config.Config{
-		Target:             target,
-		Mode:               mode,
-		Stdin:              stdin,
-		Stdout:             stdout,
-		Include:            include,
-		Exclude:            exclude,
-		Order:              attrOrder,
-		BlockOrder:         blockOrder,
-		FmtOnly:            fmtOnly,
-		NoFmt:              noFmt,
-		FmtStrategy:        fmtStrategy,
-		ProvidersSchema:    providersSchema,
-		UseTerraformSchema: useTerraformSchema,
-		Concurrency:        concurrency,
-		Verbose:            verbose,
-		FollowSymlinks:     followSymlinks,
-		Types:              cfgTypes,
-		SortUnknown:        sortUnknown,
-	}
-
-	if err := cfg.Validate(); err != nil {
-		return &ExitCodeError{Err: err, Code: 2}
 	}
 
 	changed, err := engine.Process(cmd.Context(), cfg)
@@ -180,7 +28,7 @@ func RunE(cmd *cobra.Command, args []string) error {
 		return &ExitCodeError{Err: err, Code: 3}
 	}
 
-	if changed && (mode == config.ModeCheck || mode == config.ModeDiff) {
+	if changed && (cfg.Mode == config.ModeCheck || cfg.Mode == config.ModeDiff) {
 		return &ExitCodeError{Err: fmt.Errorf("files need formatting"), Code: 1}
 	}
 
