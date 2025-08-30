@@ -1,4 +1,4 @@
-// /internal/align/golden_test.go
+// internal/align/golden_test.go
 package align
 
 import (

@@ -1,4 +1,4 @@
-// /patternmatching/patternmatching_test.go
+// patternmatching/patternmatching_test.go
 package patternmatching_test
 
 import (

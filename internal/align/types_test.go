@@ -1,4 +1,4 @@
-// /internal/align/types_test.go
+// internal/align/types_test.go
 package align_test
 
 import (

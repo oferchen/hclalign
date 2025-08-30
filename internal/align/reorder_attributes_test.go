@@ -1,4 +1,4 @@
-// /internal/align/reorder_attributes_test.go
+// internal/align/reorder_attributes_test.go
 package align_test
 
 import (

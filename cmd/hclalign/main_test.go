@@ -1,4 +1,4 @@
-// /cmd/hclalign/main_test.go
+// cmd/hclalign/main_test.go
 package main
 
 import (
