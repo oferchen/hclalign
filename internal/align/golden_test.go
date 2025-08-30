@@ -75,7 +75,7 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-func TestUnknownAttributesAfterCanonical(t *testing.T) {
+func TestUnknownAttributesAlphabetical(t *testing.T) {
 	src := []byte(`variable "example" {
   foo = "foo"
   description = "example"
@@ -98,8 +98,8 @@ func TestUnknownAttributesAfterCanonical(t *testing.T) {
   description = "example"
   type        = number
   default     = 1
-  foo         = "foo"
   bar         = "bar"
+  foo         = "foo"
 }`)
 	if !bytes.Equal(got, exp) {
 		t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)
