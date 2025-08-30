@@ -24,7 +24,7 @@ func TestPhases(t *testing.T) {
 			alignedExp, err := os.ReadFile(filepath.Join(base, name, "aligned.tf"))
 			require.NoError(t, err)
 
-			cfg := &config.Config{Stdout: true}
+			cfg := &config.Config{Stdout: true, PrefixOrder: true}
 			if name == "resource" || name == "data" {
 				cfg.ProvidersSchema = schemaPath
 			}
@@ -45,7 +45,7 @@ func TestPhases(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		var out bytes.Buffer
-		cfg := &config.Config{Stdout: true}
+		cfg := &config.Config{Stdout: true, PrefixOrder: true}
 		_, err := ProcessReader(context.Background(), bytes.NewReader([]byte("variable \"a\" {")), &out, cfg)
 		require.Error(t, err)
 	})

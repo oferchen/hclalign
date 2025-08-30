@@ -35,6 +35,7 @@ type Config struct {
 	UseTerraformSchema bool
 	Types              []string
 	SortUnknown        bool
+	PrefixOrder        bool
 }
 
 var (

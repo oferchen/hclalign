@@ -49,7 +49,7 @@ func TestGolden(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse input: %v", diags)
 			}
-			if err := Apply(file, &Options{}); err != nil {
+			if err := Apply(file, &Options{PrefixOrder: true}); err != nil {
 				t.Fatalf("reorder: %v", err)
 			}
 			got := file.Bytes()
@@ -61,7 +61,7 @@ func TestGolden(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse expected: %v", diags)
 			}
-			if err := Apply(file2, &Options{}); err != nil {
+			if err := Apply(file2, &Options{PrefixOrder: true}); err != nil {
 				t.Fatalf("reorder expected: %v", err)
 			}
 			if !bytes.Equal(expBytes, file2.Bytes()) {
@@ -89,7 +89,7 @@ func TestUnknownAttributesAlphabetical(t *testing.T) {
 		t.Fatalf("parse input: %v", diags)
 	}
 
-	if err := Apply(file, &Options{}); err != nil {
+	if err := Apply(file, &Options{PrefixOrder: true}); err != nil {
 		t.Fatalf("reorder: %v", err)
 	}
 

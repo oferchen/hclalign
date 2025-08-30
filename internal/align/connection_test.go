@@ -21,7 +21,7 @@ func TestConnectionAttributeOrder(t *testing.T) {
 }`)
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
 	got := string(file.Bytes())
 	exp := `resource "r" "t" {
 

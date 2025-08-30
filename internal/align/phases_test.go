@@ -48,7 +48,7 @@ func TestPhases(t *testing.T) {
 			file, diags := hclwrite.ParseConfig(parseData, inPath, hcl.InitialPos)
 			require.False(t, diags.HasErrors())
 
-			opts := &alignpkg.Options{}
+			opts := &alignpkg.Options{PrefixOrder: true}
 			if name == "resource" || name == "data" {
 				opts.Schemas = schemas
 			}

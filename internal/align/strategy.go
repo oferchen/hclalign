@@ -13,6 +13,7 @@ type Options struct {
 
 	Types       map[string]struct{}
 	SortUnknown bool
+	PrefixOrder bool
 }
 
 type Schema struct {
