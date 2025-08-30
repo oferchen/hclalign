@@ -12,9 +12,12 @@ linters:
     - misspell
     - gofumpt
     - depguard
+    - gocyclo
 linters-settings:
   gofumpt:
     extra-rules: true
+  gocyclo:
+    min-complexity: 15
   revive:
     rules:
       - name: indent-error-flow
