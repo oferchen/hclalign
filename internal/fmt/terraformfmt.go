@@ -46,7 +46,10 @@ func formatBinary(ctx context.Context, src []byte) ([]byte, error) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("terraform fmt failed: %v: %s", err, stderr.String())
+		if stderrStr := stderr.String(); stderrStr != "" {
+			return nil, fmt.Errorf("terraform fmt failed: %w: %s", err, stderrStr)
+		}
+		return nil, fmt.Errorf("terraform fmt failed: %w", err)
 	}
 	formatted := stdout.Bytes()
 
