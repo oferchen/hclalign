@@ -39,7 +39,7 @@ func TestSortUnknown(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse input: %v", diags)
 			}
-			if err := alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas, SortUnknown: tc.sort, Types: map[string]struct{}{"resource": {}}}); err != nil {
+			if err := alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas, SortUnknown: tc.sort, Types: map[string]struct{}{"resource": {}}, PrefixOrder: true}); err != nil {
 				t.Fatalf("align: %v", err)
 			}
 			got := hclwrite.Format(file.Bytes())
@@ -54,7 +54,7 @@ func TestSortUnknown(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse expected: %v", diags)
 			}
-			if err := alignpkg.Apply(file2, &alignpkg.Options{Schemas: schemas, SortUnknown: tc.sort, Types: map[string]struct{}{"resource": {}}}); err != nil {
+			if err := alignpkg.Apply(file2, &alignpkg.Options{Schemas: schemas, SortUnknown: tc.sort, Types: map[string]struct{}{"resource": {}}, PrefixOrder: true}); err != nil {
 				t.Fatalf("reapply: %v", err)
 			}
 			if !bytes.Equal(want, hclwrite.Format(file2.Bytes())) {

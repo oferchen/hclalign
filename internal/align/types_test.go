@@ -34,7 +34,7 @@ func TestTypesSelection(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse input: %v", diags)
 			}
-			if err := alignpkg.Apply(file, &alignpkg.Options{Types: tc.types}); err != nil {
+			if err := alignpkg.Apply(file, &alignpkg.Options{Types: tc.types, PrefixOrder: true}); err != nil {
 				t.Fatalf("align: %v", err)
 			}
 			got := hclwrite.Format(file.Bytes())
@@ -49,7 +49,7 @@ func TestTypesSelection(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse expected: %v", diags)
 			}
-			if err := alignpkg.Apply(file2, &alignpkg.Options{Types: tc.types}); err != nil {
+			if err := alignpkg.Apply(file2, &alignpkg.Options{Types: tc.types, PrefixOrder: true}); err != nil {
 				t.Fatalf("reapply: %v", err)
 			}
 			if !bytes.Equal(want, hclwrite.Format(file2.Bytes())) {

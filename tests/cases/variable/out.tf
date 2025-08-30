@@ -15,6 +15,6 @@ variable "example" {
     condition     = length(var.example) > 1
     error_message = "second"
   }
-  bar = "bar"
   foo = "foo"
+  bar = "bar"
 }

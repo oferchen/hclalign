@@ -3,7 +3,6 @@ package align
 
 import (
 	"bytes"
-	"sort"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -16,6 +15,9 @@ type variableStrategy struct{}
 func (variableStrategy) Name() string { return "variable" }
 
 func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
+	if opts != nil && !opts.PrefixOrder {
+		return nil
+	}
 	order := opts.Order
 	if len(order) == 0 {
 		order = config.CanonicalOrder
@@ -59,6 +61,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	attrLeadTrim := make(map[string]int)
 	attrExtraLead := make(map[string]hclwrite.Tokens)
 	currentTokens := hclwrite.Tokens{}
+	attrOrder := make([]string, 0, len(attrs))
 	prefixCaptured := false
 	blockIndex := 0
 	capturedComments := 0
@@ -80,6 +83,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		if tok.Type == hclsyntax.TokenIdent {
 			name := string(tok.Bytes)
 			if attr, ok := attrs[name]; ok && i+1 < len(allTokens) && allTokens[i+1].Type == hclsyntax.TokenEqual {
+				attrOrder = append(attrOrder, name)
 				attrToks := attr.BuildTokens(nil)
 				leadCount := 0
 				for leadCount < len(attrToks) && attrToks[leadCount].Type == hclsyntax.TokenComment {
@@ -193,12 +197,13 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	}
 
 	unknown := make([]string, 0)
-	for name := range attrTokensMap {
+	for _, name := range attrOrder {
 		if _, isKnown := canonicalSet[name]; !isKnown {
-			unknown = append(unknown, name)
+			if _, ok := attrTokensMap[name]; ok {
+				unknown = append(unknown, name)
+			}
 		}
 	}
-	sort.Strings(unknown)
 
 	for _, name := range orderedKnown {
 		if tok, ok := attrTokensMap[name]; ok {

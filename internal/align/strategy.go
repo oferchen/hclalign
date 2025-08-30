@@ -13,6 +13,7 @@ type Options struct {
 
 	Types       map[string]struct{}
 	SortUnknown bool
+	PrefixOrder bool
 }
 
 type Schema struct {
@@ -36,7 +37,7 @@ func Register(s Strategy) {
 
 func Apply(file *hclwrite.File, opts *Options) error {
 	if opts == nil {
-		opts = &Options{}
+		opts = &Options{PrefixOrder: true}
 	}
 	return applyBody(file.Body(), opts)
 }
@@ -71,5 +72,5 @@ func applyBody(body *hclwrite.Body, opts *Options) error {
 }
 
 func ReorderAttributes(file *hclwrite.File, order []string) error {
-	return Apply(file, &Options{Order: order})
+	return Apply(file, &Options{Order: order, PrefixOrder: true})
 }

@@ -18,7 +18,7 @@ func TestProvisionerAttributeOrderAndComments(t *testing.T) {
 }`)
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
 	got := string(file.Bytes())
 	exp := `provisioner "local-exec" {
   on_failure = "continue" // on_failure inline
@@ -26,6 +26,6 @@ func TestProvisionerAttributeOrderAndComments(t *testing.T) {
   foo        = "bar" // foo inline
 }`
 	require.Equal(t, exp, got)
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
 	require.Equal(t, exp, string(file.Bytes()))
 }

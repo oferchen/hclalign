@@ -11,6 +11,6 @@ variable "multi" {
     error_message = "msg2"
   }
   bar = 2
-  baz = 3
   foo = 1
+  baz = 3
 }

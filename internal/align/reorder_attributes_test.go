@@ -159,3 +159,35 @@ func TestReorderAttributes_InlineCommentAfterBrace(t *testing.T) {
 
 	require.Equal(t, src, string(f.Bytes()))
 }
+
+func TestReorderAttributes_UnknownOrderPreserved(t *testing.T) {
+	src := `variable "example" {
+  custom_b    = 1
+  description = "d"
+  custom_a    = 2
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	require.NoError(t, alignpkg.ReorderAttributes(f, nil))
+
+	expected := `variable "example" {
+  description = "d"
+  custom_b    = 1
+  custom_a    = 2
+}`
+	require.Equal(t, expected, string(f.Bytes()))
+}
+
+func TestReorderAttributes_PrefixOrderDisabled(t *testing.T) {
+	src := `variable "example" {
+  default     = "v"
+  description = "d"
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	require.NoError(t, alignpkg.Apply(f, &alignpkg.Options{PrefixOrder: false}))
+
+	require.Equal(t, src, string(f.Bytes()))
+}

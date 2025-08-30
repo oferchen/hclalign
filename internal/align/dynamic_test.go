@@ -18,7 +18,7 @@ func TestDynamicAttributeOrderAndComments(t *testing.T) {
 }`)
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
 	got := string(file.Bytes())
 	exp := `dynamic "x" {
   for_each = var.list // for_each inline
@@ -26,6 +26,6 @@ func TestDynamicAttributeOrderAndComments(t *testing.T) {
   foo      = 1 // foo inline
 }`
 	require.Equal(t, exp, got)
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
 	require.Equal(t, exp, string(file.Bytes()))
 }

@@ -49,7 +49,7 @@ func TestGolden(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse input: %v", diags)
 			}
-			if err := Apply(file, &Options{}); err != nil {
+			if err := Apply(file, &Options{PrefixOrder: true}); err != nil {
 				t.Fatalf("reorder: %v", err)
 			}
 			got := file.Bytes()
@@ -61,7 +61,7 @@ func TestGolden(t *testing.T) {
 			if diags.HasErrors() {
 				t.Fatalf("parse expected: %v", diags)
 			}
-			if err := Apply(file2, &Options{}); err != nil {
+			if err := Apply(file2, &Options{PrefixOrder: true}); err != nil {
 				t.Fatalf("reorder expected: %v", err)
 			}
 			if !bytes.Equal(expBytes, file2.Bytes()) {
@@ -75,7 +75,7 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-func TestUnknownAttributesAlphabetical(t *testing.T) {
+func TestUnknownAttributesPreserveOrder(t *testing.T) {
 	src := []byte(`variable "example" {
   foo = "foo"
   description = "example"
@@ -89,7 +89,7 @@ func TestUnknownAttributesAlphabetical(t *testing.T) {
 		t.Fatalf("parse input: %v", diags)
 	}
 
-	if err := Apply(file, &Options{}); err != nil {
+	if err := Apply(file, &Options{PrefixOrder: true}); err != nil {
 		t.Fatalf("reorder: %v", err)
 	}
 
@@ -98,8 +98,8 @@ func TestUnknownAttributesAlphabetical(t *testing.T) {
   description = "example"
   type        = number
   default     = 1
-  bar         = "bar"
   foo         = "foo"
+  bar         = "bar"
 }`)
 	if !bytes.Equal(got, exp) {
 		t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)

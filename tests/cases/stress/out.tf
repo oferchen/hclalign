@@ -5,6 +5,14 @@ variable "stress" {
   sensitive   = true
   nullable    = false
   a1          = 1
+  a2          = 2
+  a3          = 3
+  a4          = 4
+  a5          = 5
+  a6          = 6
+  a7          = 7
+  a8          = 8
+  a9          = 9
   a10         = 10
   a11         = 11
   a12         = 12
@@ -15,7 +23,6 @@ variable "stress" {
   a17         = 17
   a18         = 18
   a19         = 19
-  a2          = 2
   a20         = 20
   a21         = 21
   a22         = 22
@@ -26,12 +33,5 @@ variable "stress" {
   a27         = 27
   a28         = 28
   a29         = 29
-  a3          = 3
   a30         = 30
-  a4          = 4
-  a5          = 5
-  a6          = 6
-  a7          = 7
-  a8          = 8
-  a9          = 9
 }

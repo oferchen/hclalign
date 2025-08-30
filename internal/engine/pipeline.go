@@ -149,7 +149,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 			typesMap[t] = struct{}{}
 		}
 	}
-	if err := align.Apply(file, &align.Options{Order: p.cfg.Order, BlockOrder: p.cfg.BlockOrder, Schemas: p.schemas, Types: typesMap, SortUnknown: p.cfg.SortUnknown}); err != nil {
+	if err := align.Apply(file, &align.Options{Order: p.cfg.Order, BlockOrder: p.cfg.BlockOrder, Schemas: p.schemas, Types: typesMap, SortUnknown: p.cfg.SortUnknown, PrefixOrder: true}); err != nil {
 		return false, nil, err
 	}
 	if testHookAfterReorder != nil {

@@ -33,7 +33,7 @@ func TestSchemaAwareOrder(t *testing.T) {
 	}
 	schemas := map[string]*alignpkg.Schema{"test_thing": sch}
 
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas, PrefixOrder: true}))
 
 	got := string(file.Bytes())
 	exp := `resource "test_thing" "ex" {
@@ -67,7 +67,7 @@ resource "null_resource" "n" {
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas, PrefixOrder: true}))
 
 	got := string(file.Bytes())
 	exp := `resource "aws_s3_bucket" "b" {
@@ -98,7 +98,7 @@ func TestMetaArgsOrder(t *testing.T) {
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, alignpkg.Apply(file, nil))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
 
 	got := string(file.Bytes())
 	exp := `resource "test" "ex" {
@@ -141,7 +141,7 @@ func TestLifecycleProvisionerOrder(t *testing.T) {
 	}
 	schemas := map[string]*alignpkg.Schema{"test_thing": sch}
 
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas, PrefixOrder: true}))
 
 	got := string(file.Bytes())
 	exp := `resource "test_thing" "ex" {
@@ -164,6 +164,6 @@ func TestLifecycleProvisionerOrder(t *testing.T) {
 }`
 	require.Equal(t, exp, got)
 
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas}))
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas, PrefixOrder: true}))
 	require.Equal(t, exp, string(file.Bytes()))
 }
