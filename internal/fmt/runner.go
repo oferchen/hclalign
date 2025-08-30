@@ -5,6 +5,12 @@ import (
         "context"
         "os/exec"
 
+	"github.com/oferchen/hclalign/formatter"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
+)
+
+func Run(ctx context.Context, src []byte) ([]byte, internalfs.Hints, error) {
+	return formatter.Format(src, "")
         internalfs "github.com/oferchen/hclalign/internal/fs"
         "github.com/oferchen/hclalign/formatter"
 )
