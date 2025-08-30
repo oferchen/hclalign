@@ -17,7 +17,7 @@ This process is idempotent: running the tool multiple times yields the same resu
 
 ## Schema Options
 
-The default schema orders variable attributes as `description`, `type`, `default`, `sensitive`, `nullable`. Override it with `--order`.
+The default schema orders variable attributes as `description → type → default → sensitive → nullable → validation`. Override it with `--order`.
 
 ## Formatting Strategies
 
