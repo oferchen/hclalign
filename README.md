@@ -2,14 +2,14 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-`hclalign` normalizes Terraform and other HCL files with a two‑phase pipeline that first formats input and then reorders attributes for consistent alignment.
+`hclalign` normalizes Terraform and other HCL files with a two‑phase pipeline that mirrors `terraform fmt` before reordering attributes for consistent alignment.
 
 ## Pipeline
 
-1. **fmt** – parses the file with `hclwrite` to produce canonical formatting.
+1. **fmt** – runs `terraform fmt` semantics, invoking the Terraform CLI when available and falling back to a pure Go formatter otherwise.
 2. **align** – reorders attributes to match a configurable schema.
 
-This process is idempotent: running the tool multiple times yields the same result.
+`terraform fmt` is run again after alignment to ensure canonical layout. This process is idempotent: running the tool multiple times yields the same result.
 
 ## Supported Blocks
 
@@ -59,7 +59,7 @@ terraform {
 
 ### Flag interactions
 
-Use `--types` to select which block types to align and `--order` to customize the variable schema:
+Use `--types` to select which block types to align. `--order` customizes the variable schema and has no effect on other block types:
 
 ```sh
 # align module and output blocks using their default order
@@ -87,7 +87,7 @@ keep their original order unless `--prefix-order` is used.
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
 - `--include`, `--exclude`: glob patterns controlling which files are processed
 - `--follow-symlinks`: traverse symbolic links
-- `--order`: control schema ordering
+- `--order`: control variable attribute order
 - `--concurrency`: maximum parallel file processing
 - `-v, --verbose`: enable verbose logging
 - `--providers-schema`: path to a provider schema JSON file
@@ -95,6 +95,14 @@ keep their original order unless `--prefix-order` is used.
 - `--types`: comma-separated list of block types to align (defaults to `variable`)
 - `--all`: align all supported block types (mutually exclusive with `--types`)
 - `--prefix-order`: lexicographically sort attributes not covered by the schema; by default, unknown attributes preserve their input order
+
+
+## Exit Codes
+
+- `0`: success
+- `1`: changes required when running with `--check` or `--diff`
+- `2`: invalid CLI usage or configuration error
+- `3`: processing error during formatting or alignment
 
 ## Atomic Writes and BOM Preservation
 
@@ -148,18 +156,18 @@ cat variables.tf | hclalign --stdin --stdout
 | --- | --- |
 | `make init` | download and verify Go modules |
 | `make tidy` | tidy module dependencies |
-| `make fmt` | run `gofumpt`, strip comments, run `terraform fmt` on test cases if available, regenerate `out.tf` fixtures |
+| `make fmt` | run `gofumpt` (v0.6.0); regenerate golden files; run `terraform fmt` on test cases if available |
 | `make strip` | remove comments and enforce the single-line comment policy |
 | `make lint` | execute `golangci-lint` |
 | `make vet` | run `go vet` |
 | `make test` | run tests with coverage |
 | `make test-race` | run tests with the race detector |
-| `make fuzz` | run fuzz tests for 5s |
+| `make fuzz` | run fuzz tests |
 | `make cover` | verify coverage ≥95% |
 | `make build` | build the `hclalign` binary into `.build/` |
 | `make clean` | remove build artifacts |
 
-Terraform CLI is optional. If installed, `make fmt` runs `terraform fmt` on `tests/cases`; otherwise a warning is printed.
+Terraform CLI is optional. If installed, `make fmt` runs `terraform fmt` on `tests/cases` and regenerates golden test files.
 
 `make fmt` uses `go run mvdan.cc/gofumpt@latest` so contributors do not need to install `gofumpt` manually.
 

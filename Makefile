@@ -15,19 +15,13 @@ init: ## download and verify modules
 tidy: ## tidy modules
 	$(GO) mod tidy
 
-fmt: ## format code
-        $(GO) run mvdan.cc/gofumpt@latest -w .
-        $(GO) run ./tools/stripcomments --repo-root "$(PWD)"
-        @if command -v terraform >/dev/null 2>&1; then \
-        terraform fmt -recursive tests/cases; \
-        else \
-        echo "warning: terraform not found; skipping terraform fmt" >&2; \
-        fi
-        find tests/cases -name in.tf | while read -r file; do \
-                dir=$$(dirname "$$file"); \
-                cp "$$file" "$$dir/out.tf"; \
-                $(GO) run ./cmd/hclalign "$$dir/out.tf"; \
-        done
+fmt: ## format code and regenerate test fixtures
+	$(GO) run mvdan.cc/gofumpt@v0.6.0 -w .
+	$(MAKE) strip
+	@if command -v terraform >/dev/null 2>&1; then \
+	terraform fmt -recursive tests/cases; \
+	fi
+	$(GO) run ./cmd/hclalign tests/cases
 
 strip: ## normalize Go file comments and enforce policy
 	$(GO) run ./tools/stripcomments --repo-root "$(PWD)"
@@ -47,6 +41,11 @@ test-race: ## run tests with race detector
 
 fuzz: ## run fuzz tests
         $(GO) test ./... -run=^$ -fuzz=Fuzz -fuzztime=5s
+
+fuzz: ## run fuzz tests
+	$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/align
+	$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/engine
+	$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/hcl
 
 cover: export COVER_THRESH ?= 95
 cover: ## run coverage check

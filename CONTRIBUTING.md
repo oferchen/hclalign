@@ -4,7 +4,7 @@ Thank you for considering a contribution to `hclalign`!
 
 ## Coding Standards
 
-- Go code should be formatted with `gofmt` and organized with `goimports`.
+- Go code is formatted with `gofumpt`.
 - Follow idiomatic Go practices and keep functions small and well tested.
 - New features should include unit tests and, when appropriate, fuzz tests.
 
@@ -31,7 +31,7 @@ make fmt
 make vet
 make lint
 make test-race
-make fuzz-short
+make fuzz
 make build
 ```
 

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOutputEphemeralAttributeOrder(t *testing.T) {
+func TestOutputAttributeOrder(t *testing.T) {
 	src := []byte(`output "ephemeral" {
   value      = var.v
   depends_on = [var.x]
