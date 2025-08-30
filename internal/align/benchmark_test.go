@@ -1,5 +1,5 @@
-// /internal/hclalign/benchmark_test.go
-package hclalign
+// /internal/align/benchmark_test.go
+package align
 
 import (
 	"testing"
