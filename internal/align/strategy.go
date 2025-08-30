@@ -11,8 +11,7 @@ type Options struct {
 
 	Schema *Schema
 
-	Types       map[string]struct{}
-	SortUnknown bool
+	Types map[string]struct{}
 }
 
 type Schema struct {

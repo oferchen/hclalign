@@ -34,7 +34,7 @@ type Config struct {
 	ProvidersSchema    string
 	UseTerraformSchema bool
 	Types              []string
-	SortUnknown        bool
+	PrefixOrder        bool
 }
 
 var (
