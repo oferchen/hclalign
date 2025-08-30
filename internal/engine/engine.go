@@ -79,37 +79,32 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 
 	original := data
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
-	formatted := data
-	if !cfg.NoFmt {
-		formatted, err = terraformfmt.Format(data, "stdin", cfg.FmtStrategy)
-		if err != nil {
-			return false, fmt.Errorf("parsing error: %w", err)
-		}
+	formatted, err := terraformfmt.Format(data, "stdin", "")
+	if err != nil {
+		return false, fmt.Errorf("parsing error: %w", err)
 	}
 
 	parseData := internalfs.PrepareForParse(formatted, hints)
 
-	if !cfg.FmtOnly {
-		file, diags := hclwrite.ParseConfig(parseData, "stdin", hcl.InitialPos)
-		if diags.HasErrors() {
-			return false, fmt.Errorf("parsing error: %v", diags.Errs())
-		}
-		schemas, err := loadSchemas(ctx, cfg)
-		if err != nil {
-			return false, err
-		}
-		var typesMap map[string]struct{}
-		if cfg.Types != nil {
-			typesMap = make(map[string]struct{}, len(cfg.Types))
-			for _, t := range cfg.Types {
-				typesMap[t] = struct{}{}
-			}
-		}
-		if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Schemas: schemas, Types: typesMap, SortUnknown: cfg.SortUnknown}); err != nil {
-			return false, err
-		}
-		formatted = hclwrite.Format(file.Bytes())
+	file, diags := hclwrite.ParseConfig(parseData, "stdin", hcl.InitialPos)
+	if diags.HasErrors() {
+		return false, fmt.Errorf("parsing error: %v", diags.Errs())
 	}
+	schemas, err := loadSchemas(ctx, cfg)
+	if err != nil {
+		return false, err
+	}
+	var typesMap map[string]struct{}
+	if cfg.Types != nil {
+		typesMap = make(map[string]struct{}, len(cfg.Types))
+		for _, t := range cfg.Types {
+			typesMap[t] = struct{}{}
+		}
+	}
+	if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Schemas: schemas, Types: typesMap, SortUnknown: cfg.SortUnknown}); err != nil {
+		return false, err
+	}
+	formatted = hclwrite.Format(file.Bytes())
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
 		formatted = formatted[:len(formatted)-1]

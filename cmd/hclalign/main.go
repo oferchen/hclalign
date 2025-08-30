@@ -37,9 +37,6 @@ func run(args []string) int {
 	rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	rootCmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
 	rootCmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields and per-block ordering flags (e.g. locals=alphabetical)")
-	rootCmd.Flags().Bool("fmt-only", false, "only format files, skip alignment")
-	rootCmd.Flags().Bool("no-fmt", false, "skip initial formatting")
-	rootCmd.Flags().String("fmt-strategy", "auto", "formatting strategy to use")
 	rootCmd.Flags().String("providers-schema", "", "path to providers schema file")
 	rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
@@ -48,7 +45,6 @@ func run(args []string) int {
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")
 	rootCmd.Flags().Bool("sort-unknown", false, "lexicographically sort unknown attributes")
-	rootCmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
 	rootCmd.MarkFlagsMutuallyExclusive("types", "all")
 
 	rootCmd.SetArgs(args)

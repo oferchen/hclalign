@@ -33,9 +33,6 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	cmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
 	cmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields and per-block ordering flags (e.g. locals=alphabetical)")
-	cmd.Flags().Bool("fmt-only", false, "only format files, skip alignment")
-	cmd.Flags().Bool("no-fmt", false, "skip initial formatting")
-	cmd.Flags().String("fmt-strategy", "auto", "formatting strategy to use")
 	cmd.Flags().String("providers-schema", "", "path to providers schema file")
 	cmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
@@ -44,7 +41,6 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	cmd.Flags().Bool("all", false, "align all block types")
 	cmd.Flags().Bool("sort-unknown", false, "lexicographically sort unknown attributes")
-	cmd.MarkFlagsMutuallyExclusive("fmt-only", "no-fmt")
 	cmd.MarkFlagsMutuallyExclusive("types", "all")
 	if exclusive {
 		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")

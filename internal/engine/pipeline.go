@@ -122,39 +122,34 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config, schem
 
 	original := data
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
-	formatted := data
-	if !cfg.NoFmt {
-		formatted, err = terraformfmt.Format(data, filePath, cfg.FmtStrategy)
-		if err != nil {
-			return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
-		}
+	formatted, err := terraformfmt.Format(data, filePath, "")
+	if err != nil {
+		return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
 	}
 
 	parseData := internalfs.PrepareForParse(formatted, hints)
 
-	if !cfg.FmtOnly {
-		file, diags := hclwrite.ParseConfig(parseData, filePath, hcl.InitialPos)
-		if diags.HasErrors() {
-			return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
-		}
-		if testHookAfterParse != nil {
-			testHookAfterParse()
-		}
-		var typesMap map[string]struct{}
-		if cfg.Types != nil {
-			typesMap = make(map[string]struct{}, len(cfg.Types))
-			for _, t := range cfg.Types {
-				typesMap[t] = struct{}{}
-			}
-		}
-		if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Schemas: schemas, Types: typesMap, SortUnknown: cfg.SortUnknown}); err != nil {
-			return false, nil, err
-		}
-		if testHookAfterReorder != nil {
-			testHookAfterReorder()
-		}
-		formatted = hclwrite.Format(file.Bytes())
+	file, diags := hclwrite.ParseConfig(parseData, filePath, hcl.InitialPos)
+	if diags.HasErrors() {
+		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
 	}
+	if testHookAfterParse != nil {
+		testHookAfterParse()
+	}
+	var typesMap map[string]struct{}
+	if cfg.Types != nil {
+		typesMap = make(map[string]struct{}, len(cfg.Types))
+		for _, t := range cfg.Types {
+			typesMap[t] = struct{}{}
+		}
+	}
+	if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Schemas: schemas, Types: typesMap, SortUnknown: cfg.SortUnknown}); err != nil {
+		return false, nil, err
+	}
+	if testHookAfterReorder != nil {
+		testHookAfterReorder()
+	}
+	formatted = hclwrite.Format(file.Bytes())
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
 		formatted = formatted[:len(formatted)-1]

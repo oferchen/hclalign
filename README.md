@@ -19,13 +19,6 @@ This process is idempotent: running the tool multiple times yields the same resu
 
 The default schema orders variable attributes as `description → type → default → sensitive → nullable → validation`. Override it with `--order`.
 
-## Formatting Strategies
-
-The fmt phase supports multiple strategies controlled by `--fmt-strategy`:
-`auto` chooses the Terraform binary if available, `binary` always shells out to
-`terraform fmt`, and `go` uses the built-in formatter. Use `--fmt-only` to stop
-after formatting or `--no-fmt` to skip this phase.
-
 ## Provider Schema Integration
 
 Resource and data blocks can be ordered according to provider schemas. Supply a
@@ -44,9 +37,6 @@ fall back to alphabetical order.
 - `--order`: control schema ordering
 - `--concurrency`: maximum parallel file processing
 - `-v, --verbose`: enable verbose logging
-- `--fmt-only`: run only the formatting phase
-- `--no-fmt`: skip the formatting phase
-- `--fmt-strategy {auto,binary,go}`: choose formatting backend
 - `--providers-schema`: path to a provider schema JSON file
 - `--use-terraform-schema`: derive schema via `terraform providers schema -json`
 
