@@ -9,8 +9,8 @@ data "d" "t" {
 }
 
 provider "p" {
-  b = 1
   a = 2
+  b = 1
 }
 
 module "m" {
