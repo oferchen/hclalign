@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 
 - Changed project license to Apache-2.0.
 - Added variable-attribute reordering tool with support for include/exclude globs.
+- Removed `--strict-order` flag and strict mode.
 - Introduced safety features such as check and diff modes, idempotent operation, and atomic file writes.
 - Improved testing with race detector and fuzz test execution.
 - Added optional symlink traversal via `--follow-symlinks` and clarified default include/exclude patterns.

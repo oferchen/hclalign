@@ -28,7 +28,6 @@ type Config struct {
 	Exclude            []string
 	Order              []string
 	BlockOrder         map[string]string
-	StrictOrder        bool
 	Concurrency        int
 	Verbose            bool
 	FollowSymlinks     bool
@@ -70,7 +69,7 @@ func (c *Config) Validate() error {
 	if err := ValidateBlockOrder(c.BlockOrder); err != nil {
 		return fmt.Errorf("invalid order: %w", err)
 	}
-	if err := ValidateOrder(c.Order, c.StrictOrder); err != nil {
+	if err := ValidateOrder(c.Order); err != nil {
 		return fmt.Errorf("invalid order: %w", err)
 	}
 	if c.Types != nil {
@@ -91,7 +90,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func ValidateOrder(order []string, strict bool) error {
+func ValidateOrder(order []string) error {
 	provided := make(map[string]struct{})
 	for _, item := range order {
 		if item == "" {
@@ -101,13 +100,6 @@ func ValidateOrder(order []string, strict bool) error {
 			return fmt.Errorf("duplicate attribute '%s' found in order", item)
 		}
 		provided[item] = struct{}{}
-	}
-	if strict {
-		for _, item := range CanonicalOrder {
-			if _, exists := provided[item]; !exists {
-				return fmt.Errorf("missing expected attribute '%s' in provided order", item)
-			}
-		}
 	}
 	return nil
 }

@@ -2,8 +2,6 @@
 package align
 
 import (
-	"sort"
-
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
@@ -29,10 +27,6 @@ func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
 			continue
 		}
 		others = append(others, name)
-	}
-
-	if opts != nil && opts.Strict {
-		sort.Strings(others)
 	}
 
 	names = append(names, others...)

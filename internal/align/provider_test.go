@@ -31,7 +31,7 @@ func TestProviderNestedBlockOrder(t *testing.T) {
 	require.Equal(t, exp, got)
 }
 
-func TestProviderAttributeOrderNonStrict(t *testing.T) {
+func TestProviderAttributeOrder(t *testing.T) {
 	src := []byte(`provider "aws" {
   region  = "us-east-1"
   alias   = "west"
@@ -45,24 +45,6 @@ func TestProviderAttributeOrderNonStrict(t *testing.T) {
   alias   = "west"
   region  = "us-east-1"
   profile = "default"
-}`
-	require.Equal(t, exp, got)
-}
-
-func TestProviderAttributeOrderStrict(t *testing.T) {
-	src := []byte(`provider "aws" {
-  region  = "us-east-1"
-  alias   = "west"
-  profile = "default"
-}`)
-	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
-	require.False(t, diags.HasErrors())
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Strict: true}))
-	got := string(file.Bytes())
-	exp := `provider "aws" {
-  alias   = "west"
-  profile = "default"
-  region  = "us-east-1"
 }`
 	require.Equal(t, exp, got)
 }

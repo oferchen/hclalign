@@ -59,10 +59,6 @@ func RunE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	strictOrder, err := cmd.Flags().GetBool("strict-order")
-	if err != nil {
-		return err
-	}
 	fmtOnly, err := cmd.Flags().GetBool("fmt-only")
 	if err != nil {
 		return err
@@ -163,7 +159,6 @@ func RunE(cmd *cobra.Command, args []string) error {
 		Exclude:            exclude,
 		Order:              attrOrder,
 		BlockOrder:         blockOrder,
-		StrictOrder:        strictOrder,
 		FmtOnly:            fmtOnly,
 		NoFmt:              noFmt,
 		FmtStrategy:        fmtStrategy,

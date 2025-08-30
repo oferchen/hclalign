@@ -7,8 +7,6 @@ type Options struct {
 	Order      []string
 	BlockOrder map[string]string
 
-	Strict bool
-
 	Schemas map[string]*Schema
 
 	Schema *Schema
@@ -72,6 +70,6 @@ func applyBody(body *hclwrite.Body, opts *Options) error {
 	return nil
 }
 
-func ReorderAttributes(file *hclwrite.File, order []string, strict bool) error {
-	return Apply(file, &Options{Order: order, Strict: strict})
+func ReorderAttributes(file *hclwrite.File, order []string) error {
+	return Apply(file, &Options{Order: order})
 }

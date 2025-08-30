@@ -2,7 +2,6 @@
 package align
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -101,14 +100,6 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 	}
 	if opts.SortUnknown {
 		sort.Strings(unk)
-	}
-
-	if opts.Strict {
-		for r := range opts.Schema.Required {
-			if _, ok := attrs[r]; !ok {
-				return fmt.Errorf("missing required attribute %q", r)
-			}
-		}
 	}
 
 	blocks := body.Blocks()

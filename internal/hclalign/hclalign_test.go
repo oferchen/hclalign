@@ -19,7 +19,7 @@ func TestReorderAttributes_VariableBlock(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil))
 
 	expected := `variable "example" {
   description = "d"
@@ -38,7 +38,7 @@ func TestReorderAttributes_CustomOrder(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclalign.ReorderAttributes(f, []string{"default", "description"}, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, []string{"default", "description"}))
 
 	expected := `variable "example" {
   default     = "v"
@@ -59,7 +59,7 @@ func TestReorderAttributes_NestedBlocks(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil))
 
 	expected := `variable "example" {
   default = "v"
@@ -79,34 +79,9 @@ func TestReorderAttributes_IgnoresNonVariable(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil))
 
 	require.Equal(t, src, string(f.Bytes()))
-}
-
-func TestReorderAttributes_StrictUnknownAttrWithCanonical(t *testing.T) {
-	src := `variable "example" {
-  description = "d"
-  type        = string
-  default     = "v"
-  sensitive   = true
-  nullable    = false
-  custom      = true
-}`
-	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
-	require.False(t, diags.HasErrors())
-
-	require.NoError(t, hclalign.ReorderAttributes(f, nil, true))
-
-	expected := `variable "example" {
-  description = "d"
-  type        = string
-  default     = "v"
-  sensitive   = true
-  nullable    = false
-  custom      = true
-}`
-	require.Equal(t, expected, string(f.Bytes()))
 }
 
 func TestReorderAttributes_LoosePlacesUnknownAfterCanonical(t *testing.T) {
@@ -118,7 +93,7 @@ func TestReorderAttributes_LoosePlacesUnknownAfterCanonical(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclalign.ReorderAttributes(f, []string{"description", "type"}, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, []string{"description", "type"}))
 
 	expected := `variable "example" {
   description = "d"
@@ -133,7 +108,7 @@ func TestReorderAttributes_FirstAttrSameLine(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil))
 
 	require.Equal(t, src, string(f.Bytes()))
 }
@@ -147,7 +122,7 @@ func TestReorderAttributes_OnlyNestedBlocks(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil))
 
 	require.Equal(t, src, string(f.Bytes()))
 }
@@ -162,7 +137,7 @@ func TestReorderAttributes_DefaultBlockNestedType(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil))
 
 	expected := `variable "example" {
   type = string
@@ -180,7 +155,7 @@ func TestReorderAttributes_InlineCommentAfterBrace(t *testing.T) {
 	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 
-	require.NoError(t, hclalign.ReorderAttributes(f, nil, false))
+	require.NoError(t, hclalign.ReorderAttributes(f, nil))
 
 	require.Equal(t, src, string(f.Bytes()))
 }
