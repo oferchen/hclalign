@@ -25,7 +25,7 @@ jobs:
           cache: true
       - run: make tidy
       - run: make fmt
-      - run: make nocomments
+      - run: make sanitize
       - run: make lint
       - run: make vet
       - name: Vulnerability check
