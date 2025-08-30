@@ -119,7 +119,7 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-func TestUnknownAttributesAlphabetical(t *testing.T) {
+func TestUnknownAttributesOrder(t *testing.T) {
 	src := []byte(`variable "example" {
   foo = "foo"
   description = "example"
@@ -128,24 +128,45 @@ func TestUnknownAttributesAlphabetical(t *testing.T) {
   default = 1
 }`)
 
-	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
-	if diags.HasErrors() {
-		t.Fatalf("parse input: %v", diags)
-	}
+	t.Run("original", func(t *testing.T) {
+		file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
+		if diags.HasErrors() {
+			t.Fatalf("parse input: %v", diags)
+		}
+		if err := alignpkg.Apply(file, &alignpkg.Options{}); err != nil {
+			t.Fatalf("reorder: %v", err)
+		}
+		got := file.Bytes()
+		exp := []byte(`variable "example" {
+  description = "example"
+  type        = number
+  default     = 1
+  foo         = "foo"
+  bar         = "bar"
+}`)
+		if !bytes.Equal(got, exp) {
+			t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)
+		}
+	})
 
-	if err := alignpkg.Apply(file, &alignpkg.Options{}); err != nil {
-		t.Fatalf("reorder: %v", err)
-	}
-
-	got := file.Bytes()
-	exp := []byte(`variable "example" {
+	t.Run("prefix", func(t *testing.T) {
+		file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
+		if diags.HasErrors() {
+			t.Fatalf("parse input: %v", diags)
+		}
+		if err := alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}); err != nil {
+			t.Fatalf("reorder: %v", err)
+		}
+		got := file.Bytes()
+		exp := []byte(`variable "example" {
   description = "example"
   type        = number
   default     = 1
   bar         = "bar"
   foo         = "foo"
 }`)
-	if !bytes.Equal(got, exp) {
-		t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)
-	}
+		if !bytes.Equal(got, exp) {
+			t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)
+		}
+	})
 }

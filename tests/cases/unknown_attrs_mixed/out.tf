@@ -4,8 +4,8 @@ variable "example" {
   default     = 1
   sensitive   = true
   nullable    = false
+  foo         = "foo"
   bar         = "bar"
   baz         = "baz"
-  foo         = "foo"
   qux         = "qux"
 }
