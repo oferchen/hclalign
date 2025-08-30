@@ -2,10 +2,6 @@
 package align
 
 import (
-	"fmt"
-	"sort"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
@@ -20,50 +16,6 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 
 	attrs := body.Attributes()
 	blocks := body.Blocks()
-
-	canonical := []string{"required_version", "experiments", "required_providers", "backend", "cloud"}
-	canonSet := make(map[string]struct{}, len(canonical))
-	for _, n := range canonical {
-		canonSet[n] = struct{}{}
-	}
-
-	if opts != nil && opts.Strict {
-		required := []string{"required_version", "required_providers", "backend", "cloud"}
-		var missing []string
-		for _, n := range required {
-			if _, ok := attrs[n]; ok {
-				continue
-			}
-			found := false
-			for _, b := range blocks {
-				if b.Type() == n {
-					found = true
-					break
-				}
-			}
-			if !found {
-				missing = append(missing, n)
-			}
-		}
-		if len(missing) > 0 {
-			sort.Strings(missing)
-			return fmt.Errorf("terraform: missing attributes or blocks: %s", strings.Join(missing, ", "))
-		}
-	}
-
-	for _, nb := range blocks {
-		if nb.Type() == "required_providers" && opts != nil && opts.Strict {
-			attrs := nb.Body().Attributes()
-			names := make([]string, 0, len(attrs))
-			for name := range attrs {
-				names = append(names, name)
-			}
-			sort.Strings(names)
-			if err := reorderBlock(nb, names); err != nil {
-				return err
-			}
-		}
-	}
 
 	tokens := body.BuildTokens(nil)
 	newline := ihcl.DetectLineEnding(tokens)

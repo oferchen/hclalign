@@ -9,29 +9,15 @@ import (
 )
 
 func TestValidateOrder_UnknownAttributeAllowed(t *testing.T) {
-        order := append([]string{}, CanonicalOrder...)
-        order = append(order, "unknown")
-        if err := ValidateOrder(order, true); err != nil {
-                t.Fatalf("unexpected error: %v", err)
-        }
-}
-
-func TestValidateOrder_StrictCanonicalOrder(t *testing.T) {
-	if err := ValidateOrder(CanonicalOrder, true); err != nil {
+	order := append([]string{}, CanonicalOrder...)
+	order = append(order, "unknown")
+	if err := ValidateOrder(order); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestValidateOrder_StrictMissingAttribute(t *testing.T) {
-	subset := CanonicalOrder[:len(CanonicalOrder)-1]
-	err := ValidateOrder(subset, true)
-	if err == nil || !strings.Contains(err.Error(), "missing expected attribute") {
-		t.Fatalf("expected missing expected attribute error, got %v", err)
-	}
-}
-
 func TestValidateOrder_EmptyAttribute(t *testing.T) {
-	err := ValidateOrder([]string{""}, false)
+	err := ValidateOrder([]string{""})
 	if err == nil || !strings.Contains(err.Error(), "attribute name cannot be empty") {
 		t.Fatalf("expected error for empty attribute name, got %v", err)
 	}
@@ -45,7 +31,7 @@ func TestCanonicalOrderMatchesBuiltInAttributes(t *testing.T) {
 }
 
 func TestValidateOrder_EmptyAttributeName(t *testing.T) {
-	err := ValidateOrder([]string{"description", ""}, false)
+	err := ValidateOrder([]string{"description", ""})
 	if err == nil || err.Error() != "attribute name cannot be empty" {
 		t.Fatalf("expected error for empty attribute name, got %v", err)
 	}
@@ -111,7 +97,6 @@ func TestValidate_ValidConfig(t *testing.T) {
 		Include:     DefaultInclude,
 		Exclude:     DefaultExclude,
 		Order:       CanonicalOrder,
-		StrictOrder: true,
 	}
 	if err := c.Validate(); err != nil {
 		t.Fatalf("expected no error, got %v", err)

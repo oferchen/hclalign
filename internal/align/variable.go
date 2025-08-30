@@ -3,9 +3,6 @@ package align
 
 import (
 	"bytes"
-	"fmt"
-	"sort"
-	"strings"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -40,35 +37,18 @@ func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if len(knownOrder) == 0 {
 		knownOrder = config.CanonicalOrder
 	}
-	return reorderVariableBlock(block, knownOrder, canonicalSet, opts.Strict)
+	return reorderVariableBlock(block, knownOrder, canonicalSet)
 }
 
 func init() {
 	Register(variableStrategy{})
 }
 
-func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}, strict bool) error {
+func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}) error {
 	body := block.Body()
 
 	attrs := body.Attributes()
 	nestedBlocks := body.Blocks()
-
-	if strict {
-		var missing []string
-		for name := range canonicalSet {
-			if _, ok := attrs[name]; !ok {
-				missing = append(missing, name)
-			}
-		}
-		if len(missing) > 0 {
-			sort.Strings(missing)
-			varName := ""
-			if labels := block.Labels(); len(labels) > 0 {
-				varName = labels[0]
-			}
-			return fmt.Errorf("variable %q: missing attributes: %s", varName, strings.Join(missing, ", "))
-		}
-	}
 
 	allTokens := body.BuildTokens(nil)
 	newline := ihcl.DetectLineEnding(allTokens)
@@ -204,37 +184,19 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		}
 	}
 
-	if strict {
-		for _, name := range orderedKnown {
-			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.LeadTokens)
-				body.SetAttributeRaw(name, tok.ExprTokens)
-			}
-		}
-		for _, name := range originalOrder {
-			if _, isKnown := canonicalSet[name]; isKnown {
-				continue
-			}
-			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.LeadTokens)
-				body.SetAttributeRaw(name, tok.ExprTokens)
-			}
-		}
-	} else {
-		finalOrder := make([]string, 0, len(originalOrder))
+	finalOrder := make([]string, 0, len(originalOrder))
 
-		finalOrder = append(finalOrder, orderedKnown...)
-		for _, name := range originalOrder {
-			if _, isKnown := canonicalSet[name]; !isKnown {
-				finalOrder = append(finalOrder, name)
-			}
+	finalOrder = append(finalOrder, orderedKnown...)
+	for _, name := range originalOrder {
+		if _, isKnown := canonicalSet[name]; !isKnown {
+			finalOrder = append(finalOrder, name)
 		}
+	}
 
-		for _, name := range finalOrder {
-			if tok, ok := attrTokensMap[name]; ok {
-				body.AppendUnstructuredTokens(tok.LeadTokens)
-				body.SetAttributeRaw(name, tok.ExprTokens)
-			}
+	for _, name := range finalOrder {
+		if tok, ok := attrTokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.LeadTokens)
+			body.SetAttributeRaw(name, tok.ExprTokens)
 		}
 	}
 

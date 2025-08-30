@@ -147,7 +147,7 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config, schem
 				typesMap[t] = struct{}{}
 			}
 		}
-		if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Strict: cfg.StrictOrder, Schemas: schemas, Types: typesMap, SortUnknown: cfg.SortUnknown}); err != nil {
+		if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Schemas: schemas, Types: typesMap, SortUnknown: cfg.SortUnknown}); err != nil {
 			return false, nil, err
 		}
 		if testHookAfterReorder != nil {

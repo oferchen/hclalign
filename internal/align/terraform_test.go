@@ -36,50 +36,21 @@ func TestTerraformAttributeOrderAndBlocks(t *testing.T) {
 }
 
 func TestTerraformRequiredProvidersSorting(t *testing.T) {
-	t.Run("strict", func(t *testing.T) {
-		src := []byte(`terraform {
-  required_version = ">= 1.0"
-  backend "s3" {}
-  cloud {}
-  required_providers {
-    b = {}
-    a = {}
-  }
-}`)
-		file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
-		require.False(t, diags.HasErrors())
-		require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Strict: true}))
-		exp := `terraform {
-  required_version = ">= 1.0"
-
-  backend "s3" {}
-
-  required_providers {
-    a = {}
-    b = {}
-  }
-
-  cloud {}
-}`
-		require.Equal(t, exp, string(file.Bytes()))
-	})
-	t.Run("lenient", func(t *testing.T) {
-		src := []byte(`terraform {
-  required_providers {
-    b = {}
-    a = {}
-  }
-}`)
-		file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
-		require.False(t, diags.HasErrors())
-		require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
-		exp := `terraform {
+	src := []byte(`terraform {
+    required_providers {
+      b = {}
+      a = {}
+    }
+  }`)
+	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
+	exp := `terraform {
 
   required_providers {
     b = {}
     a = {}
   }
 }`
-		require.Equal(t, exp, string(file.Bytes()))
-	})
+	require.Equal(t, exp, string(file.Bytes()))
 }

@@ -37,7 +37,6 @@ func run(args []string) int {
 	rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	rootCmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
 	rootCmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields and per-block ordering flags (e.g. locals=alphabetical)")
-	rootCmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	rootCmd.Flags().Bool("fmt-only", false, "only format files, skip alignment")
 	rootCmd.Flags().Bool("no-fmt", false, "skip initial formatting")
 	rootCmd.Flags().String("fmt-strategy", "auto", "formatting strategy to use")

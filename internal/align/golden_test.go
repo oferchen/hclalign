@@ -29,7 +29,6 @@ func TestGolden(t *testing.T) {
 		if _, err := os.Stat(outPath); err != nil {
 			return nil
 		}
-		strictPath := filepath.Join(path, "out_strict.tf")
 		name, err := filepath.Rel(casesDir, path)
 		if err != nil {
 			return err
@@ -41,52 +40,32 @@ func TestGolden(t *testing.T) {
 				t.Fatalf("read input: %v", err)
 			}
 
-			run := func(t *testing.T, strict bool, expPath string) {
-				expBytes, err := os.ReadFile(expPath)
-				if err != nil {
-					t.Fatalf("read expected: %v", err)
-				}
-
-				file, diags := hclwrite.ParseConfig(inBytes, inPath, hcl.InitialPos)
-				if diags.HasErrors() {
-					t.Fatalf("parse input: %v", diags)
-				}
-				if err := Apply(file, &Options{Strict: strict}); err != nil {
-					if strict {
-						t.Skipf("strict mode error: %v", err)
-						return
-					}
-					t.Fatalf("reorder: %v", err)
-				}
-				got := file.Bytes()
-				if !bytes.Equal(got, expBytes) {
-					t.Fatalf("output mismatch for %s (strict=%v):\n-- got --\n%s\n-- want --\n%s", name, strict, got, expBytes)
-				}
-
-				file2, diags := hclwrite.ParseConfig(expBytes, expPath, hcl.InitialPos)
-				if diags.HasErrors() {
-					t.Fatalf("parse expected: %v", diags)
-				}
-				if err := Apply(file2, &Options{Strict: strict}); err != nil {
-					if strict {
-						t.Skipf("strict mode error: %v", err)
-						return
-					}
-					t.Fatalf("reorder expected: %v", err)
-				}
-				if !bytes.Equal(expBytes, file2.Bytes()) {
-					t.Fatalf("non-idempotent on expected for %s (strict=%v)", name, strict)
-				}
+			expBytes, err := os.ReadFile(outPath)
+			if err != nil {
+				t.Fatalf("read expected: %v", err)
 			}
 
-			t.Run("loose", func(t *testing.T) { run(t, false, outPath) })
+			file, diags := hclwrite.ParseConfig(inBytes, inPath, hcl.InitialPos)
+			if diags.HasErrors() {
+				t.Fatalf("parse input: %v", diags)
+			}
+			if err := Apply(file, &Options{}); err != nil {
+				t.Fatalf("reorder: %v", err)
+			}
+			got := file.Bytes()
+			if !bytes.Equal(got, expBytes) {
+				t.Fatalf("output mismatch for %s:\n-- got --\n%s\n-- want --\n%s", name, got, expBytes)
+			}
 
-			if _, err := os.Stat(strictPath); err == nil {
-				t.Run("strict", func(t *testing.T) { run(t, true, strictPath) })
-			} else if os.IsNotExist(err) {
-				t.Run("strict", func(t *testing.T) { run(t, true, outPath) })
-			} else if err != nil {
-				t.Fatalf("stat strict: %v", err)
+			file2, diags := hclwrite.ParseConfig(expBytes, outPath, hcl.InitialPos)
+			if diags.HasErrors() {
+				t.Fatalf("parse expected: %v", diags)
+			}
+			if err := Apply(file2, &Options{}); err != nil {
+				t.Fatalf("reorder expected: %v", err)
+			}
+			if !bytes.Equal(expBytes, file2.Bytes()) {
+				t.Fatalf("non-idempotent on expected for %s", name)
 			}
 		})
 		return nil

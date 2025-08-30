@@ -33,7 +33,6 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	cmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
 	cmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields and per-block ordering flags (e.g. locals=alphabetical)")
-	cmd.Flags().Bool("strict-order", false, "enforce strict attribute ordering")
 	cmd.Flags().Bool("fmt-only", false, "only format files, skip alignment")
 	cmd.Flags().Bool("no-fmt", false, "skip initial formatting")
 	cmd.Flags().String("fmt-strategy", "auto", "formatting strategy to use")
