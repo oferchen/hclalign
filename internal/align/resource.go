@@ -29,8 +29,9 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 		names = append(names, name)
 	}
 	if opts == nil || opts.Schema == nil {
+		canonical := CanonicalBlockAttrOrder[block.Type()]
 		metaAttrs := []string{}
-		for _, n := range []string{"provider", "count", "for_each", "depends_on"} {
+		for _, n := range canonical {
 			if _, ok := attrs[n]; ok {
 				metaAttrs = append(metaAttrs, n)
 			}
@@ -71,8 +72,9 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 	sort.Strings(opt)
 	sort.Strings(comp)
 
+	canonical := CanonicalBlockAttrOrder[block.Type()]
 	metaAttrs := []string{}
-	for _, n := range []string{"provider", "count", "for_each", "depends_on"} {
+	for _, n := range canonical {
 		if _, ok := attrs[n]; ok {
 			metaAttrs = append(metaAttrs, n)
 		}

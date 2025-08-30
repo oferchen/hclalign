@@ -10,14 +10,13 @@ type outputStrategy struct{}
 
 func (outputStrategy) Name() string { return "output" }
 
-var outputCanonicalOrder = []string{"description", "value", "sensitive", "depends_on"}
-
 func (outputStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	attrs := block.Body().Attributes()
 
+	canonical := CanonicalBlockAttrOrder["output"]
 	order := make([]string, 0, len(attrs))
-	reserved := make(map[string]struct{}, len(outputCanonicalOrder))
-	for _, name := range outputCanonicalOrder {
+	reserved := make(map[string]struct{}, len(canonical))
+	for _, name := range canonical {
 		if _, ok := attrs[name]; ok {
 			order = append(order, name)
 		}
