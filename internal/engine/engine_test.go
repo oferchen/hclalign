@@ -366,8 +366,8 @@ func TestProcessScenarios(t *testing.T) {
 			name: "concurrency",
 			setup: func(t *testing.T) (*config.Config, string, bool, map[string]string) {
 				dir := t.TempDir()
-				cases := []string{"simple", "trailing_commas", "comments"}
-				names := []string{"a.tf", "b.tf", "c.tf"}
+				cases := []string{"simple", "trailing_commas", "comments", "heredocs"}
+				names := []string{"a.tf", "b.tf", "c.tf", "d.tf"}
 				files := make(map[string]string)
 				var expected string
 				for i, c := range cases {
