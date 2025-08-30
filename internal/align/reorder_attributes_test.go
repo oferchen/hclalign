@@ -159,3 +159,53 @@ func TestReorderAttributes_InlineCommentAfterBrace(t *testing.T) {
 
 	require.Equal(t, src, string(f.Bytes()))
 }
+
+func TestReorderAttributes_CustomOrderValidationFirst(t *testing.T) {
+	src := `variable "example" {
+  description = "d"
+  validation {
+    condition     = true
+    error_message = "msg"
+  }
+  type = string
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	require.NoError(t, alignpkg.ReorderAttributes(f, []string{"validation", "description", "type"}))
+
+	expected := `variable "example" {
+  validation {
+    condition     = true
+    error_message = "msg"
+  }
+  description = "d"
+  type        = string
+}`
+	require.Equal(t, expected, string(f.Bytes()))
+}
+
+func TestReorderAttributes_CustomOrderValidationMiddle(t *testing.T) {
+	src := `variable "example" {
+  description = "d"
+  validation {
+    condition     = true
+    error_message = "msg"
+  }
+  type = string
+}`
+	f, diags := hclwrite.ParseConfig([]byte(src), "test.hcl", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+
+	require.NoError(t, alignpkg.ReorderAttributes(f, []string{"description", "validation", "type"}))
+
+	expected := `variable "example" {
+  description = "d"
+  validation {
+    condition     = true
+    error_message = "msg"
+  }
+  type = string
+}`
+	require.Equal(t, expected, string(f.Bytes()))
+}
