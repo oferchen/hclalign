@@ -148,19 +148,20 @@ cat variables.tf | hclalign --stdin --stdout
 | --- | --- |
 | `make init` | download and verify Go modules |
 | `make tidy` | tidy module dependencies |
-| `make fmt` | run `gofumpt` (v0.6.0) and `gofmt`; run `terraform fmt` on test cases if available |
+| `make fmt` | run `gofumpt`, strip comments, run `terraform fmt` on test cases if available, regenerate `out.tf` fixtures |
 | `make strip` | remove comments and enforce the single-line comment policy |
 | `make lint` | execute `golangci-lint` |
 | `make vet` | run `go vet` |
 | `make test` | run tests with coverage |
 | `make test-race` | run tests with the race detector |
+| `make fuzz` | run fuzz tests for 5s |
 | `make cover` | verify coverage ≥95% |
 | `make build` | build the `hclalign` binary into `.build/` |
 | `make clean` | remove build artifacts |
 
-Terraform CLI is optional. If installed, `make fmt` runs `terraform fmt` on `tests/cases`.
+Terraform CLI is optional. If installed, `make fmt` runs `terraform fmt` on `tests/cases`; otherwise a warning is printed.
 
-`make fmt` uses `go run mvdan.cc/gofumpt@v0.6.0` so contributors do not need to install `gofumpt` manually.
+`make fmt` uses `go run mvdan.cc/gofumpt@latest` so contributors do not need to install `gofumpt` manually.
 
 ## Continuous Integration
 Use `hclalign . --check` in CI to fail builds when formatting is needed. The provided GitHub Actions workflow runs `make tidy`, `make fmt`, `make lint`, `make test-race`, and `make cover` on Linux and macOS with multiple Go versions.

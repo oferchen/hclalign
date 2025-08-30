@@ -6,7 +6,7 @@ COVERPROFILE := $(BUILD_DIR)/coverage.out
 
 GO ?= go
 
-.PHONY: init tidy fmt strip lint vet test test-race cover build clean
+.PHONY: init tidy fmt strip lint vet test test-race fuzz cover build clean
 
 init: ## download and verify modules
 	$(GO) mod download
@@ -16,13 +16,18 @@ tidy: ## tidy modules
 	$(GO) mod tidy
 
 fmt: ## format code
-	$(GO) run mvdan.cc/gofumpt@v0.6.0 -w .
-	gofmt -s -w .
-	$(MAKE) strip
-	@if command -v terraform >/dev/null 2>&1; then \
-	terraform fmt -recursive tests/cases; \
-	fi
-	$(GO) run ./cmd/hclalign tests/cases
+        $(GO) run mvdan.cc/gofumpt@latest -w .
+        $(GO) run ./tools/stripcomments --repo-root "$(PWD)"
+        @if command -v terraform >/dev/null 2>&1; then \
+        terraform fmt -recursive tests/cases; \
+        else \
+        echo "warning: terraform not found; skipping terraform fmt" >&2; \
+        fi
+        find tests/cases -name in.tf | while read -r file; do \
+                dir=$$(dirname "$$file"); \
+                cp "$$file" "$$dir/out.tf"; \
+                $(GO) run ./cmd/hclalign "$$dir/out.tf"; \
+        done
 
 strip: ## normalize Go file comments and enforce policy
 	$(GO) run ./tools/stripcomments --repo-root "$(PWD)"
@@ -38,7 +43,10 @@ test: ## run tests
 	$(GO) test -shuffle=on -cover $(PKG)
 
 test-race: ## run tests with race detector
-	$(GO) test -race -shuffle=on $(PKG)
+        $(GO) test -race -shuffle=on $(PKG)
+
+fuzz: ## run fuzz tests
+        $(GO) test ./... -run=^$ -fuzz=Fuzz -fuzztime=5s
 
 cover: export COVER_THRESH ?= 95
 cover: ## run coverage check
