@@ -37,12 +37,12 @@ align: fmt ## align tests
 lint: ## run linters
 	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run --timeout=5m
 
-sanitize: ## enforce comment policy
-	mkdir -p $(BUILD_DIR)
-	$(GO) build -o $(BUILD_DIR)/stripcomments ./tools/stripcomments
-	$(BUILD_DIR)/stripcomments $(shell git ls-files '*.go')
+sanitize: strip ## enforce comment policy
 	$(GO) run ./cmd/commentcheck
 	$(GO) build $(PKG)
+
+strip: ## normalize Go file comments
+	$(GO) run ./tools/stripcomments --repo-root "$(PWD)"
 
 vet: ## vet code
 	$(GO) vet $(PKG)

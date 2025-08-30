@@ -3,12 +3,14 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,18 +101,36 @@ func process(root, path string) error {
 }
 
 func main() {
-	root, err := os.Getwd()
+	var repoRoot string
+	flag.StringVar(&repoRoot, "repo-root", "", "repository root")
+	flag.Parse()
+	if repoRoot == "" {
+		fmt.Fprintln(os.Stderr, "--repo-root is required")
+		os.Exit(1)
+	}
+	root, err := filepath.Abs(repoRoot)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	if len(os.Args) < 2 {
-		return
-	}
-	for _, p := range os.Args[1:] {
-		if err := process(root, p); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		if d.IsDir() && rel == filepath.Join("tools", "stripcomments") {
+			return filepath.SkipDir
+		}
+		if d.IsDir() || !strings.HasSuffix(d.Name(), ".go") {
+			return nil
+		}
+		return process(root, path)
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
