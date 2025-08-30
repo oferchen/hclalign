@@ -22,7 +22,7 @@ tidy: ## tidy modules
 	$(GO) mod tidy
 
 fmt: ## format code
-	gofumpt -l -w $(FMT_DIRS)
+	$(GO) run mvdan.cc/gofumpt@latest -l -w $(FMT_DIRS)
 	$(GOFMT) -s -w $(FMT_DIRS)
 	@if command -v terraform >/dev/null 2>&1; then \
 		terraform fmt -recursive tests/cases; \

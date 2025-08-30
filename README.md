@@ -95,7 +95,7 @@ cat variables.tf | hclalign --stdin --stdout
 | --- | --- |
 | `make init` | download and verify Go modules |
 | `make tidy` | tidy module dependencies |
-| `make fmt` | run gofumpt and gofmt on the codebase; `terraform fmt` then `hclalign` on test cases |
+| `make fmt` | run gofumpt (via `go run`) and gofmt on the codebase; `terraform fmt` then `hclalign` on test cases |
 | `make lint` | execute `golangci-lint` |
 | `make vet` | run `go vet` |
 | `make test` | run tests with coverage |
@@ -105,6 +105,8 @@ cat variables.tf | hclalign --stdin --stdout
 | `make clean` | remove build artifacts |
 
 Terraform CLI is optional. If installed, `make fmt` runs `terraform fmt` on `tests/cases` before invoking `hclalign`; otherwise `terraform fmt` is skipped with a warning.
+
+`make fmt` uses `go run mvdan.cc/gofumpt@latest` so contributors do not need to install `gofumpt` manually.
 
 ## Continuous Integration
 Use `hclalign . --check` in CI to fail builds when formatting is needed. The provided GitHub Actions workflow runs `make tidy`, `make fmt`, `make lint`, `make test-race`, and `make cover` on Linux and macOS with multiple Go versions.
