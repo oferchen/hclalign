@@ -39,7 +39,7 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		isAttr bool
 	}
 
-	var cloudBlock, backendBlock, requiredProviders *hclwrite.Block
+	var requiredProviders, backendBlock, cloudBlock *hclwrite.Block
 	var otherBlocks []*hclwrite.Block
 	for _, b := range blocks {
 		switch b.Type() {
@@ -69,11 +69,11 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if _, ok := attrTokens["experiments"]; ok {
 		items = append(items, item{name: "experiments", isAttr: true})
 	}
-	if backendBlock != nil {
-		items = append(items, item{block: backendBlock})
-	}
 	if requiredProviders != nil {
 		items = append(items, item{block: requiredProviders})
+	}
+	if backendBlock != nil {
+		items = append(items, item{block: backendBlock})
 	}
 	if cloudBlock != nil {
 		items = append(items, item{block: cloudBlock})
