@@ -1,10 +1,6 @@
 terraform {
   required_version = ">= 1.0"
 
-  cloud {
-    organization = "hashicorp"
-  }
-
   backend "s3" {
     region = "us-east-1"
   }
@@ -18,5 +14,9 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.0"
     }
+  }
+
+  cloud {
+    organization = "hashicorp"
   }
 }

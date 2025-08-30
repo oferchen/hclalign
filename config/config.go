@@ -37,6 +37,8 @@ type Config struct {
 	FmtStrategy        string
 	ProvidersSchema    string
 	UseTerraformSchema bool
+	Types              []string
+	SortUnknown        bool
 }
 
 var (
@@ -70,6 +72,21 @@ func (c *Config) Validate() error {
 	}
 	if err := ValidateOrder(c.Order, c.StrictOrder); err != nil {
 		return fmt.Errorf("invalid order: %w", err)
+	}
+	if c.Types != nil {
+		if len(c.Types) == 0 {
+			c.Types = []string{"variable"}
+		}
+		seen := make(map[string]struct{}, len(c.Types))
+		for _, t := range c.Types {
+			if t == "" {
+				return fmt.Errorf("type name cannot be empty")
+			}
+			if _, ok := seen[t]; ok {
+				return fmt.Errorf("duplicate type '%s'", t)
+			}
+			seen[t] = struct{}{}
+		}
 	}
 	return nil
 }

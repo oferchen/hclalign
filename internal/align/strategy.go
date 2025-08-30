@@ -12,6 +12,9 @@ type Options struct {
 	Schemas map[string]*Schema
 
 	Schema *Schema
+
+	Types       map[string]struct{}
+	SortUnknown bool
 }
 
 type Schema struct {
@@ -43,6 +46,14 @@ func Apply(file *hclwrite.File, opts *Options) error {
 func applyBody(body *hclwrite.Body, opts *Options) error {
 	for _, b := range body.Blocks() {
 		if strategy, ok := registry[b.Type()]; ok {
+			if opts.Types != nil {
+				if _, ok := opts.Types[b.Type()]; !ok {
+					if err := applyBody(b.Body(), opts); err != nil {
+						return err
+					}
+					continue
+				}
+			}
 			sub := *opts
 			sub.Schema = nil
 			if len(b.Labels()) > 0 && opts.Schemas != nil {
