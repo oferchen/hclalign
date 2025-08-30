@@ -128,12 +128,12 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 
 	original := data
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
-	formatted, err := terraformfmt.Run(ctx, data)
-	if err != nil {
-		return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
-	}
+        formatted, _, err := terraformfmt.Run(ctx, data)
+        if err != nil {
+                return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
+        }
 
-	parseData := internalfs.PrepareForParse(formatted, hints)
+        parseData := internalfs.PrepareForParse(formatted, hints)
 
 	file, diags := hclwrite.ParseConfig(parseData, filePath, hcl.InitialPos)
 	if diags.HasErrors() {
@@ -155,10 +155,10 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	if testHookAfterReorder != nil {
 		testHookAfterReorder()
 	}
-	formatted, err = terraformfmt.Run(ctx, file.Bytes())
-	if err != nil {
-		return false, nil, err
-	}
+        formatted, _, err = terraformfmt.Run(ctx, file.Bytes())
+        if err != nil {
+                return false, nil, err
+        }
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
 		formatted = formatted[:len(formatted)-1]

@@ -72,19 +72,19 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		w = os.Stdout
 	}
 
-	data, hints, err := internalfs.ReadAllWithHints(r)
-	if err != nil {
-		return false, err
-	}
+        data, hints, err := internalfs.ReadAllWithHints(r)
+        if err != nil {
+                return false, err
+        }
 
-	original := append([]byte(nil), data...)
-	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
-	formatted, err := terraformfmt.Format(data, "stdin", "")
-	if err != nil {
-		return false, fmt.Errorf("parsing error: %w", err)
-	}
+        original := append([]byte(nil), data...)
+        hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
+        formatted, _, err := terraformfmt.Run(ctx, data)
+        if err != nil {
+                return false, fmt.Errorf("parsing error: %w", err)
+        }
 
-	parseData := internalfs.PrepareForParse(formatted, hints)
+        parseData := internalfs.PrepareForParse(formatted, hints)
 
 	file, diags := hclwrite.ParseConfig(parseData, "stdin", hcl.InitialPos)
 	if diags.HasErrors() {
@@ -101,13 +101,13 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 			typesMap[t] = struct{}{}
 		}
 	}
-	if err := align.Apply(file, &align.Options{Order: cfg.Order, Schemas: schemas, Types: typesMap, PrefixOrder: cfg.PrefixOrder}); err != nil {
-		return false, err
-	}
-	formatted, err = terraformfmt.Format(file.Bytes(), "stdin", "")
-	if err != nil {
-		return false, err
-	}
+        if err := align.Apply(file, &align.Options{Order: cfg.Order, Schemas: schemas, Types: typesMap, PrefixOrder: cfg.PrefixOrder}); err != nil {
+                return false, err
+        }
+        formatted, _, err = terraformfmt.Run(ctx, file.Bytes())
+        if err != nil {
+                return false, err
+        }
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
 		formatted = formatted[:len(formatted)-1]

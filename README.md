@@ -6,7 +6,7 @@
 
 ## Pipeline
 
-1. **fmt** – runs `terraform fmt` semantics, invoking the Terraform CLI when available and falling back to a pure Go formatter otherwise.
+1. **fmt** – detects the Terraform CLI with `exec.LookPath`; if found it runs `terraform fmt`, otherwise a pure Go formatter is used. Newline and BOM hints are carried through and applied only when writing the result.
 2. **align** – reorders attributes to match a configurable schema.
 
 `terraform fmt` is run again after alignment to ensure canonical layout. This process is idempotent: running the tool multiple times yields the same result.
