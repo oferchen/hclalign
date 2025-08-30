@@ -51,7 +51,7 @@ func newRootCmd(exclusive bool) *cobra.Command {
 func TestProcessWriteFileError(t *testing.T) {
 	dir := t.TempDir()
 	casesDir := filepath.Join("..", "..", "tests", "cases")
-	data, err := os.ReadFile(filepath.Join(casesDir, "simple", "in.tf"))
+	data, err := os.ReadFile(filepath.Join(casesDir, "variable", "in.tf"))
 	require.NoError(t, err)
 	filePath := filepath.Join(dir, "example.tf")
 	require.NoError(t, os.WriteFile(filePath, data, 0o644))
@@ -63,7 +63,7 @@ func TestProcessWriteFileError(t *testing.T) {
 	defer func() { enginepkg.WriteFileAtomic = original }()
 
 	cmd := newRootCmd(true)
-	cmd.SetArgs([]string{filePath, "--write"})
+	cmd.SetArgs([]string{filePath, "--write", "--prefix-order"})
 	_, err = cmd.ExecuteC()
 	require.Error(t, err)
 	var exitErr *cli.ExitCodeError

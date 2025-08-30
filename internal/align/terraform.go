@@ -74,6 +74,9 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		}
 		otherAttrs = append(otherAttrs, name)
 	}
+	if opts != nil && opts.PrefixOrder {
+		sort.Strings(otherAttrs)
+	}
 
 	var items []item
 	if _, ok := attrTokens["required_version"]; ok {
