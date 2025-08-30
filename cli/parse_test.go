@@ -66,3 +66,11 @@ func TestParseConfigConcurrencyValidation(t *testing.T) {
 	require.ErrorAs(t, err, &exitErr)
 	require.Equal(t, 2, exitErr.Code)
 }
+
+func TestParseConfigPrefixOrder(t *testing.T) {
+	cmd := newRootCmd(true)
+	require.NoError(t, cmd.ParseFlags([]string{"--prefix-order"}))
+	cfg, err := parseConfig(cmd, []string{"target"})
+	require.NoError(t, err)
+	require.True(t, cfg.PrefixOrder)
+}
