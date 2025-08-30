@@ -40,43 +40,32 @@ func TestGolden(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			inPath := filepath.Join(path, "in.tf")
-			fmtPath := filepath.Join(path, "fmt.tf")
-			alignedPath := filepath.Join(path, "aligned.tf")
+			outPath := filepath.Join(path, "out.tf")
 			if _, err := os.Stat(inPath); err != nil {
 				t.Skip("missing in.tf")
 			}
-			if _, err := os.Stat(fmtPath); err != nil {
-				t.Skip("missing fmt.tf")
-			}
-			if _, err := os.Stat(alignedPath); err != nil {
-				t.Skip("missing aligned.tf")
+			if _, err := os.Stat(outPath); err != nil {
+				t.Skip("missing out.tf")
 			}
 
 			inBytes, err := os.ReadFile(inPath)
 			if err != nil {
 				t.Fatalf("read input: %v", err)
 			}
-			fmtBytes, err := os.ReadFile(fmtPath)
+			outBytes, err := os.ReadFile(outPath)
 			if err != nil {
-				t.Fatalf("read fmt: %v", err)
-			}
-			alignedBytes, err := os.ReadFile(alignedPath)
-			if err != nil {
-				t.Fatalf("read aligned: %v", err)
+				t.Fatalf("read out: %v", err)
 			}
 
-			gotFmt, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
+			fmtBytes, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
 			if err != nil {
 				t.Fatalf("format input: %v", err)
 			}
 			hadNewline := len(inBytes) > 0 && inBytes[len(inBytes)-1] == '\n'
-			if !hadNewline && len(gotFmt) > 0 && gotFmt[len(gotFmt)-1] == '\n' {
-				gotFmt = gotFmt[:len(gotFmt)-1]
+			if !hadNewline && len(fmtBytes) > 0 && fmtBytes[len(fmtBytes)-1] == '\n' {
+				fmtBytes = fmtBytes[:len(fmtBytes)-1]
 			}
-			if !bytes.Equal(gotFmt, fmtBytes) {
-				t.Fatalf("fmt mismatch for %s:\n-- got --\n%s\n-- want --\n%s", name, gotFmt, fmtBytes)
-			}
-			againFmt, err := terraformfmt.Format(fmtBytes, fmtPath, string(terraformfmt.StrategyGo))
+			againFmt, err := terraformfmt.Format(fmtBytes, inPath, string(terraformfmt.StrategyGo))
 			if err != nil {
 				t.Fatalf("format fmt: %v", err)
 			}
@@ -90,7 +79,7 @@ func TestGolden(t *testing.T) {
 
 			hints := internalfs.DetectHintsFromBytes(fmtBytes)
 			parseBytes := internalfs.PrepareForParse(fmtBytes, hints)
-			file, diags := hclwrite.ParseConfig(parseBytes, fmtPath, hcl.InitialPos)
+			file, diags := hclwrite.ParseConfig(parseBytes, inPath, hcl.InitialPos)
 			if diags.HasErrors() {
 				t.Fatalf("parse fmt: %v", diags)
 			}
@@ -102,19 +91,19 @@ func TestGolden(t *testing.T) {
 				t.Fatalf("align fmt: %v", err)
 			}
 			gotAligned := file.Bytes()
-			if !bytes.Equal(gotAligned, alignedBytes) {
-				t.Fatalf("aligned mismatch for %s:\n-- got --\n%s\n-- want --\n%s", name, gotAligned, alignedBytes)
+			if !bytes.Equal(gotAligned, outBytes) {
+				t.Fatalf("aligned mismatch for %s:\n-- got --\n%s\n-- want --\n%s", name, gotAligned, outBytes)
 			}
 
-			file2, diags := hclwrite.ParseConfig(alignedBytes, alignedPath, hcl.InitialPos)
+			file2, diags := hclwrite.ParseConfig(outBytes, outPath, hcl.InitialPos)
 			if diags.HasErrors() {
-				t.Fatalf("parse aligned: %v", diags)
+				t.Fatalf("parse out: %v", diags)
 			}
 			if err := alignpkg.Apply(file2, opts); err != nil {
-				t.Fatalf("align aligned: %v", err)
+				t.Fatalf("align out: %v", err)
 			}
-			if !bytes.Equal(alignedBytes, file2.Bytes()) {
-				t.Fatalf("non-idempotent on aligned for %s", name)
+			if !bytes.Equal(outBytes, file2.Bytes()) {
+				t.Fatalf("non-idempotent on out for %s", name)
 			}
 		})
 		return nil

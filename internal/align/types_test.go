@@ -15,18 +15,43 @@ import (
 func TestTypesSelection(t *testing.T) {
 	base := filepath.Join("..", "..", "tests", "cases", "types")
 	inPath := filepath.Join(base, "in.tf")
+	outPath := filepath.Join(base, "out.tf")
 	src, err := os.ReadFile(inPath)
 	if err != nil {
 		t.Fatalf("read input: %v", err)
 	}
+	outBytes, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read out: %v", err)
+	}
+	outFile, diags := hclwrite.ParseConfig(outBytes, outPath, hcl.InitialPos)
+	if diags.HasErrors() {
+		t.Fatalf("parse out: %v", diags)
+	}
 	cases := []struct {
 		name  string
 		types map[string]struct{}
-		want  string
+		want  func() []byte
 	}{
-		{"variable", map[string]struct{}{"variable": {}}, "aligned_variable.tf"},
-		{"output", map[string]struct{}{"output": {}}, "aligned_output.tf"},
-		{"all", nil, "aligned_all.tf"},
+		{
+			name:  "variable",
+			types: map[string]struct{}{"variable": {}},
+			want: func() []byte {
+				return []byte("variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n\noutput \"o\" {\n  value       = \"v\"\n  description = \"d\"\n}\n")
+			},
+		},
+		{
+			name:  "output",
+			types: map[string]struct{}{"output": {}},
+			want: func() []byte {
+				return []byte("variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n\noutput \"o\" {\n  description = \"d\"\n  value       = \"v\"\n}\n")
+			},
+		},
+		{
+			name:  "all",
+			types: nil,
+			want:  func() []byte { return hclwrite.Format(outFile.Bytes()) },
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -38,14 +63,11 @@ func TestTypesSelection(t *testing.T) {
 				t.Fatalf("align: %v", err)
 			}
 			got := hclwrite.Format(file.Bytes())
-			want, err := os.ReadFile(filepath.Join(base, tc.want))
-			if err != nil {
-				t.Fatalf("read expected: %v", err)
-			}
+			want := tc.want()
 			if !bytes.Equal(got, want) {
 				t.Fatalf("output mismatch for %s:\n-- got --\n%s\n-- want --\n%s", tc.name, got, want)
 			}
-			file2, diags := hclwrite.ParseConfig(want, tc.want, hcl.InitialPos)
+			file2, diags := hclwrite.ParseConfig(want, tc.name, hcl.InitialPos)
 			if diags.HasErrors() {
 				t.Fatalf("parse expected: %v", diags)
 			}
