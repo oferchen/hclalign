@@ -2,8 +2,10 @@
 package engine_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -63,12 +65,18 @@ func TestProcessWriteFileError(t *testing.T) {
 	defer func() { enginepkg.WriteFileAtomic = original }()
 
 	cmd := newRootCmd(true)
+	cmd.SilenceErrors = true
+	cmd.SetOut(io.Discard)
+	var stderr bytes.Buffer
+	cmd.SetErr(io.MultiWriter(io.Discard, &stderr))
 	cmd.SetArgs([]string{filePath, "--write", "--prefix-order"})
 	_, err = cmd.ExecuteC()
 	require.Error(t, err)
 	var exitErr *cli.ExitCodeError
 	require.ErrorAs(t, err, &exitErr)
 	require.Equal(t, 3, exitErr.Code)
+
+	require.Empty(t, stderr.String())
 
 	got, err := os.ReadFile(filePath)
 	require.NoError(t, err)
