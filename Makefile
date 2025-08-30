@@ -17,9 +17,10 @@ tidy: ## tidy modules
 
 fmt: ## format code and regenerate test fixtures
 	$(GO) run mvdan.cc/gofumpt@v0.6.0 -w .
+	gofmt -s -w .
 	$(MAKE) strip
 	@if command -v terraform >/dev/null 2>&1; then \
-	terraform fmt -recursive tests/cases; \
+	terraform fmt -recursive; \
 	fi
 	$(GO) run ./cmd/hclalign tests/cases
 
@@ -37,10 +38,10 @@ test: ## run tests
 	$(GO) test -shuffle=on -cover $(PKG)
 
 test-race: ## run tests with race detector
-        $(GO) test -race -shuffle=on $(PKG)
+	$(GO) test -race -shuffle=on $(PKG)
 
 fuzz: ## run fuzz tests
-        $(GO) test ./... -run=^$ -fuzz=Fuzz -fuzztime=5s
+	$(GO) test ./... -run=^$ -fuzz=Fuzz -fuzztime=5s
 
 fuzz: ## run fuzz tests
 	$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/align
