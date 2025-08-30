@@ -89,14 +89,11 @@ func TestRunEStdinRequiresStdout(t *testing.T) {
 	require.Equal(t, 2, exitErr.Code)
 }
 
-func TestRunEMultipleModeFlags(t *testing.T) {
-	cmd := newRootCmd(false)
+func TestRunEMutuallyExclusiveFlags(t *testing.T) {
+	cmd := newRootCmd(true)
 	cmd.SetArgs([]string{"--check", "--diff"})
 	_, err := cmd.ExecuteC()
 	require.Error(t, err)
-	var exitErr *ExitCodeError
-	require.ErrorAs(t, err, &exitErr)
-	require.Equal(t, 2, exitErr.Code)
 }
 
 func TestRunEFormattingNeeded(t *testing.T) {

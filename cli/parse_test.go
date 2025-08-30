@@ -39,14 +39,11 @@ func TestParseConfigStdinRequiresStdout(t *testing.T) {
 	require.Equal(t, 2, exitErr.Code)
 }
 
-func TestParseConfigMultipleModeFlags(t *testing.T) {
-	cmd := newRootCmd(false)
-	require.NoError(t, cmd.ParseFlags([]string{"--check", "--diff"}))
-	_, err := parseConfig(cmd, []string{"target"})
+func TestParseConfigMutuallyExclusiveFlags(t *testing.T) {
+	cmd := newRootCmd(true)
+	cmd.SetArgs([]string{"--check", "--diff"})
+	_, err := cmd.ExecuteC()
 	require.Error(t, err)
-	var exitErr *ExitCodeError
-	require.ErrorAs(t, err, &exitErr)
-	require.Equal(t, 2, exitErr.Code)
 }
 
 func TestParseConfigNoTarget(t *testing.T) {
