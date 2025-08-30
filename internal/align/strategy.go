@@ -12,7 +12,7 @@ type Options struct {
 	Schema *Schema
 
 	Types       map[string]struct{}
-	SortUnknown bool
+	PrefixOrder bool
 }
 
 type Schema struct {

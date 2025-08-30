@@ -45,7 +45,7 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 				rest = append(rest, n)
 			}
 		}
-		if opts.SortUnknown {
+		if opts.PrefixOrder {
 			sort.Strings(rest)
 		}
 		order := append(metaAttrs, rest...)
@@ -98,7 +98,7 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 			unk = append(unk, n)
 		}
 	}
-	if opts.SortUnknown {
+	if opts.PrefixOrder {
 		sort.Strings(unk)
 	}
 
