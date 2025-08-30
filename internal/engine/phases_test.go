@@ -50,3 +50,21 @@ func TestPhases(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestTemplatesIdempotent(t *testing.T) {
+	base := filepath.Join("..", "..", "tests", "cases", "templates")
+	inBytes, err := os.ReadFile(filepath.Join(base, "in.tf"))
+	require.NoError(t, err)
+	cfg := &config.Config{Stdout: true}
+	var out bytes.Buffer
+	_, err = ProcessReader(context.Background(), bytes.NewReader(inBytes), &out, cfg)
+	require.NoError(t, err)
+
+	first := out.Bytes()
+	out.Reset()
+
+	changed, err := ProcessReader(context.Background(), bytes.NewReader(first), &out, cfg)
+	require.NoError(t, err)
+	require.False(t, changed)
+	require.Equal(t, string(first), out.String())
+}
