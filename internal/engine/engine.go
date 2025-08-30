@@ -77,7 +77,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		return false, err
 	}
 
-	original := data
+	original := append([]byte(nil), data...)
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
 	formatted, err := terraformfmt.Format(data, "stdin", "")
 	if err != nil {
