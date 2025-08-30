@@ -1,4 +1,4 @@
-// filename: internal/align/provisioner.go
+// internal/align/provisioner.go
 package align
 
 import (

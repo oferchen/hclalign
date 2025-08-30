@@ -1,4 +1,4 @@
-// filename: internal/align/locals.go
+// internal/align/locals.go
 package align
 
 import "github.com/hashicorp/hcl/v2/hclwrite"

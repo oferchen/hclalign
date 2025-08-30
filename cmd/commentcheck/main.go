@@ -1,4 +1,4 @@
-// filename: cmd/commentcheck/main.go
+// cmd/commentcheck/main.go
 package main
 
 import (
@@ -56,7 +56,7 @@ func check(root string) error {
 		if err != nil {
 			return err
 		}
-		want := "// filename: " + filepath.ToSlash(rel)
+		want := "// " + filepath.ToSlash(rel)
 		if len(lines) != 1 || lines[0] != buildLines+1 || len(texts) != 1 || texts[0] != want {
 			bad = append(bad, path)
 		}

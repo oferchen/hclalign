@@ -1,4 +1,4 @@
-// filename: internal/align/lifecycle.go
+// internal/align/lifecycle.go
 package align
 
 import (

@@ -1,4 +1,4 @@
-// filename: internal/engine/schema_test.go
+// internal/engine/schema_test.go
 package engine
 
 import (

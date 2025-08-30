@@ -1,4 +1,4 @@
-// filename: internal/diff/diff.go
+// internal/diff/diff.go
 package diff
 
 import (

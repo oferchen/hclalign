@@ -1,4 +1,4 @@
-// filename: internal/ci/covercheck/main.go
+// internal/ci/covercheck/main.go
 package main
 
 import (

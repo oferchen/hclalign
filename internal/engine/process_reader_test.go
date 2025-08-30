@@ -1,4 +1,4 @@
-// filename: internal/engine/process_reader_test.go
+// internal/engine/process_reader_test.go
 package engine_test
 
 import (

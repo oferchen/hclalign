@@ -1,4 +1,4 @@
-// filename: internal/align/canonical.go
+// internal/align/canonical.go
 package align
 
 import "github.com/oferchen/hclalign/config"
