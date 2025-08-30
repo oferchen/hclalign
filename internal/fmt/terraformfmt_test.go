@@ -1,4 +1,4 @@
-// internal/fmt/terraformfmt_test.go
+// filename: internal/fmt/terraformfmt_test.go
 package terraformfmt
 
 import (
@@ -23,15 +23,15 @@ func TestGoMatchesBinary(t *testing.T) {
 }
 
 func TestAutoUsesGoEvenIfTerraformPresent(t *testing.T) {
-       if _, err := exec.LookPath("terraform"); err != nil {
-               t.Skip("terraform binary not found")
-       }
-       src := []byte("variable \"a\" {\n  type = string\n}\n")
-       autoFmt, err := Format(src, "test.tf", string(StrategyAuto))
-       require.NoError(t, err)
-       goFmt, err := Format(src, "test.tf", string(StrategyGo))
-       require.NoError(t, err)
-       require.Equal(t, string(goFmt), string(autoFmt))
+	if _, err := exec.LookPath("terraform"); err != nil {
+		t.Skip("terraform binary not found")
+	}
+	src := []byte("variable \"a\" {\n  type = string\n}\n")
+	autoFmt, err := Format(src, "test.tf", string(StrategyAuto))
+	require.NoError(t, err)
+	goFmt, err := Format(src, "test.tf", string(StrategyGo))
+	require.NoError(t, err)
+	require.Equal(t, string(goFmt), string(autoFmt))
 }
 
 func TestIdempotent(t *testing.T) {

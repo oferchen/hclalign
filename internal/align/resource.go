@@ -1,4 +1,4 @@
-// internal/align/resource.go
+// filename: internal/align/resource.go
 package align
 
 import (

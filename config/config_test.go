@@ -1,4 +1,4 @@
-// config/config_test.go
+// filename: config/config_test.go
 package config
 
 import (

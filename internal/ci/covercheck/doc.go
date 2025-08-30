@@ -1,2 +1,2 @@
-// internal/ci/covercheck/doc.go
+// filename: internal/ci/covercheck/doc.go
 package main

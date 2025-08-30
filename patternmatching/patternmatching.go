@@ -1,4 +1,4 @@
-// patternmatching/patternmatching.go
+// filename: patternmatching/patternmatching.go
 package patternmatching
 
 import (

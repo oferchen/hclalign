@@ -1,11 +1,11 @@
 variable "example" {
-  foo = "foo"
   description = "example"
-  bar = "bar"
-  type = number
-  baz = "baz"
-  default = 1
-  qux = "qux"
-  sensitive = true
-  nullable = false
+  type        = number
+  default     = 1
+  sensitive   = true
+  nullable    = false
+  foo         = "foo"
+  bar         = "bar"
+  baz         = "baz"
+  qux         = "qux"
 }

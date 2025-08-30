@@ -14,7 +14,7 @@ Coordinate autonomous agents (and humans) to deliver a **production-grade, two-p
 Non-negotiables:
 
 * **Apache-2.0** license for the repo.
-* **Comment policy:** every `.go` file contains exactly **one** comment on line 1: `// <repo-relative-path>`.
+* **Comment policy:** every `.go` file contains exactly **one** comment on line 1: `// filename: <repo-relative-path>`.
 * **Atomic writes:** same-dir temp → fsync → rename; preserve mode; preserve BOM/CRLF.
 * **Idempotency:** running twice yields identical bytes.
 * **Coverage:** ≥ **95%** functional coverage (enforced in CI).

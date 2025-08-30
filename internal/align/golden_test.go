@@ -1,4 +1,4 @@
-// internal/align/golden_test.go
+// filename: internal/align/golden_test.go
 package align_test
 
 import (

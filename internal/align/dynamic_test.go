@@ -1,4 +1,4 @@
-// internal/align/dynamic_test.go
+// filename: internal/align/dynamic_test.go
 package align_test
 
 import (

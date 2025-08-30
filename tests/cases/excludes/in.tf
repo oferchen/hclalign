@@ -1,9 +1,9 @@
 variable "ignored" {
+  type    = number
   default = 0
-  type = number
 }
 
 variable "included" {
-  type = number
+  type    = number
   default = 1
 }

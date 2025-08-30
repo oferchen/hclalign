@@ -1,4 +1,4 @@
-// internal/fmt/terraformfmt.go
+// filename: internal/fmt/terraformfmt.go
 package terraformfmt
 
 import (
@@ -21,16 +21,16 @@ const (
 )
 
 func Format(src []byte, filename, strategy string) ([]byte, error) {
-        switch Strategy(strategy) {
-        case StrategyGo:
-                return formatter.Format(src, filename)
-        case StrategyBinary:
-                return formatBinary(src)
-       case StrategyAuto, "":
-               return formatter.Format(src, filename)
-        default:
-                return nil, fmt.Errorf("unknown fmt strategy %q", strategy)
-        }
+	switch Strategy(strategy) {
+	case StrategyGo:
+		return formatter.Format(src, filename)
+	case StrategyBinary:
+		return formatBinary(src)
+	case StrategyAuto, "":
+		return formatter.Format(src, filename)
+	default:
+		return nil, fmt.Errorf("unknown fmt strategy %q", strategy)
+	}
 }
 
 func formatBinary(src []byte) ([]byte, error) {

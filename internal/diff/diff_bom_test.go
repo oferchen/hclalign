@@ -1,4 +1,4 @@
-// internal/diff/diff_bom_test.go
+// filename: internal/diff/diff_bom_test.go
 package diff
 
 import (

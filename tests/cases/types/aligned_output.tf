@@ -1,6 +1,6 @@
 variable "a" {
-  type        = string
   description = "d"
+  type        = string
 }
 
 output "o" {

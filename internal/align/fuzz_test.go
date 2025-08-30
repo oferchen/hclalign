@@ -1,4 +1,4 @@
-// internal/align/fuzz_test.go
+// filename: internal/align/fuzz_test.go
 package align
 
 import (
