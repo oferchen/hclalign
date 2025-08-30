@@ -149,7 +149,10 @@ func processFile(ctx context.Context, filePath string, cfg *config.Config, schem
 	if testHookAfterReorder != nil {
 		testHookAfterReorder()
 	}
-	formatted = hclwrite.Format(file.Bytes())
+	formatted, err = terraformfmt.Format(file.Bytes(), filePath, "")
+	if err != nil {
+		return false, nil, err
+	}
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
 		formatted = formatted[:len(formatted)-1]

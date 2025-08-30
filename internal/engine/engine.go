@@ -104,7 +104,10 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	if err := align.Apply(file, &align.Options{Order: cfg.Order, BlockOrder: cfg.BlockOrder, Schemas: schemas, Types: typesMap, SortUnknown: cfg.SortUnknown}); err != nil {
 		return false, err
 	}
-	formatted = hclwrite.Format(file.Bytes())
+	formatted, err = terraformfmt.Format(file.Bytes(), "stdin", "")
+	if err != nil {
+		return false, err
+	}
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
 		formatted = formatted[:len(formatted)-1]
