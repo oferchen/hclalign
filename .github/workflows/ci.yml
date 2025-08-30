@@ -23,7 +23,6 @@ jobs:
       - run: make tidy
       - run: make fmt
       - run: go run ./cmd/hclalign --check tests/cases
-      - run: make strip
       - run: make lint
       - run: make vet
       - name: Fuzz tests

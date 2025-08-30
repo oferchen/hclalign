@@ -18,19 +18,18 @@ tidy: ## tidy modules
 fmt: ## format code
 	$(GO) run mvdan.cc/gofumpt@v0.6.0 -w .
 	gofmt -s -w .
+	$(MAKE) strip
 	@if command -v terraform >/dev/null 2>&1; then \
-	terraform fmt -list=false -diff=false -write=true tests/cases; \
+	terraform fmt -recursive tests/cases; \
 	fi
+	$(GO) run ./cmd/hclalign tests/cases
 
-strip: ## remove comments and enforce policy
-	$(GO) run ./tools/stripcomments -- --repo-root "$(PWD)"
+strip: ## normalize Go file comments and enforce policy
+	$(GO) run ./tools/stripcomments --repo-root "$(PWD)"
 	$(GO) run ./cmd/commentcheck
 
 lint: ## run linters
-	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 run --timeout=5m
-
-strip: ## normalize Go file comments
-	$(GO) run ./tools/stripcomments --repo-root "$(PWD)"
+	       $(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 run --timeout=5m
 
 vet: ## vet code
 	$(GO) vet $(PKG)
