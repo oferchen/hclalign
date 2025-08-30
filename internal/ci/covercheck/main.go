@@ -17,7 +17,11 @@ var ignore = []string{
 }
 
 func main() {
-	const profile = ".build/coverage.out"
+	if len(os.Args) < 2 {
+		fmt.Fprintln(os.Stderr, "usage: covercheck <profile>")
+		os.Exit(1)
+	}
+	profile := os.Args[1]
 
 	f, err := os.Open(profile)
 	if err != nil {

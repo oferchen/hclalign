@@ -1,4 +1,4 @@
-// /tools/nocomments/main.go
+// /tools/stripcomments/main.go
 package main
 
 import (

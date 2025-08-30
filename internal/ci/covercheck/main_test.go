@@ -9,9 +9,9 @@ import (
 	"testing"
 )
 
-func runCovercheck(t *testing.T) (string, int) {
+func runCovercheck(t *testing.T, profile string) (string, int) {
 	t.Helper()
-	cmd := exec.Command("go", "run", ".")
+	cmd := exec.Command("go", "run", ".", profile)
 	out, err := cmd.CombinedOutput()
 	if err == nil {
 		return string(out), 0
@@ -53,7 +53,7 @@ func TestCovercheck(t *testing.T) {
 				t.Fatalf("write profile: %v", err)
 			}
 			defer os.RemoveAll(".build")
-			out, code := runCovercheck(t)
+			out, code := runCovercheck(t, profile)
 			if code != tc.wantExit {
 				t.Fatalf("exit %d, want %d; output: %s", code, tc.wantExit, out)
 			}
