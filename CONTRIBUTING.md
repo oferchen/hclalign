@@ -13,7 +13,7 @@ Thank you for considering a contribution to `hclalign`!
 Run the comment stripping tool to ensure each Go file begins with a path comment:
 
 ```sh
-make strip-comments
+make sanitize
 ```
 
 Before submitting a pull request, ensure the continuous integration pipeline passes:

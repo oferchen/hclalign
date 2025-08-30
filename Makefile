@@ -2,63 +2,70 @@
 APP := hclalign
 PKG := ./...
 BUILD_DIR := ./.build
-COVERPROFILE := coverage.out
+COVERPROFILE := $(BUILD_DIR)/coverage.out
 
 GO ?= go
 
 FMT_PKGS := $(shell $(GO) list $(PKG))
 FMT_DIRS := $(shell $(GO) list -f '{{.Dir}}' $(PKG))
 
-.PHONY: all init tidy fmt lint vet vuln nocomments test test-race cover cover-html build ci clean
+.PHONY: all init tidy fmt lint vet vuln sanitize test test-race fuzz-short cover cover-html build ci clean help
 
-all: build
+all: build ## build the project
 
-init:
-	$(GO) mod download
-	$(GO) mod verify
+init: ## download and verify modules
+        $(GO) mod download
+        $(GO) mod verify
 
-tidy:
-	$(GO) mod tidy
+tidy: ## tidy modules
+        $(GO) mod tidy
 
-fmt:
-	gofumpt -l -w . && gofmt -s -w .
+fmt: ## format code
+        gofumpt -l -w . && gofmt -s -w .
 
-lint:
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	golangci-lint run --timeout=5m
+lint: ## run linters
+        $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+        golangci-lint run --timeout=5m
 
-nocomments:
-	mkdir -p $(BUILD_DIR)
-	$(GO) build -o $(BUILD_DIR)/nocomments ./tools/nocomments
-	$(BUILD_DIR)/nocomments $(shell git ls-files '*.go')
-	$(GO) run ./cmd/commentcheck
-	$(GO) build $(PKG)
+sanitize: ## enforce comment policy
+        mkdir -p $(BUILD_DIR)
+        $(GO) build -o $(BUILD_DIR)/stripcomments ./tools/stripcomments
+        $(BUILD_DIR)/stripcomments $(shell git ls-files '*.go')
+        $(GO) run ./cmd/commentcheck
+        $(GO) build $(PKG)
 
-vet:
-	$(GO) vet $(PKG)
+vet: ## vet code
+        $(GO) vet $(PKG)
 
-test:
-	$(GO) test -shuffle=on $(PKG)
+test: ## run tests
+        $(GO) test -shuffle=on -cover $(PKG)
 
-test-race:
-	mkdir -p $(BUILD_DIR)
-	$(GO) test $(PKG) -race -shuffle=on
+test-race: ## run tests with race detector
+        mkdir -p $(BUILD_DIR)
+        $(GO) test $(PKG) -race -shuffle=on
 
-cover:
-	$(GO) test -race -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...
-	$(GO) tool cover -func=$(COVERPROFILE) | awk '/total:/ { if ($$3+0 < 95) { print "COVERAGE <95%"; exit 1 } }'
+fuzz-short: ## short fuzzing run
+        $(GO) test $(PKG) -run=^$ -fuzz=Fuzz -fuzztime=5s
 
-cover-html: cover
-	$(GO) tool cover -html=$(COVERPROFILE) -o $(BUILD_DIR)/coverage.html
+cover: ## run coverage check
+        mkdir -p $(BUILD_DIR)
+        $(GO) test -race -covermode=atomic -coverpkg=./... -coverprofile=$(COVERPROFILE) ./...
+        $(GO) run ./internal/ci/covercheck $(COVERPROFILE)
 
-build:
-	mkdir -p $(BUILD_DIR)
-	$(GO) build -trimpath -ldflags="-s -w" -buildvcs=false -o $(BUILD_DIR)/$(APP) ./cmd/hclalign
+cover-html: cover ## generate HTML coverage report
+        $(GO) tool cover -html=$(COVERPROFILE) -o $(BUILD_DIR)/coverage.html
 
-vuln:
-	$(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
+build: ## build binary
+        mkdir -p $(BUILD_DIR)
+        $(GO) build -trimpath -ldflags="-s -w" -buildvcs=false -o $(BUILD_DIR)/$(APP) ./cmd/hclalign
 
-ci: tidy fmt nocomments lint vet vuln test-race cover build
+vuln: ## check vulnerabilities
+        $(GO) run golang.org/x/vuln/cmd/govulncheck@latest $(PKG)
 
-clean:
-	rm -rf $(BUILD_DIR) $(COVERPROFILE)
+ci: tidy fmt sanitize lint vet vuln test test-race fuzz-short cover build ## run CI tasks
+
+clean: ## remove build artifacts
+        rm -rf $(BUILD_DIR) $(COVERPROFILE)
+
+help: ## show this help
+        @grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS=":.*?## "}; {printf "%-16s %s\n", $$1, $$2}'
