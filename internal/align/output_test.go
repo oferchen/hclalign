@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOutputAttributeOrder(t *testing.T) {
+func TestOutputEphemeralPlacement(t *testing.T) {
 	src := []byte(`output "ephemeral" {
   value      = var.v
   depends_on = [var.x]
@@ -24,8 +24,8 @@ func TestOutputAttributeOrder(t *testing.T) {
 	exp := `output "ephemeral" {
   value      = var.v
   sensitive  = false
-  depends_on = [var.x]
   ephemeral  = true
+  depends_on = [var.x]
 }`
 	require.Equal(t, exp, got)
 }
