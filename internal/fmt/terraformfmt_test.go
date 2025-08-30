@@ -2,6 +2,7 @@
 package terraformfmt
 
 import (
+	"os"
 	"os/exec"
 	"testing"
 
@@ -52,4 +53,34 @@ func TestBinaryPreservesHints(t *testing.T) {
 	hints := internalfs.DetectHintsFromBytes(formatted)
 	require.True(t, hints.HasBOM)
 	require.Equal(t, "\r\n", hints.Newline)
+}
+
+func TestUnknownStrategy(t *testing.T) {
+	_, err := Format([]byte("{}"), "test.tf", "bogus")
+	require.Error(t, err)
+}
+
+func TestBinaryInvalidUTF8(t *testing.T) {
+	_, err := Format([]byte{0xff, 0xfe}, "test.tf", string(StrategyBinary))
+	require.Error(t, err)
+}
+
+func TestBinaryMissingTerraform(t *testing.T) {
+	oldPath := os.Getenv("PATH")
+	defer os.Setenv("PATH", oldPath)
+	os.Setenv("PATH", "")
+	_, err := Format([]byte("variable \"a\" {}\n"), "test.tf", string(StrategyBinary))
+	require.Error(t, err)
+}
+
+func TestAutoFallsBackToGo(t *testing.T) {
+	oldPath := os.Getenv("PATH")
+	defer os.Setenv("PATH", oldPath)
+	os.Setenv("PATH", "")
+	src := []byte("variable \"a\" {\n  type = string\n}\n")
+	autoFmt, err := Format(src, "test.tf", string(StrategyAuto))
+	require.NoError(t, err)
+	goFmt, err := Format(src, "test.tf", string(StrategyGo))
+	require.NoError(t, err)
+	require.Equal(t, string(goFmt), string(autoFmt))
 }
