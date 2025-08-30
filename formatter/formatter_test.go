@@ -2,8 +2,10 @@
 package formatter
 
 import (
-	"bytes"
-	"testing"
+        "bytes"
+        "testing"
+
+        internalfs "github.com/oferchen/hclalign/internal/fs"
 )
 
 func TestFormatHints(t *testing.T) {
@@ -28,15 +30,16 @@ func TestFormatHints(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := Format(tc.input, "test.hcl")
-			if err != nil {
-				t.Fatalf("Format returned error: %v", err)
-			}
-			if !bytes.Equal(got, tc.want) {
-				t.Fatalf("unexpected output\nwant: %q\n got: %q", tc.want, got)
-			}
-		})
-	}
+                        got, hints, err := Format(tc.input, "test.hcl")
+                        if err != nil {
+                                t.Fatalf("Format returned error: %v", err)
+                        }
+                        styled := internalfs.ApplyHints(got, hints)
+                        if !bytes.Equal(styled, tc.want) {
+                                t.Fatalf("unexpected output\nwant: %q\n got: %q", tc.want, styled)
+                        }
+                })
+        }
 }
 
 func TestFormatTrailingNewline(t *testing.T) {
@@ -65,20 +68,21 @@ func TestFormatTrailingNewline(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := Format(tc.input, "test.hcl")
-			if err != nil {
-				t.Fatalf("Format returned error: %v", err)
-			}
-			if !bytes.Equal(got, tc.want) {
-				t.Fatalf("unexpected output\nwant: %q\n got: %q", tc.want, got)
-			}
-		})
-	}
+                        got, hints, err := Format(tc.input, "test.hcl")
+                        if err != nil {
+                                t.Fatalf("Format returned error: %v", err)
+                        }
+                        styled := internalfs.ApplyHints(got, hints)
+                        if !bytes.Equal(styled, tc.want) {
+                                t.Fatalf("unexpected output\nwant: %q\n got: %q", tc.want, styled)
+                        }
+                })
+        }
 }
 
 func TestFormatRejectsInvalidUTF8(t *testing.T) {
 	invalid := []byte{0xff, 0xfe, 0xfd}
-	if _, err := Format(invalid, "test.hcl"); err == nil {
-		t.Fatalf("expected error for invalid UTF-8 input")
-	}
+        if _, _, err := Format(invalid, "test.hcl"); err == nil {
+                t.Fatalf("expected error for invalid UTF-8 input")
+        }
 }
