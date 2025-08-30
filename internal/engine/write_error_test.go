@@ -4,7 +4,6 @@ package engine_test
 import (
 	"context"
 	"errors"
-	iofs "io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -58,7 +57,7 @@ func TestProcessWriteFileError(t *testing.T) {
 	require.NoError(t, os.WriteFile(filePath, data, 0o644))
 
 	original := enginepkg.WriteFileAtomic
-	enginepkg.WriteFileAtomic = func(ctx context.Context, path string, b []byte, perm iofs.FileMode, hints internalfs.Hints) error {
+	enginepkg.WriteFileAtomic = func(ctx context.Context, _ internalfs.WriteOpts) error {
 		return errors.New("write error")
 	}
 	defer func() { enginepkg.WriteFileAtomic = original }()

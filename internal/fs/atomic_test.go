@@ -183,7 +183,7 @@ func TestWriteFileAtomic(t *testing.T) {
 			if tc.setup != nil {
 				ctx = tc.setup(t, dir, path)
 			}
-			if err := WriteFileAtomic(context.Background(), path, tc.data, tc.perm, tc.hints); err != nil {
+			if err := WriteFileAtomic(context.Background(), WriteOpts{Path: path, Data: tc.data, Perm: tc.perm, Hints: tc.hints}); err != nil {
 				t.Fatalf("WriteFileAtomic: %v", err)
 			}
 			if tc.validate != nil {
@@ -206,7 +206,7 @@ func TestWriteFileAtomicContextCanceledBeforeRename(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- WriteFileAtomic(ctx, path, data, 0o644, Hints{})
+		errCh <- WriteFileAtomic(ctx, WriteOpts{Path: path, Data: data, Perm: 0o644, Hints: Hints{}})
 	}()
 
 	time.Sleep(10 * time.Millisecond)

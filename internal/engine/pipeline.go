@@ -179,7 +179,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 			}
 			return false, out, nil
 		}
-		if err := WriteFileAtomic(ctx, filePath, formatted, perm, hints); err != nil {
+		if err := WriteFileAtomic(ctx, internalfs.WriteOpts{Path: filePath, Data: formatted, Perm: perm, Hints: hints}); err != nil {
 			return false, nil, fmt.Errorf("error writing file %s with original permissions: %w", filePath, err)
 		}
 		if p.cfg.Stdout {
@@ -191,7 +191,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 		}
 	case config.ModeDiff:
 		if changed {
-			text, err := diff.Unified(filePath, filePath, original, styled, hints)
+			text, err := diff.Unified(diff.UnifiedOpts{FromFile: filePath, ToFile: filePath, Original: original, Styled: styled, Hints: hints})
 			if err != nil {
 				return false, nil, err
 			}

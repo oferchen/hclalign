@@ -122,7 +122,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	switch cfg.Mode {
 	case config.ModeDiff:
 		if changed {
-			text, err := diff.Unified("stdin", "stdin", original, styled, hints)
+			text, err := diff.Unified(diff.UnifiedOpts{FromFile: "stdin", ToFile: "stdin", Original: original, Styled: styled, Hints: hints})
 			if err != nil {
 				return false, err
 			}

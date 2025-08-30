@@ -11,7 +11,7 @@ import (
 func TestUnifiedDiff(t *testing.T) {
 	a := []byte("line1\nline2\n")
 	b := []byte("line1\nline3\n")
-	diffStr, err := Unified("a", "a", a, b, internalfs.Hints{Newline: "\n"})
+	diffStr, err := Unified(UnifiedOpts{FromFile: "a", ToFile: "a", Original: a, Styled: b, Hints: internalfs.Hints{Newline: "\n"}})
 	if err != nil {
 		t.Fatalf("Unified returned error: %v", err)
 	}
@@ -32,7 +32,7 @@ func TestUnifiedDiff(t *testing.T) {
 func TestUnifiedDiffUsesEOL(t *testing.T) {
 	a := []byte("line1\r\nline2\r\n")
 	b := []byte("line1\r\nline3\r\n")
-	diffStr, err := Unified("a", "a", a, b, internalfs.Hints{Newline: "\r\n"})
+	diffStr, err := Unified(UnifiedOpts{FromFile: "a", ToFile: "a", Original: a, Styled: b, Hints: internalfs.Hints{Newline: "\r\n"}})
 	if err != nil {
 		t.Fatalf("Unified returned error: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestUnifiedDiffUsesEOL(t *testing.T) {
 func TestUnifiedDiffCRLFExact(t *testing.T) {
 	a := []byte("line1\r\nline2\r\n")
 	b := []byte("line1\r\nline3\r\n")
-	diffStr, err := Unified("a", "a", a, b, internalfs.Hints{Newline: "\r\n"})
+	diffStr, err := Unified(UnifiedOpts{FromFile: "a", ToFile: "a", Original: a, Styled: b, Hints: internalfs.Hints{Newline: "\r\n"}})
 	if err != nil {
 		t.Fatalf("Unified returned error: %v", err)
 	}
