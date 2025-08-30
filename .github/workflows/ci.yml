@@ -22,9 +22,10 @@ jobs:
           cache: true
       - run: make tidy
       - run: make fmt
-      - run: make sanitize
-      - run: make align
+      - run: go run ./cmd/hclalign --check tests/cases
+      - run: make strip
       - run: make lint
+      - run: make vet
       - name: Fuzz tests
         run: go test ./... -run=^$ -fuzz=Fuzz -fuzztime=5s
         continue-on-error: true
