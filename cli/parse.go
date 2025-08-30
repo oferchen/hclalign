@@ -36,7 +36,7 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		return nil, err
 	}
 
-	attrOrder, blockOrder, err := config.ParseOrder(orderRaw)
+	attrOrder, err := config.ParseOrder(orderRaw)
 	if err != nil {
 		return nil, &ExitCodeError{Err: err, Code: 2}
 	}
@@ -78,7 +78,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		Include:            include,
 		Exclude:            exclude,
 		Order:              attrOrder,
-		BlockOrder:         blockOrder,
 		ProvidersSchema:    providersSchema,
 		UseTerraformSchema: useTerraformSchema,
 		Concurrency:        concurrency,

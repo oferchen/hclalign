@@ -37,25 +37,6 @@ func TestValidateOrder_EmptyAttributeName(t *testing.T) {
 	}
 }
 
-func TestParseOrder_BlockOrderingFlag(t *testing.T) {
-	attrs, blocks, err := ParseOrder([]string{"locals=alphabetical"})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(attrs) != 0 {
-		t.Fatalf("expected no attributes, got %v", attrs)
-	}
-	if blocks["locals"] != "alphabetical" {
-		t.Fatalf("expected locals=alphabetical, got %v", blocks)
-	}
-}
-
-func TestParseOrder_DuplicateBlockOrderingFlag(t *testing.T) {
-	if _, _, err := ParseOrder([]string{"locals=alphabetical", "locals=alphabetical"}); err == nil {
-		t.Fatalf("expected error for duplicate block ordering flag")
-	}
-}
-
 func TestDefaultExcludeMatchesExpected(t *testing.T) {
 	expected := []string{"**/.terraform/**", "**/vendor/**", "**/.git/**", "**/node_modules/**"}
 	if !reflect.DeepEqual(DefaultExclude, expected) {

@@ -61,7 +61,7 @@ func TestTerraformRequiredProvidersSorting(t *testing.T) {
 	require.Equal(t, exp, string(file.Bytes()))
 }
 
-func TestTerraformBlockOrderWithoutExperiments(t *testing.T) {
+func TestTerraformBlocksOrderWithoutExperiments(t *testing.T) {
 	src := []byte(`terraform {
   backend "s3" {}
   required_providers {}

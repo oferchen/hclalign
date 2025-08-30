@@ -4,7 +4,6 @@ package config
 import (
 	"fmt"
 	"runtime"
-	"strings"
 
 	"github.com/oferchen/hclalign/patternmatching"
 )
@@ -27,7 +26,6 @@ type Config struct {
 	Include            []string
 	Exclude            []string
 	Order              []string
-	BlockOrder         map[string]string
 	Concurrency        int
 	Verbose            bool
 	FollowSymlinks     bool
@@ -59,9 +57,6 @@ func (c *Config) Validate() error {
 	}
 	if err := patternmatching.ValidatePatterns(c.Exclude); err != nil {
 		return fmt.Errorf("invalid exclude: %w", err)
-	}
-	if err := ValidateBlockOrder(c.BlockOrder); err != nil {
-		return fmt.Errorf("invalid order: %w", err)
 	}
 	if err := ValidateOrder(c.Order); err != nil {
 		return fmt.Errorf("invalid order: %w", err)
@@ -98,39 +93,9 @@ func ValidateOrder(order []string) error {
 	return nil
 }
 
-func ValidateBlockOrder(order map[string]string) error {
-	for block, val := range order {
-		if block != "locals" || val != "alphabetical" {
-			return fmt.Errorf("unknown block ordering '%s=%s'", block, val)
-		}
+func ParseOrder(order []string) ([]string, error) {
+	if err := ValidateOrder(order); err != nil {
+		return nil, err
 	}
-	return nil
-}
-
-func ParseOrder(order []string) ([]string, map[string]string, error) {
-	attrs := make([]string, 0, len(order))
-	attrSet := make(map[string]struct{}, len(order))
-	blocks := make(map[string]string)
-	for _, item := range order {
-		if item == "" {
-			return nil, nil, fmt.Errorf("attribute name cannot be empty")
-		}
-		if strings.Contains(item, "=") {
-			block, val, ok := strings.Cut(item, "=")
-			if !ok || block == "" || val == "" {
-				return nil, nil, fmt.Errorf("invalid block ordering '%s'", item)
-			}
-			if _, exists := blocks[block]; exists {
-				return nil, nil, fmt.Errorf("duplicate attribute '%s' found in order", item)
-			}
-			blocks[block] = val
-			continue
-		}
-		if _, exists := attrSet[item]; exists {
-			return nil, nil, fmt.Errorf("duplicate attribute '%s' found in order", item)
-		}
-		attrSet[item] = struct{}{}
-		attrs = append(attrs, item)
-	}
-	return attrs, blocks, nil
+	return append([]string(nil), order...), nil
 }
