@@ -21,7 +21,7 @@ func TestPhases(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			inBytes, err := os.ReadFile(filepath.Join(base, name, "in.tf"))
 			require.NoError(t, err)
-			alignedExp, err := os.ReadFile(filepath.Join(base, name, "aligned.tf"))
+			outExp, err := os.ReadFile(filepath.Join(base, name, "out.tf"))
 			require.NoError(t, err)
 
 			cfg := &config.Config{Stdout: true}
@@ -32,14 +32,14 @@ func TestPhases(t *testing.T) {
 			var out bytes.Buffer
 			changed, err := ProcessReader(context.Background(), bytes.NewReader(inBytes), &out, cfg)
 			require.NoError(t, err)
-			require.Equal(t, !bytes.Equal(inBytes, alignedExp), changed)
-			require.Equal(t, string(alignedExp), out.String())
+			require.Equal(t, !bytes.Equal(inBytes, outExp), changed)
+			require.Equal(t, string(outExp), out.String())
 
 			out.Reset()
-			changed, err = ProcessReader(context.Background(), bytes.NewReader(alignedExp), &out, cfg)
+			changed, err = ProcessReader(context.Background(), bytes.NewReader(outExp), &out, cfg)
 			require.NoError(t, err)
 			require.False(t, changed)
-			require.Equal(t, string(alignedExp), out.String())
+			require.Equal(t, string(outExp), out.String())
 		})
 	}
 

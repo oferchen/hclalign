@@ -30,8 +30,8 @@ func TestPrefixOrder(t *testing.T) {
 		prefix bool
 		want   string
 	}{
-		{"original", false, "aligned.tf"},
-		{"sorted", true, "aligned_sorted.tf"},
+		{"original", false, "out.tf"},
+		{"sorted", true, "sorted.tf"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
