@@ -36,6 +36,13 @@ func TestCheck(t *testing.T) {
 			t.Fatalf("expected error")
 		}
 	})
+	t.Run("noncompliant block comment", func(t *testing.T) {
+		dir := t.TempDir()
+		write(t, dir, "bad.go", "/* /bad.go */\npackage main\n")
+		if err := check(dir); err == nil {
+			t.Fatalf("expected error")
+		}
+	})
 }
 
 func write(t *testing.T, dir, name, content string) {
