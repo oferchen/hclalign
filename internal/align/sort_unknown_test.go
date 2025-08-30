@@ -1,4 +1,4 @@
-// /internal/align/sort_unknown_test.go
+// internal/align/sort_unknown_test.go
 package align_test
 
 import (

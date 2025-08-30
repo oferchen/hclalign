@@ -1,4 +1,4 @@
-// /internal/engine/reader.go
+// internal/engine/reader.go
 package engine
 
 import (

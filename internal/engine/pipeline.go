@@ -1,4 +1,4 @@
-// /internal/engine/pipeline.go
+// internal/engine/pipeline.go
 package engine
 
 import (

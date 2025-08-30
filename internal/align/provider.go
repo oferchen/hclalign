@@ -1,4 +1,4 @@
-// /internal/align/provider.go
+// internal/align/provider.go
 package align
 
 import (

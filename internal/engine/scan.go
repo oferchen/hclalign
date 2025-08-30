@@ -1,4 +1,4 @@
-// /internal/engine/scan.go
+// internal/engine/scan.go
 package engine
 
 import (

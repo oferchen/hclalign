@@ -1,4 +1,4 @@
-// /internal/align/schema/loader.go
+// internal/align/schema/loader.go
 package schema
 
 import (

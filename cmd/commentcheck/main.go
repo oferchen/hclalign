@@ -1,4 +1,4 @@
-// /cmd/commentcheck/main.go
+// cmd/commentcheck/main.go
 package main
 
 import (

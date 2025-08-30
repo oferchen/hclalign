@@ -1,4 +1,4 @@
-// /internal/align/locals.go
+// internal/align/locals.go
 package align
 
 import (
