@@ -14,29 +14,14 @@ func (moduleStrategy) Name() string { return "module" }
 func (moduleStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	attrs := block.Body().Attributes()
 
+	canonical := CanonicalBlockAttrOrder["module"]
 	order := make([]string, 0, len(attrs))
-
-	if _, ok := attrs["source"]; ok {
-		order = append(order, "source")
-	}
-	if _, ok := attrs["version"]; ok {
-		order = append(order, "version")
-	}
-
-	metaArgs := []string{"providers", "count", "for_each", "depends_on"}
-	for _, name := range metaArgs {
+	reserved := make(map[string]struct{}, len(canonical))
+	for _, name := range canonical {
 		if _, ok := attrs[name]; ok {
 			order = append(order, name)
 		}
-	}
-
-	reserved := map[string]struct{}{
-		"source":     {},
-		"version":    {},
-		"providers":  {},
-		"count":      {},
-		"for_each":   {},
-		"depends_on": {},
+		reserved[name] = struct{}{}
 	}
 
 	vars := make([]string, 0, len(attrs))

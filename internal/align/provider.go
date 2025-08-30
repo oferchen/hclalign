@@ -12,18 +12,21 @@ type providerStrategy struct{}
 func (providerStrategy) Name() string { return "provider" }
 
 func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
-	body := block.Body()
+	attrs := block.Body().Attributes()
+	canonical := CanonicalBlockAttrOrder["provider"]
 
-	attrs := body.Attributes()
 	names := make([]string, 0, len(attrs))
-
-	if _, ok := attrs["alias"]; ok {
-		names = append(names, "alias")
+	reserved := make(map[string]struct{}, len(canonical))
+	for _, name := range canonical {
+		if _, ok := attrs[name]; ok {
+			names = append(names, name)
+		}
+		reserved[name] = struct{}{}
 	}
 
 	others := make([]string, 0, len(attrs))
 	for name := range attrs {
-		if name == "alias" {
+		if _, ok := reserved[name]; ok {
 			continue
 		}
 		others = append(others, name)
