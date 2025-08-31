@@ -93,3 +93,4 @@ func TestOutputBlockOrder(t *testing.T) {
 }`
 	require.Equal(t, exp, got)
 }
+

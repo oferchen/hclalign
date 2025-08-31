@@ -68,7 +68,3 @@ func applyBody(body *hclwrite.Body, opts *Options) error {
 	}
 	return nil
 }
-
-func ReorderAttributes(file *hclwrite.File, order []string) error {
-	return Apply(file, &Options{Order: order})
-}

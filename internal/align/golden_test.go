@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -87,9 +86,6 @@ func TestGolden(t *testing.T) {
 				t.Fatalf("parse fmt: %v", diags)
 			}
 			opts := &alignpkg.Options{}
-			if strings.Contains(name, "prefix_order") {
-				opts.PrefixOrder = true
-			}
 			if name == "resource" || name == "data" {
 				opts.Schemas = schemas
 			}
@@ -143,27 +139,6 @@ func TestUnknownAttributesOrder(t *testing.T) {
   default     = 1
   foo         = "foo"
   bar         = "bar"
-}`)
-		if !bytes.Equal(got, exp) {
-			t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)
-		}
-	})
-
-	t.Run("prefix", func(t *testing.T) {
-		file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
-		if diags.HasErrors() {
-			t.Fatalf("parse input: %v", diags)
-		}
-		if err := alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}); err != nil {
-			t.Fatalf("reorder: %v", err)
-		}
-		got := file.Bytes()
-		exp := []byte(`variable "example" {
-  description = "example"
-  type        = number
-  default     = 1
-  bar         = "bar"
-  foo         = "foo"
 }`)
 		if !bytes.Equal(got, exp) {
 			t.Fatalf("output mismatch:\n-- got --\n%s\n-- want --\n%s", got, exp)
