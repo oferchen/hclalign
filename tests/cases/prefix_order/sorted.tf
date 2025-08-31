@@ -10,4 +10,7 @@ module "m" {
     aws     = aws.us
     azurerm = azurerm
   }
+  a = 1
+  b = 2
+  c = 3
 }
