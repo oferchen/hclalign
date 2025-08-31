@@ -216,7 +216,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 		formatted = formatted[:len(formatted)-1]
 	}
 
-	styled := internalfs.ApplyHints(formatted, hints)
+	styled := internalfs.ApplyHints(append([]byte(nil), formatted...), hints)
 	changed := !bytes.Equal(originalWithHints, styled)
 
 	var out []byte

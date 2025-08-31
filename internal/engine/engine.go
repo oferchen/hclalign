@@ -121,7 +121,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 		formatted = formatted[:len(formatted)-1]
 	}
 
-	styled := internalfs.ApplyHints(formatted, hints)
+	styled := internalfs.ApplyHints(append([]byte(nil), formatted...), hints)
 	changed := !bytes.Equal(originalWithHints, styled)
 
 	switch cfg.Mode {
