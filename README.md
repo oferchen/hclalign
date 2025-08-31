@@ -13,7 +13,7 @@
 
 ## Supported Blocks and Canonical Order
 
-`hclalign` aligns attributes inside Terraform blocks. By default it processes only `variable` blocks and targets files matching the glob patterns `**/*.tf` and `**/*.tfvars` while excluding `.terraform/**` and `**/vendor/**`.
+`hclalign` aligns attributes inside Terraform blocks. By default it processes only `variable` blocks and targets files matching the glob patterns `**/*.tf` and `**/*.tfvars` while excluding `.terraform/**`, `.terraform.lock.hcl`, and `**/vendor/**`.
 
 Attributes are reordered inside these block types using canonical schemas:
 
@@ -21,8 +21,8 @@ Attributes are reordered inside these block types using canonical schemas:
 - **output:** `description`, `value`, `sensitive`, `depends_on`, then other attributes
 - **locals:** no reordering
 - **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically and other attributes
-- **provider:** `alias` followed by remaining attributes in their original order
-- **terraform:** `required_version`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then other attributes and blocks
+- **provider:** `alias` followed by remaining attributes sorted alphabetically, then nested blocks in their original order
+- **terraform:** `required_version`, `required_providers` (entries sorted alphabetically), `experiments`, `ephemeral`, `backend`, `cloud`, then other attributes and blocks
 - **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical), followed by any other attributes
 
 Validation blocks are placed immediately after canonical attributes. Attributes not covered by a canonical list or provider schema keep their original order. Entries within `required_providers` are sorted alphabetically by provider name.
@@ -70,6 +70,13 @@ hclalign . --types variable,module --order value,description,type
 hclalign . --types module --order value,description,type
 ```
 
+`--prefix-order` adjusts the sort order of providers inside `required_providers` so specified prefixes appear before the default alphabetical list:
+
+```sh
+# prioritize aws and azurerm providers
+hclalign . --prefix-order aws,azurerm
+```
+
 ## Provider Schema Integration
 
 Resource and data blocks can be ordered according to provider schemas. Supply a
@@ -83,9 +90,10 @@ keep their original order.
 - `--check`: exit with non‑zero status if changes are required
 - `--diff`: print unified diff instead of writing files
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
-- `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `**/vendor/**`)
+- `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `.terraform.lock.hcl`, `**/vendor/**`)
 - `--follow-symlinks`: traverse symbolic links
 - `--order`: control variable attribute order
+- `--prefix-order`: comma-separated provider name prefixes that take precedence when sorting `required_providers`
 - `--concurrency`: maximum parallel file processing
 - `-v, --verbose`: enable verbose logging
 - `--providers-schema`: path to a provider schema JSON file
@@ -139,6 +147,12 @@ Preview the diff of required changes:
 
 ```sh
 hclalign . --diff
+```
+
+Customize provider ordering inside `required_providers` using prefix priorities:
+
+```sh
+hclalign . --prefix-order aws,azurerm
 ```
 
 Process a single file from STDIN and write to STDOUT:
