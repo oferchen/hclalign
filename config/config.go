@@ -33,7 +33,6 @@ type Config struct {
 	UseTerraformSchema bool
 	Types              []string
 	PrefixOrder        bool
-	SkipTerraformFmt   bool
 }
 
 var (
