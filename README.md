@@ -13,7 +13,7 @@
 
 ## Supported Blocks and Canonical Order
 
-`hclalign` aligns attributes inside Terraform blocks. By default it processes only `variable` blocks and targets files matching the glob patterns `**/*.tf` and `**/*.tfvars` while excluding `.terraform/**` and `**/vendor/**`.
+`hclalign` aligns attributes inside Terraform blocks. By default it processes only `variable` blocks and targets files matching the glob patterns `**/*.tf` and `**/*.tfvars` while excluding `.terraform/**`, `**/vendor/**`, `**/*~`, `**/*.swp`, `**/*.tmp`, and `**/*.tfstate*`.
 
 Attributes are reordered inside these block types using canonical schemas:
 
@@ -83,7 +83,7 @@ keep their original order.
 - `--check`: exit with non‑zero status if changes are required
 - `--diff`: print unified diff instead of writing files
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
-- `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `**/vendor/**`)
+- `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `**/vendor/**`, `**/*~`, `**/*.swp`, `**/*.tmp`, `**/*.tfstate*`)
 - `--follow-symlinks`: traverse symbolic links
 - `--order`: control variable attribute order
 - `--concurrency`: maximum parallel file processing
