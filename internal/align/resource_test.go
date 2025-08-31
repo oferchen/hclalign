@@ -167,34 +167,3 @@ func TestLifecycleProvisionerOrder(t *testing.T) {
 	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas}))
 	require.Equal(t, exp, string(file.Bytes()))
 }
-
-func TestSchemaAwareOrderPrefix(t *testing.T) {
-	src := []byte(`resource "test" "ex" {
-  foo = 1
-  zz  = 5
-  bar = 2
-  baz = 3
-  aa  = 4
-}`)
-
-	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
-	require.False(t, diags.HasErrors())
-
-	sch := &alignpkg.Schema{
-		Required: map[string]struct{}{"foo": {}},
-		Optional: map[string]struct{}{"bar": {}},
-		Computed: map[string]struct{}{"baz": {}},
-	}
-	schemas := map[string]*alignpkg.Schema{"test": sch}
-
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{Schemas: schemas, PrefixOrder: true}))
-
-	exp := `resource "test" "ex" {
-  foo = 1
-  bar = 2
-  baz = 3
-  aa  = 4
-  zz  = 5
-}`
-	require.Equal(t, exp, string(file.Bytes()))
-}

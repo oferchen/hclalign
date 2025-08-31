@@ -70,13 +70,6 @@ hclalign . --types variable,module --order value,description,type
 hclalign . --types module --order value,description,type
 ```
 
-`--prefix-order` adjusts the sort order of providers inside `required_providers` so specified prefixes appear before the default alphabetical list:
-
-```sh
-# prioritize aws and azurerm providers
-hclalign . --prefix-order aws,azurerm
-```
-
 ## Provider Schema Integration
 
 Resource and data blocks can be ordered according to provider schemas. Supply a
@@ -93,7 +86,6 @@ By default `hclalign` rewrites files in place. The following flags adjust this b
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
 - `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `.terraform.lock.hcl`, `**/vendor/**`)
 - `--order`: control variable attribute order
-- `--prefix-order`: alphabetize attributes not in canonical lists
 - `--concurrency`: maximum parallel file processing
 - `-v, --verbose`: enable verbose logging
 - `--providers-schema`: path to a provider schema JSON file
@@ -147,12 +139,6 @@ Preview the diff of required changes:
 
 ```sh
 hclalign . --diff
-```
-
-Customize provider ordering inside `required_providers` using prefix priorities:
-
-```sh
-hclalign . --prefix-order aws,azurerm
 ```
 
 Process a single file from STDIN and write to STDOUT:

@@ -6,15 +6,11 @@ import "github.com/hashicorp/hcl/v2/hclwrite"
 type Options struct {
 	Order []string
 
-	PrefixOrder bool
-
 	Schemas map[string]*Schema
 
 	Schema *Schema
 
 	Types map[string]struct{}
-
-	PrefixOrder bool
 }
 
 type Schema struct {

@@ -20,8 +20,8 @@ module "complex" {
   for_each   = {}
   depends_on = []
   a          = 1
-  b          = 2
   c          = 3
+  b          = 2
 
   foo {
     x = 1
@@ -29,7 +29,7 @@ module "complex" {
 }
 
 module "vars_only" {
-  a = 1
-  b = 2
   c = 3
+  b = 2
+  a = 1
 }

@@ -2,9 +2,8 @@
 package align
 
 import (
-	"sort"
-
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
 
 type providerStrategy struct{}
@@ -31,9 +30,6 @@ func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
 			continue
 		}
 		extra = append(extra, name)
-	}
-	if opts != nil && opts.PrefixOrder {
-		sort.Strings(extra)
 	}
 	names = append(names, extra...)
 	return reorderBlock(block, names)

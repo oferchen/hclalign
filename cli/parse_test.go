@@ -20,14 +20,6 @@ func TestParseConfigValid(t *testing.T) {
 	require.Equal(t, config.ModeCheck, cfg.Mode)
 }
 
-func TestParseConfigPrefixOrder(t *testing.T) {
-	cmd := newRootCmd(true)
-	require.NoError(t, cmd.ParseFlags([]string{"--prefix-order"}))
-	cfg, err := parseConfig(cmd, []string{"target"})
-	require.NoError(t, err)
-	require.True(t, cfg.PrefixOrder)
-}
-
 func TestParseConfigTargetWithStdin(t *testing.T) {
 	cmd := newRootCmd(true)
 	require.NoError(t, cmd.ParseFlags([]string{"--stdin", "--stdout"}))

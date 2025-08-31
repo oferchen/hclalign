@@ -26,7 +26,6 @@ type Config struct {
 	Include            []string
 	Exclude            []string
 	Order              []string
-	PrefixOrder        bool
 	Concurrency        int
 	Verbose            bool
 	ProvidersSchema    string

@@ -32,7 +32,6 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	cmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
 	cmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
-	cmd.Flags().Bool("prefix-order", false, "alphabetize attributes not in canonical lists")
 	cmd.Flags().String("providers-schema", "", "path to providers schema file")
 	cmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
