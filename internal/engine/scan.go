@@ -25,8 +25,28 @@ func scan(ctx context.Context, cfg *config.Config) ([]string, error) {
 	}
 
 	var files []string
+	var visited map[string]struct{}
+	if cfg.FollowSymlinks {
+		visited = make(map[string]struct{})
+	}
+
 	var walk func(context.Context, string) error
 	walk = func(ctx context.Context, dir string) error {
+		if cfg.FollowSymlinks {
+			realDir, err := filepath.EvalSymlinks(dir)
+			if err != nil {
+				return err
+			}
+			realDir, err = filepath.Abs(realDir)
+			if err != nil {
+				return err
+			}
+			if _, ok := visited[realDir]; ok {
+				return nil
+			}
+			visited[realDir] = struct{}{}
+		}
+
 		if !matcher.Matches(dir) {
 			return nil
 		}
@@ -51,6 +71,17 @@ func scan(ctx context.Context, cfg *config.Config) ([]string, error) {
 					continue
 				}
 				if info.IsDir() {
+					realPath, err := filepath.EvalSymlinks(path)
+					if err != nil {
+						return err
+					}
+					realPath, err = filepath.Abs(realPath)
+					if err != nil {
+						return err
+					}
+					if _, ok := visited[realPath]; ok {
+						continue
+					}
 					if err := walk(ctx, path); err != nil {
 						return err
 					}
