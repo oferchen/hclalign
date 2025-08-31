@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
 
 type moduleStrategy struct{}
@@ -34,13 +35,16 @@ func (moduleStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		reserved[name] = struct{}{}
 	}
 
-	vars := make([]string, 0, len(attrs))
-	for name := range attrs {
+	original := ihcl.AttributeOrder(block.Body(), attrs)
+	vars := []string{}
+	for _, name := range original {
 		if _, ok := reserved[name]; !ok {
 			vars = append(vars, name)
 		}
 	}
-	sort.Strings(vars)
+	if opts != nil && opts.PrefixOrder {
+		sort.Strings(vars)
+	}
 
 	order = append(order, vars...)
 
