@@ -153,7 +153,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 		}
 		ranFmt, err = terraformFmtFormatFile(ctx, tmpName)
 		if err != nil {
-			return false, nil, fmt.Errorf("error formatting file %s: %w", filePath, err)
+			return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
 		}
 		if err := ctx.Err(); err != nil {
 			return false, nil, err
