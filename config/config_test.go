@@ -24,7 +24,7 @@ func TestValidateOrder_EmptyAttribute(t *testing.T) {
 }
 
 func TestCanonicalOrderMatchesBuiltInAttributes(t *testing.T) {
-	expected := []string{"description", "type", "default", "sensitive", "nullable", "ephemeral"}
+	expected := []string{"description", "type", "default", "sensitive", "nullable"}
 	if !reflect.DeepEqual(CanonicalOrder, expected) {
 		t.Fatalf("expected CanonicalOrder to be %v, got %v", expected, CanonicalOrder)
 	}

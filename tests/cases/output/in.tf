@@ -15,7 +15,6 @@ output "depends" {
   foo        = "bar"
   value      = var.c
   sensitive  = false
-  ephemeral  = true
   depends_on = [var.x]
 }
 
