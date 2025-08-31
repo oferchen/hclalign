@@ -20,14 +20,17 @@ const (
 	StrategyGo     Strategy = "go"
 )
 
-func Format(src []byte, filename, strategy string) ([]byte, internalfs.Hints, error) {
+func Format(ctx context.Context, src []byte, filename, strategy string) ([]byte, internalfs.Hints, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, internalfs.Hints{}, err
+	}
 	switch Strategy(strategy) {
 	case StrategyGo:
 		return formatter.Format(src, filename)
 	case StrategyBinary:
-		return formatBinary(context.Background(), src)
+		return formatBinary(ctx, src)
 	case StrategyAuto, "":
-		return Run(context.Background(), src)
+		return Run(ctx, src)
 	default:
 		return nil, internalfs.Hints{}, fmt.Errorf("unknown fmt strategy %q", strategy)
 	}
