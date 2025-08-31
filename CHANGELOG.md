@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+- Aligned toolchain with Go 1.23 and gofumpt v0.8.0.
 - Changed project license to Apache-2.0.
 - Added variable-attribute reordering tool with support for include/exclude globs and the `--order` flag for custom schemas.
 - Introduced safety features such as check and diff modes, idempotent operation, and atomic file writes.
