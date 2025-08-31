@@ -2,8 +2,9 @@
 package align
 
 import (
+	"sort"
+
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
 
 type providerStrategy struct{}
@@ -23,13 +24,15 @@ func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		reserved[name] = struct{}{}
 	}
 
-	original := ihcl.AttributeOrder(block.Body(), attrs)
-	for _, name := range original {
+	others := make([]string, 0, len(attrs))
+	for name := range attrs {
 		if _, ok := reserved[name]; ok {
 			continue
 		}
-		names = append(names, name)
+		others = append(others, name)
 	}
+	sort.Strings(others)
+	names = append(names, others...)
 
 	return reorderBlock(block, names)
 }

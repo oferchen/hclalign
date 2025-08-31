@@ -77,6 +77,12 @@ func TestMatcherDefaultExclude(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", ".terraform", "included.tf"), []byte(""), 0o644))
 	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "ignored.tf"), []byte(""), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "tempfile~"), []byte(""), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "swap.swp"), []byte(""), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "temporary.tmp"), []byte(""), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "terraform.tfstate"), []byte(""), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "terraform.tfstate.backup"), []byte(""), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "state.tfstate"), []byte(""), 0o644))
 
 	m, err := patternmatching.NewMatcher(config.DefaultInclude, config.DefaultExclude, wd)
 	require.NoError(t, err)
@@ -89,6 +95,12 @@ func TestMatcherDefaultExclude(t *testing.T) {
 		filepath.Join(wd, ".terraform", "ignored.tf"),
 		filepath.Join(wd, "vendor"),
 		filepath.Join(wd, "vendor", "ignored.tf"),
+		filepath.Join(wd, "tempfile~"),
+		filepath.Join(wd, "swap.swp"),
+		filepath.Join(wd, "temporary.tmp"),
+		filepath.Join(wd, "terraform.tfstate"),
+		filepath.Join(wd, "terraform.tfstate.backup"),
+		filepath.Join(wd, "nested", "state.tfstate"),
 	}
 	for _, p := range paths {
 		assert.False(t, m.Matches(p))

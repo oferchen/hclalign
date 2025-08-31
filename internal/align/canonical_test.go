@@ -9,6 +9,6 @@ import (
 )
 
 func TestCanonicalTerraformOrder(t *testing.T) {
-	exp := []string{"required_version", "required_providers", "backend", "cloud"}
+	exp := []string{"required_version", "experiments", "required_providers", "backend", "cloud"}
 	require.Equal(t, exp, alignpkg.CanonicalBlockAttrOrder["terraform"])
 }
