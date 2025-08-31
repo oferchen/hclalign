@@ -2,10 +2,7 @@
 package align
 
 import (
-	"sort"
-
 	"github.com/hashicorp/hcl/v2/hclwrite"
-
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
 
@@ -13,7 +10,7 @@ type providerStrategy struct{}
 
 func (providerStrategy) Name() string { return "provider" }
 
-func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
+func (providerStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	attrs := block.Body().Attributes()
 	canonical := CanonicalBlockAttrOrder["provider"]
 
@@ -34,9 +31,7 @@ func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		}
 		extra = append(extra, name)
 	}
-	if opts != nil && opts.PrefixOrder {
-		sort.Strings(extra)
-	}
+	sort.Strings(extra)
 	names = append(names, extra...)
 	return reorderBlock(block, names)
 }

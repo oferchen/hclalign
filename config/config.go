@@ -25,6 +25,7 @@ type Config struct {
 	Stdout             bool
 	Include            []string
 	Exclude            []string
+	Order              []string
 	Concurrency        int
 	ProvidersSchema    string
 	UseTerraformSchema bool

@@ -13,7 +13,7 @@ type terraformStrategy struct{}
 
 func (terraformStrategy) Name() string { return "terraform" }
 
-func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
+func (terraformStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	body := block.Body()
 
 	attrs := body.Attributes()
@@ -74,10 +74,6 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		}
 		otherAttrs = append(otherAttrs, name)
 	}
-	if opts != nil && opts.PrefixOrder {
-		sort.Strings(otherAttrs)
-	}
-
 	type item struct {
 		name   string
 		block  *hclwrite.Block

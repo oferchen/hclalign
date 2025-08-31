@@ -5,7 +5,6 @@ import "github.com/hashicorp/hcl/v2/hclwrite"
 
 type Options struct {
 	Order []string
-
 	PrefixOrder bool
 
 	Schemas map[string]*Schema
@@ -68,8 +67,4 @@ func applyBody(body *hclwrite.Body, opts *Options) error {
 		}
 	}
 	return nil
-}
-
-func ReorderAttributes(file *hclwrite.File, order []string) error {
-	return Apply(file, &Options{Order: order})
 }

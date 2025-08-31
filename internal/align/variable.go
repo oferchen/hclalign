@@ -3,7 +3,6 @@ package align
 
 import (
 	"bytes"
-	"sort"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -14,12 +13,8 @@ type variableStrategy struct{}
 
 func (variableStrategy) Name() string { return "variable" }
 
-func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
+func (variableStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	canonical := CanonicalBlockAttrOrder["variable"]
-	order := opts.Order
-	if len(order) == 0 {
-		order = canonical
-	}
 	canonicalSet := make(map[string]struct{}, len(canonical))
 	for _, name := range canonical {
 		canonicalSet[name] = struct{}{}
@@ -45,14 +40,14 @@ func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if len(knownOrder) == 0 {
 		knownOrder = canonical
 	}
-	return reorderVariableBlock(block, knownOrder, canonical, canonicalSet, validationPos, opts != nil && opts.PrefixOrder)
+	return reorderVariableBlock(block, knownOrder, canonical, canonicalSet, validationPos)
 }
 
 func init() {
 	Register(variableStrategy{})
 }
 
-func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder []string, canonicalSet map[string]struct{}, validationPos int, prefix bool) error {
+func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder []string, canonicalSet map[string]struct{}, validationPos int) error {
 	body := block.Body()
 
 	attrs := body.Attributes()
@@ -211,9 +206,6 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 			unknown = append(unknown, name)
 			seenUnknown[name] = struct{}{}
 		}
-	}
-	if prefix {
-		sort.Strings(unknown)
 	}
 
 	insertedValidation := false
