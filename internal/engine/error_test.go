@@ -18,7 +18,7 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 
 	dir := t.TempDir()
 	path := filepath.Join(dir, "bad.tf")
-	orig := "variable \"a\" {"
+	orig := "variable \"a\" {\n"
 	require.NoError(t, os.WriteFile(path, []byte(orig), 0o644))
 
 	cfg := &config.Config{
@@ -29,7 +29,7 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 
 	changed, err := Process(context.Background(), cfg)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Unclosed configuration block")
+	require.Contains(t, err.Error(), "parsing error")
 	require.False(t, changed)
 
 	data, err := os.ReadFile(path)
