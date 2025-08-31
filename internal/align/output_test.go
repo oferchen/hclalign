@@ -42,8 +42,54 @@ func TestOutputAttributePrefixOrder(t *testing.T) {
 	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
 	got := string(file.Bytes())
 	exp := `output "example" {
-  a = 1
   c = 1
+  a = 1
+}`
+	require.Equal(t, exp, got)
+}
+
+func TestOutputBlockOrder(t *testing.T) {
+	src := []byte(`output "example" {
+  postcondition {
+    condition     = true
+    error_message = "post1"
+  }
+  precondition {
+    condition     = true
+    error_message = "pre1"
+  }
+  other {}
+  postcondition {
+    condition     = false
+    error_message = "post2"
+  }
+  precondition {
+    condition     = false
+    error_message = "pre2"
+  }
+}`)
+	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
+	got := string(file.Bytes())
+	exp := `output "example" {
+  precondition {
+    condition     = true
+    error_message = "pre1"
+  }
+  precondition {
+    condition     = false
+    error_message = "pre2"
+  }
+  postcondition {
+    condition     = true
+    error_message = "post1"
+  }
+  postcondition {
+    condition     = false
+    error_message = "post2"
+  }
+  other {}
 }`
 	require.Equal(t, exp, got)
 }
