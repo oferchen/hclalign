@@ -28,10 +28,10 @@ type Config struct {
 	Order              []string
 	PrefixOrder        bool
 	Concurrency        int
-	Verbose            bool
 	ProvidersSchema    string
 	UseTerraformSchema bool
 	Types              []string
+	FollowSymlinks     bool
 }
 
 var (
