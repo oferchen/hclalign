@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os/exec"
 	"unicode/utf8"
 
@@ -31,6 +32,26 @@ func Format(src []byte, filename, strategy string) ([]byte, internalfs.Hints, er
 	default:
 		return nil, internalfs.Hints{}, fmt.Errorf("unknown fmt strategy %q", strategy)
 	}
+}
+
+func FormatFile(ctx context.Context, path string) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	if _, err := exec.LookPath("terraform"); err != nil {
+		return false, nil
+	}
+	cmd := exec.CommandContext(ctx, "terraform", "fmt", "-no-color", "-list=false", "-write=true", path)
+	cmd.Stdout = io.Discard
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		if stderrStr := stderr.String(); stderrStr != "" {
+			return false, fmt.Errorf("terraform fmt failed: %w: %s", err, stderrStr)
+		}
+		return false, fmt.Errorf("terraform fmt failed: %w", err)
+	}
+	return true, nil
 }
 
 func formatBinary(ctx context.Context, src []byte) ([]byte, internalfs.Hints, error) {

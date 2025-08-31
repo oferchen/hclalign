@@ -118,6 +118,17 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	if err := ctx.Err(); err != nil {
 		return false, nil, err
 	}
+	ranFmt := false
+	if p.cfg.Mode == config.ModeWrite {
+		var err error
+		ranFmt, err = terraformfmt.FormatFile(ctx, filePath)
+		if err != nil {
+			return false, nil, fmt.Errorf("error formatting file %s: %w", filePath, err)
+		}
+		if err := ctx.Err(); err != nil {
+			return false, nil, err
+		}
+	}
 	data, perm, hints, err := internalfs.ReadFileWithHints(ctx, filePath)
 	if err != nil {
 		return false, nil, fmt.Errorf("error reading file %s: %w", filePath, err)
@@ -130,9 +141,14 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	originalWithHints := append(append([]byte(nil), hints.BOM()...), original...)
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
 
-	formatted, _, err := terraformfmt.Run(ctx, data)
-	if err != nil {
-		return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
+	var formatted []byte
+	if ranFmt {
+		formatted = data
+	} else {
+		formatted, _, err = terraformfmt.Run(ctx, data)
+		if err != nil {
+			return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
+		}
 	}
 
 	parseData := internalfs.PrepareForParse(formatted, hints)
