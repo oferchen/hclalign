@@ -73,8 +73,8 @@ func TestRunMutuallyExclusiveFlags(t *testing.T) {
 		return nil
 	}
 
-	if code := run([]string{"--check", "--diff"}); code != 1 {
-		t.Fatalf("expected exit code 1, got %d", code)
+	if code := run([]string{"--check", "--diff"}); code != 2 {
+		t.Fatalf("expected exit code 2, got %d", code)
 	}
 }
 
