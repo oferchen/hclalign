@@ -78,6 +78,34 @@ func TestRunMutuallyExclusiveFlags(t *testing.T) {
 	}
 }
 
+func TestRunTooManyArgs(t *testing.T) {
+	oldRunE := runE
+	t.Cleanup(func() { runE = oldRunE })
+
+	runE = func(_ *cobra.Command, _ []string) error {
+		t.Fatal("runE should not be called")
+		return nil
+	}
+
+	if code := run([]string{"a", "b"}); code != 2 {
+		t.Fatalf("expected exit code 2, got %d", code)
+	}
+}
+
+func TestRunTypesAllFlags(t *testing.T) {
+	oldRunE := runE
+	t.Cleanup(func() { runE = oldRunE })
+
+	runE = func(_ *cobra.Command, _ []string) error {
+		t.Fatal("runE should not be called")
+		return nil
+	}
+
+	if code := run([]string{"--types", "variable", "--all"}); code != 2 {
+		t.Fatalf("expected exit code 2, got %d", code)
+	}
+}
+
 func TestRunWrappedExitCode(t *testing.T) {
 	oldRunE := runE
 	t.Cleanup(func() { runE = oldRunE })

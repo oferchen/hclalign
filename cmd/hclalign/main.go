@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -22,9 +21,35 @@ func main() { osExit(run(os.Args[1:])) }
 
 func run(args []string) int {
 	rootCmd := &cobra.Command{
-		Use:          "hclalign [target file or directory]",
-		Short:        "Aligns HCL files based on given criteria",
-		Args:         cobra.MaximumNArgs(1),
+		Use:   "hclalign [target file or directory]",
+		Short: "Aligns HCL files based on given criteria",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if err := cobra.MaximumNArgs(1)(cmd, args); err != nil {
+				return &cli.ExitCodeError{Err: err, Code: 2}
+			}
+
+			count := 0
+			for _, f := range []string{"write", "check", "diff"} {
+				if cmd.Flags().Changed(f) {
+					count++
+				}
+			}
+			if count > 1 {
+				return &cli.ExitCodeError{Err: errors.New("write, check, and diff are mutually exclusive"), Code: 2}
+			}
+
+			count = 0
+			for _, f := range []string{"types", "all"} {
+				if cmd.Flags().Changed(f) {
+					count++
+				}
+			}
+			if count > 1 {
+				return &cli.ExitCodeError{Err: errors.New("types and all are mutually exclusive"), Code: 2}
+			}
+
+			return nil
+		},
 		RunE:         runE,
 		SilenceUsage: true,
 	}
@@ -32,7 +57,6 @@ func run(args []string) int {
 	rootCmd.Flags().Bool("write", false, "write result to file(s)")
 	rootCmd.Flags().Bool("check", false, "check if files are formatted")
 	rootCmd.Flags().Bool("diff", false, "print the diff of required changes")
-	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 	rootCmd.Flags().Bool("stdin", false, "read from STDIN")
 	rootCmd.Flags().Bool("stdout", false, "write result to STDOUT")
 	rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
@@ -46,7 +70,6 @@ func run(args []string) int {
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")
-	rootCmd.MarkFlagsMutuallyExclusive("types", "all")
 	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
 		return &cli.ExitCodeError{Err: err, Code: 2}
 	})
@@ -56,9 +79,6 @@ func run(args []string) int {
 		var ec *cli.ExitCodeError
 		if errors.As(err, &ec) {
 			return ec.Code
-		}
-		if strings.Contains(err.Error(), "if any flags in the group") {
-			return 2
 		}
 		return 1
 	}
