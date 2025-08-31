@@ -44,7 +44,6 @@ func run(args []string) int {
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")
-	rootCmd.Flags().Bool("prefix-order", false, "lexicographically sort unknown attributes and module provider maps")
 	rootCmd.MarkFlagsMutuallyExclusive("types", "all")
 
 	rootCmd.SetArgs(args)

@@ -25,7 +25,7 @@ The default schema orders variable attributes as `description → type → defau
 - **terraform:** `required_version`, `experiments`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then remaining attributes and blocks in their original order
 - **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical)
 
-Validation blocks are placed immediately after canonical attributes. Attributes not in the canonical list or provider schema are appended in their original order. Use `--prefix-order` to sort them alphabetically; module provider maps are sorted as well.
+Validation blocks are placed immediately after canonical attributes. Attributes not in the canonical list or provider schema are appended in their original order.
 
 Entries within `required_providers` are sorted alphabetically by provider name. Other `terraform` attributes follow `required_version`, `experiments`, `backend`, and `cloud` in that order.
 
@@ -77,7 +77,7 @@ hclalign . --types module --order value,description,type
 Resource and data blocks can be ordered according to provider schemas. Supply a
 schema file via `--providers-schema` or let `hclalign` invoke `terraform
 providers schema -json` by passing `--use-terraform-schema`. Unknown attributes
-keep their original order unless `--prefix-order` is used, which also sorts module provider maps.
+keep their original order.
 
 ## CLI Flags
 
@@ -94,7 +94,6 @@ keep their original order unless `--prefix-order` is used, which also sorts modu
 - `--use-terraform-schema`: derive schema via `terraform providers schema -json`
 - `--types`: comma-separated list of block types to align (defaults to `variable`)
 - `--all`: align all supported block types (mutually exclusive with `--types`)
-- `--prefix-order`: lexicographically sort attributes not covered by the schema and module provider maps; by default, unknown attributes preserve their input order
 
 
 ## Exit Codes

@@ -81,18 +81,3 @@ func TestTerraformBlocksOrderWithoutExperiments(t *testing.T) {
 }`
 	require.Equal(t, exp, string(file.Bytes()))
 }
-
-func TestTerraformUnknownAttrsPrefixOrder(t *testing.T) {
-	src := []byte(`terraform {
-  zzz = 1
-  aaa = 2
-}`)
-	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
-	require.False(t, diags.HasErrors())
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
-	exp := `terraform {
-  aaa = 2
-  zzz = 1
-}`
-	require.Equal(t, exp, string(file.Bytes()))
-}

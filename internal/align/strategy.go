@@ -10,8 +10,7 @@ type Options struct {
 
 	Schema *Schema
 
-	Types       map[string]struct{}
-	PrefixOrder bool
+	Types map[string]struct{}
 }
 
 type Schema struct {
