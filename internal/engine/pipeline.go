@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"sync/atomic"
 
@@ -123,17 +124,6 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	if err := ctx.Err(); err != nil {
 		return false, nil, err
 	}
-	ranFmt := false
-	if p.cfg.Mode == config.ModeWrite && !p.cfg.SkipTerraformFmt {
-		var err error
-		ranFmt, err = terraformFmtFormatFile(ctx, filePath)
-		if err != nil {
-			return false, nil, fmt.Errorf("error formatting file %s: %w", filePath, err)
-		}
-		if err := ctx.Err(); err != nil {
-			return false, nil, err
-		}
-	}
 	data, perm, hints, err := internalfs.ReadFileWithHints(ctx, filePath)
 	if err != nil {
 		return false, nil, fmt.Errorf("error reading file %s: %w", filePath, err)
@@ -145,6 +135,40 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	original := append([]byte(nil), data...)
 	originalWithHints := append(append([]byte(nil), hints.BOM()...), original...)
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
+
+	ranFmt := false
+	if p.cfg.Mode == config.ModeWrite && !p.cfg.SkipTerraformFmt {
+		tmp, err := os.CreateTemp("", "hclalign-*")
+		if err != nil {
+			return false, nil, fmt.Errorf("error creating temp file for %s: %w", filePath, err)
+		}
+		tmpName := tmp.Name()
+		defer func() { _ = os.Remove(tmpName) }()
+		if _, err := tmp.Write(internalfs.ApplyHints(data, hints)); err != nil {
+			_ = tmp.Close()
+			return false, nil, fmt.Errorf("error writing temp file for %s: %w", filePath, err)
+		}
+		if err := tmp.Close(); err != nil {
+			return false, nil, fmt.Errorf("error closing temp file for %s: %w", filePath, err)
+		}
+		ranFmt, err = terraformFmtFormatFile(ctx, tmpName)
+		if err != nil {
+			return false, nil, fmt.Errorf("error formatting file %s: %w", filePath, err)
+		}
+		if err := ctx.Err(); err != nil {
+			return false, nil, err
+		}
+		if ranFmt {
+			formattedBytes, err := os.ReadFile(tmpName)
+			if err != nil {
+				return false, nil, fmt.Errorf("error reading temp file for %s: %w", filePath, err)
+			}
+			data, _, err = internalfs.ReadAllWithHints(bytes.NewReader(formattedBytes))
+			if err != nil {
+				return false, nil, err
+			}
+		}
+	}
 
 	var formatted []byte
 	switch {
