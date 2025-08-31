@@ -23,26 +23,26 @@ jobs:
       - run: make init
       - run: make tidy
       - run: make fmt
-      - run: make stripcomments
-      - run: go run ./cmd/hclalign --check tests/cases
+      - run: make strip
       - run: make lint
       - run: make vet
+      - run: make test-race
+      - run: make cover
+        env:
+          COVER_THRESH: 95
+      - run: make build
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}-${{ matrix.go }}
+          path: .build/coverage.out
+      - run: go run ./cmd/hclalign --check tests/cases
       - name: Fuzz tests
         run: go test ./... -run=^$ -fuzz=Fuzz -fuzztime=5s
         continue-on-error: true
       - name: Vulnerability check
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
         continue-on-error: true
-      - run: make test-race
-      - run: make cover
-        env:
-          COVER_THRESH: 95
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{ matrix.os }}-${{ matrix.go }}
-          path: .build/coverage.out
-      - run: make build
 
   terraform-fmt:
     name: Terraform fmt equivalence
