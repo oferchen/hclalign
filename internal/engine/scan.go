@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/oferchen/hclalign/config"
 	"github.com/oferchen/hclalign/patternmatching"
@@ -24,7 +25,17 @@ func scan(ctx context.Context, cfg *config.Config) ([]string, error) {
 		return nil, err
 	}
 
+	rootAbs, err := filepath.Abs(cfg.Target)
+	if err != nil {
+		return nil, err
+	}
+	rootEval, err := filepath.EvalSymlinks(rootAbs)
+	if err != nil {
+		rootEval = rootAbs
+	}
+
 	var files []string
+	visited := make(map[string]struct{})
 
 	var walk func(context.Context, string) error
 	walk = func(ctx context.Context, dir string) error {
@@ -34,6 +45,26 @@ func scan(ctx context.Context, cfg *config.Config) ([]string, error) {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
+		absDir, err := filepath.Abs(dir)
+		if err != nil {
+			return err
+		}
+		realDir, err := filepath.EvalSymlinks(absDir)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
+		relDir, err := filepath.Rel(rootEval, realDir)
+		if err != nil || relDir == ".." || strings.HasPrefix(relDir, ".."+string(os.PathSeparator)) {
+			return nil
+		}
+		if _, ok := visited[realDir]; ok {
+			return nil
+		}
+		visited[realDir] = struct{}{}
+
 		entries, err := os.ReadDir(dir)
 		if err != nil {
 			return err
@@ -43,7 +74,12 @@ func scan(ctx context.Context, cfg *config.Config) ([]string, error) {
 				return err
 			}
 			path := filepath.Join(dir, entry.Name())
-			info, err := entry.Info()
+			absPath, err := filepath.Abs(path)
+			if err != nil {
+				return err
+			}
+			path = absPath
+			info, err := os.Lstat(path)
 			if err != nil {
 				if os.IsNotExist(err) {
 					continue
@@ -54,13 +90,25 @@ func scan(ctx context.Context, cfg *config.Config) ([]string, error) {
 				if !cfg.FollowSymlinks {
 					continue
 				}
-				info, err = os.Stat(path)
+				realPath, err := filepath.EvalSymlinks(path)
 				if err != nil {
 					if os.IsNotExist(err) {
 						continue
 					}
 					return err
 				}
+				rel, err := filepath.Rel(rootEval, realPath)
+				if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+					continue
+				}
+				info, err = os.Stat(realPath)
+				if err != nil {
+					if os.IsNotExist(err) {
+						continue
+					}
+					return err
+				}
+				path = realPath
 			}
 			if info.IsDir() {
 				if err := walk(ctx, path); err != nil {
