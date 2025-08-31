@@ -31,7 +31,7 @@ fmt: ## format code and regenerate test fixtures
 	xargs -0 -n1 -I{} sh -c 'dir=$$(dirname {}); $(GO) run ./cmd/hclalign --stdin --stdout < {} > $$dir/fmt.tf; $(GO) run ./cmd/hclalign --stdin --stdout --all < {} > $$dir/aligned.tf'
 
 strip: ## normalize Go file comments and enforce policy
-	@$(GO) run ./tools/stripcomments
+        @$(GO) run ./tools/strip --repo-root .
 	@$(GO) run ./cmd/commentcheck
 	@git diff --exit-code
 

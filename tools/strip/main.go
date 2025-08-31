@@ -1,4 +1,4 @@
-// tools/stripcomments/main.go
+// tools/strip/main.go
 package main
 
 import (
@@ -127,7 +127,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() && rel == filepath.Join("tools", "stripcomments") {
+                if d.IsDir() && rel == filepath.Join("tools", "strip") {
 			return filepath.SkipDir
 		}
 		if d.IsDir() || !strings.HasSuffix(d.Name(), ".go") {
