@@ -16,18 +16,17 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	}
 
 	var err error
+	writeMode := getBool(cmd, "write", &err)
 	checkMode := getBool(cmd, "check", &err)
 	diffMode := getBool(cmd, "diff", &err)
 	stdin := getBool(cmd, "stdin", &err)
 	stdout := getBool(cmd, "stdout", &err)
 	include := getStringSlice(cmd, "include", &err)
 	exclude := getStringSlice(cmd, "exclude", &err)
-	orderRaw := getStringSlice(cmd, "order", &err)
-	prefixOrder := getBool(cmd, "prefix-order", &err)
+	followSymlinks := getBool(cmd, "follow-symlinks", &err)
 	providersSchema := getString(cmd, "providers-schema", &err)
 	useTerraformSchema := getBool(cmd, "use-terraform-schema", &err)
 	concurrency := getInt(cmd, "concurrency", &err)
-	verbose := getBool(cmd, "verbose", &err)
 	types := getStringSlice(cmd, "types", &err)
 	all := getBool(cmd, "all", &err)
 	if err != nil {
@@ -36,11 +35,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 
 	if checkMode && diffMode {
 		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify both --check and --diff"), Code: 2}
-	}
-
-	attrOrder, err := config.ParseOrder(orderRaw)
-	if err != nil {
-		return nil, &ExitCodeError{Err: err, Code: 2}
 	}
 
 	if !stdin && target == "" {
@@ -59,7 +53,7 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		mode = config.ModeCheck
 	case diffMode:
 		mode = config.ModeDiff
-	default:
+	case writeMode:
 		mode = config.ModeWrite
 	}
 
@@ -77,13 +71,13 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		Stdout:             stdout,
 		Include:            include,
 		Exclude:            exclude,
-		Order:              attrOrder,
-		PrefixOrder:        prefixOrder,
+		Order:              config.CanonicalOrder,
+		PrefixOrder:        false,
 		ProvidersSchema:    providersSchema,
 		UseTerraformSchema: useTerraformSchema,
 		Concurrency:        concurrency,
-		Verbose:            verbose,
 		Types:              cfgTypes,
+		FollowSymlinks:     followSymlinks,
 	}
 
 	if err := cfg.Validate(); err != nil {

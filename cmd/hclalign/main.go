@@ -54,19 +54,18 @@ func run(args []string) int {
 		SilenceUsage: true,
 	}
 
+	rootCmd.Flags().Bool("write", true, "write result to files")
 	rootCmd.Flags().Bool("check", false, "check if files are formatted")
 	rootCmd.Flags().Bool("diff", false, "print the diff of required changes")
-	rootCmd.MarkFlagsMutuallyExclusive("check", "diff")
+	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 	rootCmd.Flags().Bool("stdin", false, "read from STDIN")
 	rootCmd.Flags().Bool("stdout", false, "write result to STDOUT")
 	rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	rootCmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
-	rootCmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
-	rootCmd.Flags().Bool("prefix-order", false, "alphabetize attributes not in canonical lists")
+	rootCmd.Flags().Bool("follow-symlinks", false, "follow symbolic links when traversing directories")
 	rootCmd.Flags().String("providers-schema", "", "path to providers schema file")
 	rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
-	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")
 	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
