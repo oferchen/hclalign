@@ -57,13 +57,14 @@ func TestTemplatesIdempotent(t *testing.T) {
 	require.NoError(t, err)
 	cfg := &config.Config{Stdout: true}
 	var out bytes.Buffer
-	_, err = ProcessReader(context.Background(), bytes.NewReader(inBytes), &out, cfg)
+	changed, err := ProcessReader(context.Background(), bytes.NewReader(inBytes), &out, cfg)
 	require.NoError(t, err)
+	require.False(t, changed)
 
 	first := out.Bytes()
 	out.Reset()
 
-	changed, err := ProcessReader(context.Background(), bytes.NewReader(first), &out, cfg)
+	changed, err = ProcessReader(context.Background(), bytes.NewReader(first), &out, cfg)
 	require.NoError(t, err)
 	require.False(t, changed)
 	require.Equal(t, string(first), out.String())
@@ -76,11 +77,12 @@ func TestTemplatesProcessReaderTwice(t *testing.T) {
 
 	cfg := &config.Config{Stdout: true}
 	var first bytes.Buffer
-	_, err = ProcessReader(context.Background(), bytes.NewReader(inBytes), &first, cfg)
+	changed, err := ProcessReader(context.Background(), bytes.NewReader(inBytes), &first, cfg)
 	require.NoError(t, err)
+	require.False(t, changed)
 
 	var second bytes.Buffer
-	changed, err := ProcessReader(context.Background(), bytes.NewReader(first.Bytes()), &second, cfg)
+	changed, err = ProcessReader(context.Background(), bytes.NewReader(first.Bytes()), &second, cfg)
 	require.NoError(t, err)
 	require.False(t, changed)
 	require.Equal(t, first.String(), second.String())
