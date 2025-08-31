@@ -4,6 +4,7 @@ package engine
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,8 +15,6 @@ import (
 )
 
 func TestProcessInvalidHCLFile(t *testing.T) {
-	t.Parallel()
-
 	dir := t.TempDir()
 	path := filepath.Join(dir, "bad.tf")
 	orig := "variable \"a\" {\n"
@@ -27,9 +26,15 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 		Concurrency: 1,
 	}
 
+	origFmt := terraformFmtFormatFile
+	terraformFmtFormatFile = func(ctx context.Context, p string) (bool, error) {
+		return false, fmt.Errorf("boom")
+	}
+	defer func() { terraformFmtFormatFile = origFmt }()
+
 	changed, err := Process(context.Background(), cfg)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "parsing error")
+	require.Contains(t, err.Error(), fmt.Sprintf("parsing error in file %s", path))
 	require.False(t, changed)
 
 	data, err := os.ReadFile(path)
