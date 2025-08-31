@@ -15,10 +15,6 @@ func TestScanDefaultExcludeDirectories(t *testing.T) {
 	t.Parallel()
 
 	dir := filepath.Join("..", "..", "tests", "cases", "default_excludes")
-	gitIgnored := filepath.Join(dir, ".git", "ignored.tf")
-	require.NoError(t, os.MkdirAll(filepath.Dir(gitIgnored), 0o755))
-	require.NoError(t, os.WriteFile(gitIgnored, []byte(""), 0o644))
-	t.Cleanup(func() { _ = os.RemoveAll(filepath.Dir(gitIgnored)) })
 
 	cfg := &config.Config{
 		Target:  dir,
