@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"sync/atomic"
 
@@ -95,9 +94,6 @@ func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[s
 						case <-ctx.Done():
 							return
 						}
-					}
-					if cfg.Verbose {
-						log.Printf("processed file: %s", f)
 					}
 				}
 			}

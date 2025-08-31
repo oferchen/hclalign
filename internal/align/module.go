@@ -2,6 +2,8 @@
 package align
 
 import (
+	"sort"
+
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
@@ -11,7 +13,7 @@ type moduleStrategy struct{}
 
 func (moduleStrategy) Name() string { return "module" }
 
-func (moduleStrategy) Align(block *hclwrite.Block, opts *Options) error {
+func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	body := block.Body()
 	attrs := body.Attributes()
 	canonical := CanonicalBlockAttrOrder["module"]

@@ -10,7 +10,7 @@ type providerStrategy struct{}
 
 func (providerStrategy) Name() string { return "provider" }
 
-func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
+func (providerStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	attrs := block.Body().Attributes()
 	canonical := CanonicalBlockAttrOrder["provider"]
 
@@ -31,6 +31,7 @@ func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		}
 		extra = append(extra, name)
 	}
+	sort.Strings(extra)
 	names = append(names, extra...)
 	return reorderBlock(block, names)
 }

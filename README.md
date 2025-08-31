@@ -22,7 +22,7 @@ Attributes are reordered inside these block types using canonical schemas:
 - **locals:** no reordering
 - **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically and other attributes
 - **provider:** `alias` followed by remaining attributes sorted alphabetically, then nested blocks in their original order
-- **terraform:** `required_version`, `required_providers` (entries sorted alphabetically), `experiments`, `ephemeral`, `backend`, `cloud`, then other attributes and blocks
+- **terraform:** `required_version`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then other attributes and blocks
 - **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical), followed by any other attributes
 
 Validation blocks are placed immediately after canonical attributes. Attributes not covered by a canonical list or provider schema keep their original order, except in `provider` blocks where they are sorted alphabetically after `alias`. Entries within `required_providers` are sorted alphabetically by provider name.
@@ -81,13 +81,14 @@ keep their original order.
 
 By default `hclalign` rewrites files in place. The following flags adjust this behavior:
 
+- `--write`: write result to files (default true)
 - `--check`: exit with non‑zero status if changes are required
 - `--diff`: print unified diff instead of writing files
+- `--follow-symlinks`: follow symbolic links when searching for files
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
 - `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `.terraform.lock.hcl`, `**/vendor/**`)
 - `--order`: control variable attribute order
 - `--concurrency`: maximum parallel file processing
-- `-v, --verbose`: enable verbose logging
 - `--providers-schema`: path to a provider schema JSON file
 - `--use-terraform-schema`: derive schema via `terraform providers schema -json`
 - `--types`: comma-separated list of block types to align (defaults to `variable`)

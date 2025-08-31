@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -25,6 +24,7 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 		RunE:         RunE,
 		SilenceUsage: true,
 	}
+	cmd.Flags().Bool("write", true, "write result to files")
 	cmd.Flags().Bool("check", false, "check if files are formatted")
 	cmd.Flags().Bool("diff", false, "print the diff of required changes")
 	cmd.Flags().Bool("stdin", false, "read from STDIN")
@@ -32,15 +32,15 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	cmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
 	cmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
+	cmd.Flags().Bool("follow-symlinks", false, "follow symbolic links when traversing directories")
 	cmd.Flags().String("providers-schema", "", "path to providers schema file")
 	cmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
-	cmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
 	cmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	cmd.Flags().Bool("all", false, "align all block types")
 	cmd.MarkFlagsMutuallyExclusive("types", "all")
 	if exclusive {
-		cmd.MarkFlagsMutuallyExclusive("check", "diff")
+		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
 	}
 	return cmd
 }
@@ -293,57 +293,6 @@ func TestRunEModes(t *testing.T) {
 				if tt.wantFile != "" {
 					require.Equal(t, tt.wantFile, string(data))
 				}
-			}
-		})
-	}
-}
-
-func TestRunEVerbose(t *testing.T) {
-	unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
-
-	tests := []struct {
-		name    string
-		verbose bool
-		wantLog bool
-	}{
-		{name: "verbose", verbose: true, wantLog: true},
-		{name: "silent", verbose: false, wantLog: false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dir := t.TempDir()
-			path := filepath.Join(dir, "test.tf")
-			require.NoError(t, os.WriteFile(path, []byte(unformatted), 0o644))
-
-			cmd := newRootCmd(true)
-			args := []string{path}
-			if tt.verbose {
-				args = append(args, "--verbose")
-			}
-			cmd.SetArgs(args)
-
-			oldOut := log.Writer()
-			r, w, err := os.Pipe()
-			require.NoError(t, err)
-			log.SetOutput(w)
-			t.Cleanup(func() { log.SetOutput(oldOut) })
-			logCh := make(chan string)
-			go func() {
-				var buf bytes.Buffer
-				_, _ = io.Copy(&buf, r)
-				logCh <- buf.String()
-			}()
-
-			_, err = cmd.ExecuteC()
-			require.NoError(t, err)
-
-			w.Close()
-			got := <-logCh
-			if tt.wantLog {
-				require.Contains(t, got, "processed file: ")
-			} else {
-				require.Empty(t, got)
 			}
 		})
 	}

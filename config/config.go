@@ -27,10 +27,10 @@ type Config struct {
 	Exclude            []string
 	Order              []string
 	Concurrency        int
-	Verbose            bool
 	ProvidersSchema    string
 	UseTerraformSchema bool
 	Types              []string
+	FollowSymlinks     bool
 }
 
 var (

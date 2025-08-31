@@ -13,12 +13,8 @@ type variableStrategy struct{}
 
 func (variableStrategy) Name() string { return "variable" }
 
-func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
+func (variableStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	canonical := CanonicalBlockAttrOrder["variable"]
-	order := opts.Order
-	if len(order) == 0 {
-		order = canonical
-	}
 	canonicalSet := make(map[string]struct{}, len(canonical))
 	for _, name := range canonical {
 		canonicalSet[name] = struct{}{}
