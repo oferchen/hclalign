@@ -38,7 +38,7 @@ func TestValidateOrder_EmptyAttributeName(t *testing.T) {
 }
 
 func TestDefaultExcludeMatchesExpected(t *testing.T) {
-	expected := []string{".terraform/**", "**/.terraform/**", "vendor/**", ".git/**", "**/.git/**"}
+	expected := []string{".terraform/**", "**/.terraform/**", "vendor/**"}
 	if !reflect.DeepEqual(DefaultExclude, expected) {
 		t.Fatalf("expected DefaultExclude to be %v, got %v", expected, DefaultExclude)
 	}
