@@ -144,3 +144,15 @@ func TestHintsBOM(t *testing.T) {
 		})
 	}
 }
+
+type errReader struct{}
+
+func (errReader) Read(p []byte) (int, error) { return 0, errors.New("read error") }
+
+func TestReadAllWithHintsError(t *testing.T) {
+	t.Parallel()
+	_, _, err := ReadAllWithHints(errReader{})
+	if err == nil {
+		t.Fatalf("expected error from reader")
+	}
+}

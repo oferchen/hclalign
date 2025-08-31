@@ -114,3 +114,37 @@ func TestValidate_EmptyOrderAttribute(t *testing.T) {
 		t.Fatalf("expected error for empty order attribute, got %v", err)
 	}
 }
+
+func TestParseOrder(t *testing.T) {
+	order := []string{"a", "b"}
+	got, err := ParseOrder(order)
+	if err != nil {
+		t.Fatalf("ParseOrder: %v", err)
+	}
+	if &got[0] == &order[0] {
+		t.Fatalf("ParseOrder did not copy slice")
+	}
+
+	_, err = ParseOrder([]string{"", "b"})
+	if err == nil {
+		t.Fatalf("expected error for empty attribute")
+	}
+}
+
+func TestValidateTypes(t *testing.T) {
+	c := Config{Concurrency: 1, Include: DefaultInclude, Exclude: DefaultExclude, Types: []string{"", "var"}}
+	if err := c.Validate(); err == nil {
+		t.Fatalf("expected error for empty type name")
+	}
+	c = Config{Concurrency: 1, Include: DefaultInclude, Exclude: DefaultExclude, Types: []string{"a", "a"}}
+	if err := c.Validate(); err == nil {
+		t.Fatalf("expected error for duplicate type")
+	}
+	c = Config{Concurrency: 1, Include: DefaultInclude, Exclude: DefaultExclude, Types: []string{}}
+	if err := c.Validate(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(c.Types) != 1 || c.Types[0] != "variable" {
+		t.Fatalf("unexpected default type: %v", c.Types)
+	}
+}

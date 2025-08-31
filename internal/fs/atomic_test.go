@@ -305,3 +305,29 @@ func TestStdioDetection(t *testing.T) {
 		t.Fatalf("buffer detected as stdout")
 	}
 }
+
+func TestWriteFileAtomicCanceledAtStart(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	path := filepath.Join(t.TempDir(), "out.txt")
+	err := WriteFileAtomic(ctx, WriteOpts{Path: path, Data: []byte("x"), Perm: 0o644})
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("WriteFileAtomic error = %v; want %v", err, context.Canceled)
+	}
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("file unexpectedly created")
+	}
+}
+
+func TestWriteFileAtomicMissingDir(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "missing", "out.txt")
+	err := WriteFileAtomic(context.Background(), WriteOpts{Path: path, Data: []byte("x"), Perm: 0o644})
+	if err == nil {
+		t.Fatalf("expected error for missing directory")
+	}
+}

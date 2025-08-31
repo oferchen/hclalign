@@ -101,3 +101,11 @@ func TestLoadSchemasUseTerraformSchemaCache(t *testing.T) {
 	_, ok := schemas["test_thing"]
 	require.True(t, ok)
 }
+
+func TestLoadSchemasMissingFile(t *testing.T) {
+	t.Parallel()
+	cfg := &config.Config{ProvidersSchema: filepath.Join(t.TempDir(), "missing.json")}
+	schemas, err := loadSchemas(context.Background(), cfg)
+	require.Error(t, err)
+	require.Nil(t, schemas)
+}

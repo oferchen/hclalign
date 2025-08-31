@@ -148,3 +148,16 @@ func TestMatcherRejectsOutsideRoot(t *testing.T) {
 	upPath := filepath.Join(root, "..", filepath.Base(out), "out.tf")
 	assert.False(t, m.Matches(upPath))
 }
+
+func TestNewMatcherInvalidExcludePattern(t *testing.T) {
+	_, err := patternmatching.NewMatcher(nil, []string{"["}, "")
+	assert.Error(t, err)
+}
+
+func TestMatcherMatchesNonExistentPath(t *testing.T) {
+	wd := t.TempDir()
+	m, err := patternmatching.NewMatcher([]string{"**/*.tf"}, nil, wd)
+	require.NoError(t, err)
+	missing := filepath.Join(wd, "missing.tf")
+	assert.False(t, m.Matches(missing))
+}
