@@ -29,13 +29,20 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	useTerraformSchema := getBool(cmd, "use-terraform-schema", &err)
 	concurrency := getInt(cmd, "concurrency", &err)
 	types := getStringSlice(cmd, "types", &err)
+	followSymlinks := getBool(cmd, "follow-symlinks", &err)
 	all := getBool(cmd, "all", &err)
 	if err != nil {
 		return nil, err
 	}
 
-	if checkMode && diffMode {
-		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify both --check and --diff"), Code: 2}
+	modeCount := 0
+	for _, m := range []bool{writeMode, checkMode, diffMode} {
+		if m {
+			modeCount++
+		}
+	}
+	if modeCount > 1 {
+		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify multiple modes"), Code: 2}
 	}
 
 	if !stdin && target == "" {
@@ -50,6 +57,8 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 
 	var mode config.Mode
 	switch {
+	case writeMode:
+		mode = config.ModeWrite
 	case checkMode:
 		mode = config.ModeCheck
 	case diffMode:

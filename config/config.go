@@ -34,8 +34,8 @@ type Config struct {
 }
 
 var (
-	DefaultInclude = []string{"**/*.tf", "**/*.tfvars"}
-	DefaultExclude = []string{".terraform/**", "**/vendor/**", "**/*~", "**/*.swp", "**/*.tmp", "**/*.tfstate*"}
+	DefaultInclude = []string{"**/*.tf"}
+	DefaultExclude = []string{".terraform/**", "vendor/**"}
 	CanonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 )
 
@@ -56,9 +56,6 @@ func (c *Config) Validate() error {
 	if err := patternmatching.ValidatePatterns(c.Exclude); err != nil {
 		return fmt.Errorf("invalid exclude: %w", err)
 	}
-	if err := ValidateOrder(c.Order); err != nil {
-		return fmt.Errorf("invalid order: %w", err)
-	}
 	if c.Types != nil {
 		if len(c.Types) == 0 {
 			c.Types = []string{"variable"}
@@ -75,25 +72,4 @@ func (c *Config) Validate() error {
 		}
 	}
 	return nil
-}
-
-func ValidateOrder(order []string) error {
-	provided := make(map[string]struct{})
-	for _, item := range order {
-		if item == "" {
-			return fmt.Errorf("attribute name cannot be empty")
-		}
-		if _, exists := provided[item]; exists {
-			return fmt.Errorf("duplicate attribute '%s' found in order", item)
-		}
-		provided[item] = struct{}{}
-	}
-	return nil
-}
-
-func ParseOrder(order []string) ([]string, error) {
-	if err := ValidateOrder(order); err != nil {
-		return nil, err
-	}
-	return append([]string(nil), order...), nil
 }

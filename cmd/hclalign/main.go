@@ -54,7 +54,7 @@ func run(args []string) int {
 		SilenceUsage: true,
 	}
 
-	rootCmd.Flags().Bool("write", true, "write result to files")
+	rootCmd.Flags().Bool("write", false, "write result to files")
 	rootCmd.Flags().Bool("check", false, "check if files are formatted")
 	rootCmd.Flags().Bool("diff", false, "print the diff of required changes")
 	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
@@ -69,6 +69,7 @@ func run(args []string) int {
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")
+	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when scanning")
 	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
 		return &cli.ExitCodeError{Err: err, Code: 2}
 	})

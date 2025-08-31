@@ -24,7 +24,7 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 		RunE:         RunE,
 		SilenceUsage: true,
 	}
-	cmd.Flags().Bool("write", true, "write result to files")
+	cmd.Flags().Bool("write", false, "write result to files")
 	cmd.Flags().Bool("check", false, "check if files are formatted")
 	cmd.Flags().Bool("diff", false, "print the diff of required changes")
 	cmd.Flags().Bool("stdin", false, "read from STDIN")
@@ -38,6 +38,7 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	cmd.Flags().Bool("all", false, "align all block types")
+	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when scanning")
 	cmd.MarkFlagsMutuallyExclusive("types", "all")
 	if exclusive {
 		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
