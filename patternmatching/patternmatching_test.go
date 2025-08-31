@@ -77,6 +77,8 @@ func TestMatcherDefaultExclude(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", ".terraform", "included.tf"), []byte(""), 0o644))
 	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "ignored.tf"), []byte(""), 0o644))
+	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", "vendor"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", "vendor", "included.tf"), []byte(""), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "tempfile~"), []byte(""), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "swap.swp"), []byte(""), 0o644))
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "temporary.tmp"), []byte(""), 0o644))
@@ -90,6 +92,8 @@ func TestMatcherDefaultExclude(t *testing.T) {
 	assert.True(t, m.Matches(filepath.Join(wd, "main.tf")))
 	assert.True(t, m.Matches(filepath.Join(wd, "nested", ".terraform")))
 	assert.True(t, m.Matches(filepath.Join(wd, "nested", ".terraform", "included.tf")))
+	assert.True(t, m.Matches(filepath.Join(wd, "nested", "vendor")))
+	assert.True(t, m.Matches(filepath.Join(wd, "nested", "vendor", "included.tf")))
 	paths := []string{
 		filepath.Join(wd, ".terraform"),
 		filepath.Join(wd, ".terraform", "ignored.tf"),

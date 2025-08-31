@@ -26,5 +26,6 @@ func TestScanDefaultExcludeDirectories(t *testing.T) {
 	require.Equal(t, []string{
 		filepath.Join(dir, "main.tf"),
 		filepath.Join(dir, "nested", ".terraform", "ignored.tf"),
+		filepath.Join(dir, "nested", "vendor", "included.tf"),
 	}, files)
 }
