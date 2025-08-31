@@ -78,6 +78,30 @@ func TestRunMutuallyExclusiveFlags(t *testing.T) {
 	}
 }
 
+func TestRunSkipTerraformFmtFlag(t *testing.T) {
+	oldRunE := runE
+	t.Cleanup(func() { runE = oldRunE })
+
+	runE = func(cmd *cobra.Command, args []string) error {
+		f := cmd.Flags().Lookup("skip-terraform-fmt")
+		if f == nil || !f.Hidden {
+			t.Fatalf("flag not hidden")
+		}
+		v, err := cmd.Flags().GetBool("skip-terraform-fmt")
+		if err != nil {
+			t.Fatalf("get flag: %v", err)
+		}
+		if !v {
+			t.Fatalf("expected flag true")
+		}
+		return nil
+	}
+
+	if code := run([]string{"--skip-terraform-fmt"}); code != 0 {
+		t.Fatalf("expected exit code 0, got %d", code)
+	}
+}
+
 func TestRunWrappedExitCode(t *testing.T) {
 	oldRunE := runE
 	t.Cleanup(func() { runE = oldRunE })
