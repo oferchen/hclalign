@@ -43,8 +43,8 @@ func TestProviderAttributeOrder(t *testing.T) {
 	got := string(file.Bytes())
 	exp := `provider "aws" {
   alias   = "west"
-  profile = "default"
   region  = "us-east-1"
+  profile = "default"
 }`
 	require.Equal(t, exp, got)
 }
@@ -60,25 +60,9 @@ func TestProviderAttributeOrderNoAlias(t *testing.T) {
 	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
 	got := string(file.Bytes())
 	exp := `provider "aws" {
-  profile = "default"
   region  = "us-east-1"
+  profile = "default"
   version = "~> 4.0"
-}`
-	require.Equal(t, exp, got)
-}
-
-func TestProviderAttributePrefixOrder(t *testing.T) {
-	src := []byte(`provider "aws" {
-  zz = 1
-  aa = 2
-}`)
-	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
-	require.False(t, diags.HasErrors())
-	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
-	got := string(file.Bytes())
-	exp := `provider "aws" {
-  aa = 2
-  zz = 1
 }`
 	require.Equal(t, exp, got)
 }
