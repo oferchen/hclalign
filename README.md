@@ -13,19 +13,19 @@
 
 ## Supported Blocks and Canonical Order
 
-`hclalign` aligns attributes inside Terraform blocks. By default it processes only `variable` blocks and targets files matching the glob patterns `**/*.tf` and `**/*.tfvars` while excluding `.terraform/**` and `**/vendor/**`.
+`hclalign` aligns attributes inside Terraform blocks. By default it processes only `variable` blocks and targets files matching the glob patterns `**/*.tf` and `**/*.tfvars` while excluding `.terraform/**`, `**/vendor/**`, `**/*~`, `**/*.swp`, `**/*.tmp`, and `**/*.tfstate*`.
 
 Attributes are reordered inside these block types using canonical schemas:
 
 - **variable:** `description`, `type`, `default`, `sensitive`, `nullable`, then any other attributes followed by `validation` blocks
-- **output:** `description`, `value`, `sensitive`, `depends_on`, then other attributes
+- **output:** `description`, `value`, `sensitive`, `ephemeral`, `depends_on`, then other attributes
 - **locals:** no reordering
 - **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically and other attributes
-- **provider:** `alias` followed by remaining attributes in their original order
+- **provider:** `alias` followed by remaining attributes sorted alphabetically
 - **terraform:** `required_version`, `experiments`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then other attributes and blocks
 - **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical), followed by any other attributes
 
-Validation blocks are placed immediately after canonical attributes. Attributes not covered by a canonical list or provider schema keep their original order. Entries within `required_providers` are sorted alphabetically by provider name.
+Validation blocks are placed immediately after canonical attributes. Attributes not covered by a canonical list or provider schema keep their original order, except in `provider` blocks where they are sorted alphabetically after `alias`. Entries within `required_providers` are sorted alphabetically by provider name.
 
 ### `required_providers` sorting
 
@@ -83,7 +83,7 @@ keep their original order.
 - `--check`: exit with non‑zero status if changes are required
 - `--diff`: print unified diff instead of writing files
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
-- `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `**/vendor/**`)
+- `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `**/vendor/**`, `**/*~`, `**/*.swp`, `**/*.tmp`, `**/*.tfstate*`)
 - `--follow-symlinks`: traverse symbolic links
 - `--order`: control variable attribute order
 - `--concurrency`: maximum parallel file processing

@@ -21,7 +21,7 @@ tidy: ## tidy modules
 	@$(GO) mod tidy -v
 
 fmt: ## format code and regenerate test fixtures
-	@$(GO) run mvdan.cc/gofumpt@v0.6.0 -l -w .
+	@$(GO) run mvdan.cc/gofumpt@v0.8.0 -l -w .
 	@if command -v terraform >/dev/null 2>&1; then \
 	terraform fmt -recursive tests/cases; \
 	else \
