@@ -31,6 +31,7 @@ func (providerStrategy) Align(block *hclwrite.Block, _ *Options) error {
 		}
 		extra = append(extra, name)
 	}
+	sort.Strings(extra)
 	names = append(names, extra...)
 	return reorderBlock(block, names)
 }
