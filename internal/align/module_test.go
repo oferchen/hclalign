@@ -39,3 +39,25 @@ func TestModuleProvisionerAndProviders(t *testing.T) {
 }`
 	require.Equal(t, exp, got)
 }
+
+func TestModuleProvidersPrefixOrder(t *testing.T) {
+	src := []byte(`module "example" {
+  source    = "./m"
+  providers = {
+    b = aws.b
+    a = aws.a
+  }
+}`)
+	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
+	got := string(file.Bytes())
+	exp := `module "example" {
+  source = "./m"
+  providers = {
+    a = aws.a
+    b = aws.b
+  }
+}`
+	require.Equal(t, exp, got)
+}
