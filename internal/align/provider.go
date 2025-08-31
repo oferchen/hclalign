@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
 
 type providerStrategy struct{}

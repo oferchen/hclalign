@@ -4,8 +4,7 @@ package align
 import "github.com/hashicorp/hcl/v2/hclwrite"
 
 type Options struct {
-	Order []string
-
+	Order       []string
 	PrefixOrder bool
 
 	Schemas map[string]*Schema
@@ -13,8 +12,6 @@ type Options struct {
 	Schema *Schema
 
 	Types map[string]struct{}
-
-	PrefixOrder bool
 }
 
 type Schema struct {
