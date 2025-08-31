@@ -86,6 +86,7 @@ keep their original order.
 - `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `**/vendor/**`)
 - `--follow-symlinks`: traverse symbolic links
 - `--order`: control variable attribute order
+- `--prefix-order`: alphabetize attributes not in canonical lists
 - `--concurrency`: maximum parallel file processing
 - `-v, --verbose`: enable verbose logging
 - `--providers-schema`: path to a provider schema JSON file

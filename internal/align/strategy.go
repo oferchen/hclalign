@@ -11,6 +11,8 @@ type Options struct {
 	Schema *Schema
 
 	Types map[string]struct{}
+
+	PrefixOrder bool
 }
 
 type Schema struct {

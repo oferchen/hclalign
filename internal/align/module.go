@@ -2,8 +2,10 @@
 package align
 
 import (
+	"bytes"
 	"sort"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
@@ -25,6 +27,15 @@ func (moduleStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	attrTokens := make(map[string]ihcl.AttrTokens, len(attrs))
 	for name, attr := range attrs {
 		attrTokens[name] = ihcl.ExtractAttrTokens(attr)
+	}
+	if opts != nil && opts.PrefixOrder {
+		if at, ok := attrTokens["providers"]; ok {
+			sorted, err := sortProvidersMap(at)
+			if err != nil {
+				return err
+			}
+			attrTokens["providers"] = sorted
+		}
 	}
 	blocks := body.Blocks()
 
@@ -140,3 +151,34 @@ func orderModuleAttrs(names, canonical []string) []string {
 }
 
 func init() { Register(moduleStrategy{}) }
+
+func sortProvidersMap(at ihcl.AttrTokens) (ihcl.AttrTokens, error) {
+	exprTokens := at.ExprTokens
+	if len(exprTokens) < 2 || exprTokens[0].Type != hclsyntax.TokenOBrace {
+		return at, nil
+	}
+	var buf bytes.Buffer
+	buf.WriteString("dummy ")
+	for _, t := range exprTokens {
+		buf.Write(t.Bytes)
+	}
+	buf.WriteByte('\n')
+	file, diags := hclwrite.ParseConfig(buf.Bytes(), "providers.hcl", hcl.InitialPos)
+	if diags.HasErrors() {
+		return at, diags
+	}
+	block := file.Body().Blocks()[0]
+	attrs := block.Body().Attributes()
+	names := make([]string, 0, len(attrs))
+	for name := range attrs {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	if err := reorderBlock(block, names); err != nil {
+		return at, err
+	}
+	inner := block.Body().BuildTokens(nil)
+	at.ExprTokens = append(hclwrite.Tokens{exprTokens[0]}, inner...)
+	at.ExprTokens = append(at.ExprTokens, exprTokens[len(exprTokens)-1])
+	return at, nil
+}

@@ -2,6 +2,8 @@
 package align
 
 import (
+	"sort"
+
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
@@ -24,12 +26,17 @@ func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	}
 
 	original := ihcl.AttributeOrder(block.Body(), attrs)
+	extra := make([]string, 0)
 	for _, name := range original {
 		if _, ok := reserved[name]; ok {
 			continue
 		}
-		names = append(names, name)
+		extra = append(extra, name)
 	}
+	if opts != nil && opts.PrefixOrder {
+		sort.Strings(extra)
+	}
+	names = append(names, extra...)
 
 	return reorderBlock(block, names)
 }

@@ -29,3 +29,19 @@ func TestOutputAttributeOrder(t *testing.T) {
 }`
 	require.Equal(t, exp, got)
 }
+
+func TestOutputAttributePrefixOrder(t *testing.T) {
+	src := []byte(`output "example" {
+  c = 1
+  a = 1
+}`)
+	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
+	require.False(t, diags.HasErrors())
+	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{PrefixOrder: true}))
+	got := string(file.Bytes())
+	exp := `output "example" {
+  a = 1
+  c = 1
+}`
+	require.Equal(t, exp, got)
+}

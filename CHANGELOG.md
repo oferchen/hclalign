@@ -17,3 +17,4 @@ All notable changes to this project will be documented in this file.
 - Documented exit codes and provided CI/editor usage examples to encourage safe automation.
 - Enforced single-line SPDX comment rule.
 - Achieved ≥95% line coverage across core packages.
+- Introduced `--prefix-order` flag to alphabetize non-canonical attributes and sort module provider maps.
