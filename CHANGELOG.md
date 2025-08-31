@@ -14,7 +14,6 @@ All notable changes to this project will be documented in this file.
 - Added variable-attribute reordering tool with support for include/exclude globs and the `--order` flag for custom schemas.
 - Introduced safety features such as check and diff modes, idempotent operation, and atomic file writes.
 - Improved testing with race detector and fuzz test execution.
-- Added optional symlink traversal via `--follow-symlinks` and clarified default include/exclude patterns.
 - Documented exit codes and provided CI/editor usage examples to encourage safe automation.
 - Enforced single-line SPDX comment rule.
 - Achieved ≥95% line coverage across core packages.

@@ -91,7 +91,6 @@ keep their original order.
 - `--diff`: print unified diff instead of writing files
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
 - `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `.terraform.lock.hcl`, `**/vendor/**`)
-- `--follow-symlinks`: traverse symbolic links
 - `--order`: control variable attribute order
 - `--prefix-order`: alphabetize attributes not in canonical lists
 - `--concurrency`: maximum parallel file processing
