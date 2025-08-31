@@ -21,11 +21,11 @@ Attributes are reordered inside these block types using canonical schemas:
 - **output:** `description`, `value`, `sensitive`, `ephemeral`, `depends_on`, then other attributes
 - **locals:** no reordering
 - **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically and other attributes
-- **provider:** `alias` followed by remaining attributes in their original order
+- **provider:** `alias` followed by remaining attributes sorted alphabetically
 - **terraform:** `required_version`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then other attributes and blocks
 - **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical), followed by any other attributes
 
-Validation blocks are placed immediately after canonical attributes. Attributes not covered by a canonical list or provider schema keep their original order. Entries within `required_providers` are sorted alphabetically by provider name.
+Validation blocks are placed immediately after canonical attributes. Attributes not covered by a canonical list or provider schema keep their original order, except in `provider` blocks where they are sorted alphabetically after `alias`. Entries within `required_providers` are sorted alphabetically by provider name.
 
 ### `required_providers` sorting
 
