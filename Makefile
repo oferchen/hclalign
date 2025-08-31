@@ -6,7 +6,7 @@ COVERPROFILE := $(BUILD_DIR)/coverage.out
 
 GO ?= go
 
-.PHONY: init tidy fmt strip lint vet test test-race fuzz cover build clean align check ci
+.PHONY: init tidy fmt stripcomments lint vet test test-race fuzz cover build clean align check ci
 
 init: ## download and verify modules
 	$(GO) mod download
@@ -21,19 +21,21 @@ tidy: ## tidy modules
 	$(GO) mod tidy
 
 fmt: ## format code and regenerate test fixtures
-	$(GO) run mvdan.cc/gofumpt@v0.6.0 -w .
+	$(GO) run mvdan.cc/gofumpt@latest -w .
 	gofmt -s -w .
 	@if command -v terraform >/dev/null 2>&1; then \
-	terraform fmt -recursive; \
+	terraform fmt -recursive tests/cases; \
+	else \
+	echo "terraform not found; skipping terraform fmt"; \
 	fi
 	$(GO) run ./cmd/hclalign tests/cases
 
-strip: ## normalize Go file comments and enforce policy
+stripcomments: ## normalize Go file comments and enforce policy
 	$(GO) run ./tools/stripcomments --repo-root "$(PWD)"
 	$(GO) run ./cmd/commentcheck
 
 lint: ## run linters
-	       $(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 run --timeout=5m
+	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 run --timeout=5m
 
 vet: ## vet code
 	$(GO) vet $(PKG)
@@ -72,7 +74,7 @@ ci: ## run full CI pipeline
 	$(MAKE) init
 	$(MAKE) tidy
 	$(MAKE) fmt
-	$(MAKE) strip
+	$(MAKE) stripcomments
 	$(MAKE) lint
 	$(MAKE) vet
 	$(MAKE) test-race
