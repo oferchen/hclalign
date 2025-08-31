@@ -56,15 +56,25 @@ func process(root, path string) error {
 	if err != nil {
 		return err
 	}
+	rel, err := filepath.Rel(root, abs)
+	if err != nil {
+		return err
+	}
 	var tags []string
 	for _, cg := range f.Comments {
-		if cg.Pos() > f.Package {
-			continue
-		}
 		for _, c := range cg.List {
 			t := strings.TrimSpace(c.Text)
-			if strings.HasPrefix(t, "//go:build") || strings.HasPrefix(t, "// +build") {
+			isPragma := strings.HasPrefix(t, "//go:") || strings.HasPrefix(t, "// +build")
+			isBuild := strings.HasPrefix(t, "//go:build") || strings.HasPrefix(t, "// +build")
+			if isBuild && cg.Pos() <= f.Package {
 				tags = append(tags, t)
+				continue
+			}
+			if isPragma {
+				pos := fset.Position(c.Slash)
+				if len(cg.List) > 1 || pos.Line > 1 {
+					return fmt.Errorf("%s: pragma %q must be single line on first line", filepath.ToSlash(rel), t)
+				}
 			}
 		}
 	}
@@ -75,10 +85,6 @@ func process(root, path string) error {
 		return err
 	}
 	formatted, err := format.Source(buf.Bytes())
-	if err != nil {
-		return err
-	}
-	rel, err := filepath.Rel(root, abs)
 	if err != nil {
 		return err
 	}

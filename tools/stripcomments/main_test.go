@@ -104,3 +104,64 @@ func TestMainRepoRoot(t *testing.T) {
 		t.Fatalf("ignored file changed: got %q want %q", ignored, ignoreSrc)
 	}
 }
+
+func TestProcessPragmaErrors(t *testing.T) {
+	tests := []struct {
+		name   string
+		src    []string
+		pragma string
+	}{
+		{
+			name: "go generate single line",
+			src: []string{
+				"package main",
+				"",
+				"//go:generate echo hi",
+				"",
+				"func main() {}",
+			},
+			pragma: "//go:generate echo hi",
+		},
+		{
+			name: "go generate multi-line",
+			src: []string{
+				"package main",
+				"",
+				"//go:generate echo hi",
+				"//extra",
+				"",
+				"func main() {}",
+			},
+			pragma: "//go:generate echo hi",
+		},
+		{
+			name: "+build multi-line",
+			src: []string{
+				"package main",
+				"",
+				"// +build ignore",
+				"//extra",
+				"",
+				"func main() {}",
+			},
+			pragma: "// +build ignore",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			file := filepath.Join(dir, "x.go")
+			src := strings.Join(tt.src, "\n") + "\n"
+			if err := os.WriteFile(file, []byte(src), 0o644); err != nil {
+				t.Fatalf("write: %v", err)
+			}
+			err := process(dir, file)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if !strings.Contains(err.Error(), tt.pragma) {
+				t.Fatalf("error %v does not contain %q", err, tt.pragma)
+			}
+		})
+	}
+}
