@@ -19,7 +19,6 @@ type (
 )
 
 func TestWriteFileAtomic(t *testing.T) {
-	t.Parallel()
 	tests := []struct {
 		name     string
 		data     []byte
@@ -56,6 +55,8 @@ func TestWriteFileAtomic(t *testing.T) {
 			data: []byte("x"),
 			perm: 0o600,
 			setup: func(t *testing.T, dir, path string) any {
+				tmp := t.TempDir()
+				t.Setenv("TMPDIR", tmp)
 				entries, err := os.ReadDir(os.TempDir())
 				if err != nil {
 					t.Fatalf("readdir: %v", err)
