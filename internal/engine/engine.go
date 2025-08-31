@@ -78,7 +78,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	}
 
 	original := append([]byte(nil), data...)
-	originalWithHints := append(append([]byte(nil), hints.BOM()...), original...)
+	originalStyled := internalfs.ApplyHints(internalfs.PrepareForParse(original, hints), hints)
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
 
 	formatted, _, err := terraformfmt.Run(ctx, data)
@@ -122,13 +122,13 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	}
 
 	styled := internalfs.ApplyHints(append([]byte(nil), formatted...), hints)
-	changed := !bytes.Equal(originalWithHints, styled)
+	changed := !bytes.Equal(originalStyled, styled)
 
 	switch cfg.Mode {
 	case config.ModeDiff:
 		if changed {
 			styledForDiff := styled
-			originalForDiff := originalWithHints
+			originalForDiff := originalStyled
 			if hints.HasBOM {
 				bom := hints.BOM()
 				if len(styledForDiff) >= len(bom) {

@@ -32,6 +32,9 @@ func TestPhases(t *testing.T) {
 			var out bytes.Buffer
 			changed, err := ProcessReader(context.Background(), bytes.NewReader(inBytes), &out, cfg)
 			require.NoError(t, err)
+			if name == "templates" {
+				require.False(t, changed)
+			}
 			require.Equal(t, !bytes.Equal(inBytes, outExp), changed)
 			require.Equal(t, string(outExp), out.String())
 
