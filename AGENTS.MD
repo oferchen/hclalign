@@ -67,7 +67,7 @@ Non-negotiables:
     * `locals`: **no reordering** (fmt only)
     * `module`: `source, version, providers, count, for_each, depends_on, <inputs alpha>, <other>`
     * `provider`: `alias, <config attrs alpha>, <blocks>`
-    * `terraform`: `required_version, required_providers(alpha), backend, cloud, <other>`
+    * `terraform`: `required_version, experiments, required_providers(alpha), backend, cloud, <other>`
     * `resource/data`: meta-args first `provider, count, for_each, depends_on, lifecycle, provisioner*`, then **schema-driven** tiers: required → optional → computed (each alpha). Fallback to alpha when schema unknown.
   * Move **attributes** only; keep nested blocks & their order unless explicitly defined.
   * Use `BuildTokens(nil)` + `SetAttributeRaw`; never rebuild expressions.
