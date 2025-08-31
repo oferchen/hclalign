@@ -24,7 +24,10 @@ func TestScanDefaultExcludeDirectories(t *testing.T) {
 
 	files, err := scan(context.Background(), cfg)
 	require.NoError(t, err)
-	require.Equal(t, []string{filepath.Join(dir, "main.tf")}, files)
+	require.Equal(t, []string{
+		filepath.Join(dir, "main.tf"),
+		filepath.Join(dir, "nested", ".terraform", "ignored.tf"),
+	}, files)
 }
 
 func TestScanFollowSymlinksSelfCycle(t *testing.T) {
