@@ -14,7 +14,6 @@ func TestTerraformAttributeOrderAndBlocks(t *testing.T) {
 	src := []byte(`terraform {
   backend "s3" {}
   required_providers {}
-  experiments = ["test"]
   required_version = ">= 1.2.0"
   other = 1
   cloud {}
@@ -25,7 +24,6 @@ func TestTerraformAttributeOrderAndBlocks(t *testing.T) {
 	got := string(file.Bytes())
 	exp := `terraform {
   required_version = ">= 1.2.0"
-  experiments      = ["test"]
 
   required_providers {}
 

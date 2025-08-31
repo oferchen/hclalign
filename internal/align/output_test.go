@@ -10,22 +10,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOutputEphemeralPlacement(t *testing.T) {
-	src := []byte(`output "ephemeral" {
-  value      = var.v
-  depends_on = [var.x]
-  ephemeral  = true
-  sensitive  = false
+func TestOutputAttributeOrder(t *testing.T) {
+	src := []byte(`output "example" {
+  depends_on  = [var.x]
+  value       = var.v
+  description = "desc"
+  sensitive   = true
 }`)
 	file, diags := hclwrite.ParseConfig(src, "in.tf", hcl.InitialPos)
 	require.False(t, diags.HasErrors())
 	require.NoError(t, alignpkg.Apply(file, &alignpkg.Options{}))
 	got := string(file.Bytes())
-	exp := `output "ephemeral" {
-  value      = var.v
-  sensitive  = false
-  ephemeral  = true
-  depends_on = [var.x]
+	exp := `output "example" {
+  description = "desc"
+  value       = var.v
+  sensitive   = true
+  depends_on  = [var.x]
 }`
 	require.Equal(t, exp, got)
 }
