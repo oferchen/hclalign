@@ -20,9 +20,9 @@ func TestProcessFileTerraformFmt(t *testing.T) {
 	var formatCalls, runCalls int
 	origFormat := terraformFmtFormatFile
 	origRun := terraformFmtRun
-	terraformFmtFormatFile = func(ctx context.Context, path string) (bool, error) {
+	terraformFmtFormatFile = func(ctx context.Context, path string) ([]byte, internalfs.Hints, bool, error) {
 		formatCalls++
-		return false, nil
+		return nil, internalfs.Hints{}, false, nil
 	}
 	terraformFmtRun = func(ctx context.Context, b []byte) ([]byte, internalfs.Hints, error) {
 		runCalls++
@@ -49,9 +49,9 @@ func TestProcessFileTerraformFmtPreservesCRLF(t *testing.T) {
 
 	origFormat := terraformFmtFormatFile
 	origRun := terraformFmtRun
-	terraformFmtFormatFile = func(ctx context.Context, path string) (bool, error) {
+	terraformFmtFormatFile = func(ctx context.Context, path string) ([]byte, internalfs.Hints, bool, error) {
 		formatted := []byte("variable \"a\" {\n  type = string\n}\n")
-		return true, os.WriteFile(path, formatted, 0o644)
+		return formatted, internalfs.Hints{}, true, nil
 	}
 	terraformFmtRun = func(ctx context.Context, b []byte) ([]byte, internalfs.Hints, error) {
 		return b, internalfs.Hints{}, nil
@@ -82,9 +82,9 @@ func TestProcessFileTerraformFmtPreservesBOM(t *testing.T) {
 
 	origFormat := terraformFmtFormatFile
 	origRun := terraformFmtRun
-	terraformFmtFormatFile = func(ctx context.Context, path string) (bool, error) {
+	terraformFmtFormatFile = func(ctx context.Context, path string) ([]byte, internalfs.Hints, bool, error) {
 		formatted := []byte("variable \"a\" {\n  type = string\n}\n")
-		return true, os.WriteFile(path, formatted, 0o644)
+		return formatted, internalfs.Hints{}, true, nil
 	}
 	terraformFmtRun = func(ctx context.Context, b []byte) ([]byte, internalfs.Hints, error) {
 		return b, internalfs.Hints{}, nil

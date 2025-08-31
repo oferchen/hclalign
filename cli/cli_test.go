@@ -25,7 +25,6 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 		RunE:         RunE,
 		SilenceUsage: true,
 	}
-	cmd.Flags().Bool("write", false, "write result to file(s)")
 	cmd.Flags().Bool("check", false, "check if files are formatted")
 	cmd.Flags().Bool("diff", false, "print the diff of required changes")
 	cmd.Flags().Bool("stdin", false, "read from STDIN")
@@ -38,12 +37,11 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
-	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 	cmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	cmd.Flags().Bool("all", false, "align all block types")
 	cmd.MarkFlagsMutuallyExclusive("types", "all")
 	if exclusive {
-		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
+		cmd.MarkFlagsMutuallyExclusive("check", "diff")
 	}
 	return cmd
 }
@@ -211,8 +209,8 @@ func TestRunEModes(t *testing.T) {
 			wantStdout: formatted,
 		},
 		{
-			name:     "write",
-			flags:    []string{"--write"},
+			name:     "default",
+			flags:    nil,
 			wantCode: 0,
 			withFile: true,
 			wantFile: formatted,
@@ -348,45 +346,6 @@ func TestRunEVerbose(t *testing.T) {
 			} else {
 				require.Empty(t, got)
 			}
-		})
-	}
-}
-
-func TestRunEFollowSymlinks(t *testing.T) {
-	unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
-	formatted := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
-
-	tests := []struct {
-		name   string
-		follow bool
-		want   string
-	}{
-		{name: "follow", follow: true, want: formatted},
-		{name: "no_follow", follow: false, want: unformatted},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			base := t.TempDir()
-			target := t.TempDir()
-			realFile := filepath.Join(target, "file.tf")
-			require.NoError(t, os.WriteFile(realFile, []byte(unformatted), 0o644))
-			link := filepath.Join(base, "link")
-			require.NoError(t, os.Symlink(target, link))
-
-			cmd := newRootCmd(true)
-			args := []string{base}
-			if tt.follow {
-				args = append(args, "--follow-symlinks")
-			}
-			cmd.SetArgs(args)
-
-			_, err := cmd.ExecuteC()
-			require.NoError(t, err)
-
-			data, err := os.ReadFile(realFile)
-			require.NoError(t, err)
-			require.Equal(t, tt.want, string(data))
 		})
 	}
 }

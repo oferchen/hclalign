@@ -29,7 +29,6 @@ type Config struct {
 	PrefixOrder        bool
 	Concurrency        int
 	Verbose            bool
-	FollowSymlinks     bool
 	ProvidersSchema    string
 	UseTerraformSchema bool
 	Types              []string

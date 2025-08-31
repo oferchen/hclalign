@@ -1,4 +1,4 @@
-// tools/stripcomments/main_test.go
+// tools/strip/main_test.go
 package main
 
 import (
@@ -65,7 +65,7 @@ func TestMainRepoRoot(t *testing.T) {
 	if err := os.WriteFile(file, []byte(src), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	toolDir := filepath.Join(dir, "tools", "stripcomments")
+        toolDir := filepath.Join(dir, "tools", "strip")
 	if err := os.MkdirAll(toolDir, 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
@@ -76,7 +76,7 @@ func TestMainRepoRoot(t *testing.T) {
 	}
 	old := os.Args
 	defer func() { os.Args = old }()
-	os.Args = []string{"stripcomments", "--repo-root", dir}
+        os.Args = []string{"strip", "--repo-root", dir}
 	main()
 	out, err := os.ReadFile(file)
 	if err != nil {

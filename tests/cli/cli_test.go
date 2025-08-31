@@ -26,7 +26,7 @@ func buildBinary(t *testing.T) string {
 func TestCLI(t *testing.T) {
 	bin := buildBinary(t)
 
-	t.Run("write", func(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
 		unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
 		want := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
 
@@ -34,7 +34,7 @@ func TestCLI(t *testing.T) {
 		file := filepath.Join(dir, "test.tf")
 		require.NoError(t, os.WriteFile(file, []byte(unformatted), 0o644))
 
-		cmd := exec.Command(bin, file, "--write")
+		cmd := exec.Command(bin, file)
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
@@ -95,7 +95,7 @@ func TestCLI(t *testing.T) {
 		require.NoError(t, os.WriteFile(includedFile, []byte(unformatted), 0o644))
 		require.NoError(t, os.WriteFile(excludedFile, []byte(unformatted), 0o644))
 
-		cmd := exec.Command(bin, dir, "--write", "--include", "included.tf", "--exclude", "excluded.tf")
+		cmd := exec.Command(bin, dir, "--include", "included.tf", "--exclude", "excluded.tf")
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
@@ -128,7 +128,7 @@ func TestCLI(t *testing.T) {
 		require.NoError(t, os.WriteFile(terraformFile, []byte(unformatted), 0o644))
 		require.NoError(t, os.WriteFile(vendorFile, []byte(unformatted), 0o644))
 
-		cmd := exec.Command(bin, dir, "--write")
+		cmd := exec.Command(bin, dir)
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
@@ -191,7 +191,7 @@ func TestCLI(t *testing.T) {
 		file := filepath.Join(dir, "test.tf")
 		require.NoError(t, os.WriteFile(file, []byte(unformatted), 0o644))
 
-		cmd := exec.Command(bin, file, "--write", "--types", "output")
+		cmd := exec.Command(bin, file, "--types", "output")
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr

@@ -16,7 +16,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	}
 
 	var err error
-	writeMode := getBool(cmd, "write", &err)
 	checkMode := getBool(cmd, "check", &err)
 	diffMode := getBool(cmd, "diff", &err)
 	stdin := getBool(cmd, "stdin", &err)
@@ -29,15 +28,14 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	useTerraformSchema := getBool(cmd, "use-terraform-schema", &err)
 	concurrency := getInt(cmd, "concurrency", &err)
 	verbose := getBool(cmd, "verbose", &err)
-	followSymlinks := getBool(cmd, "follow-symlinks", &err)
 	types := getStringSlice(cmd, "types", &err)
 	all := getBool(cmd, "all", &err)
 	if err != nil {
 		return nil, err
 	}
 
-	if (writeMode && checkMode) || (writeMode && diffMode) || (checkMode && diffMode) {
-		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify more than one of --write, --check, or --diff"), Code: 2}
+	if checkMode && diffMode {
+		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify both --check and --diff"), Code: 2}
 	}
 
 	attrOrder, err := config.ParseOrder(orderRaw)
@@ -57,8 +55,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 
 	var mode config.Mode
 	switch {
-	case writeMode:
-		mode = config.ModeWrite
 	case checkMode:
 		mode = config.ModeCheck
 	case diffMode:
@@ -87,7 +83,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		UseTerraformSchema: useTerraformSchema,
 		Concurrency:        concurrency,
 		Verbose:            verbose,
-		FollowSymlinks:     followSymlinks,
 		Types:              cfgTypes,
 	}
 

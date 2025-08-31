@@ -1,10 +1,10 @@
-# /Makefile
+	# /Makefile
 PKG ?= ./...
-BIN ?= .build/hclalign
 COVER ?= coverage.out
 MINCOV ?= 95
 
 GO ?= go
+OSARCHES ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 
 .PHONY: init tidy fmt strip lint vet test test-race fuzz cover build clean
 
@@ -31,7 +31,7 @@ fmt: ## format code and regenerate test fixtures
 	xargs -0 -n1 -I{} sh -c 'dir=$$(dirname {}); $(GO) run ./cmd/hclalign --stdin --stdout < {} > $$dir/fmt.tf; $(GO) run ./cmd/hclalign --stdin --stdout --all < {} > $$dir/aligned.tf'
 
 strip: ## normalize Go file comments and enforce policy
-	@$(GO) run ./tools/stripcomments
+        @$(GO) run ./tools/strip --repo-root .
 	@$(GO) run ./cmd/commentcheck
 	@git diff --exit-code
 
@@ -57,9 +57,15 @@ cover: ## run coverage check
 	@$(GO) test -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=$(COVER) ./...
 	@$(GO) tool cover -func=$(COVER) | $(GO) run ./tools/covercheck $(MINCOV)
 
-build: ## build binary
-	@mkdir -p $(dir $(BIN))
-	@$(GO) build -trimpath -ldflags="-s -w" -buildvcs=false -o $(BIN) ./cmd/hclalign
+build: ## build binaries
+	@for target in $(OSARCHES); do \
+	os=$${target%/*}; arch=$${target#*/}; \
+	out=.build/$${os}-$${arch}; \
+	ext=""; [ $$os = windows ] && ext=.exe; \
+	echo "building $$os/$$arch"; \
+	mkdir -p $$out; \
+	CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO) build -trimpath -ldflags="-s -w" -buildvcs=false -o $$out/hclalign$$ext ./cmd/hclalign; \
+	done
 
 clean: ## remove build artifacts
 	@rm -rf .build $(COVER)
