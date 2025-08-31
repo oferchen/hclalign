@@ -3,6 +3,7 @@ package align_test
 
 import (
 	"bytes"
+	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -57,29 +58,29 @@ func TestGolden(t *testing.T) {
 				t.Fatalf("read out: %v", err)
 			}
 
-			fmtBytes, _, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
+			fmtBytes, _, err := terraformfmt.Format(context.Background(), inBytes, inPath, string(terraformfmt.StrategyGo))
 			if err != nil {
 				t.Fatalf("format input: %v", err)
 			}
 
-                        fmtBytes, _, err := terraformfmt.Format(inBytes, inPath, string(terraformfmt.StrategyGo))
-                        if err != nil {
-                                t.Fatalf("format input: %v", err)
-                        }
+			fmtBytes, _, err := terraformfmt.Format(context.Background(), inBytes, inPath, string(terraformfmt.StrategyGo))
+			if err != nil {
+				t.Fatalf("format input: %v", err)
+			}
 			hadNewline := len(inBytes) > 0 && inBytes[len(inBytes)-1] == '\n'
 			if !hadNewline && len(fmtBytes) > 0 && fmtBytes[len(fmtBytes)-1] == '\n' {
 				fmtBytes = fmtBytes[:len(fmtBytes)-1]
 			}
 
-			againFmt, _, err := terraformfmt.Format(fmtBytes, inPath, string(terraformfmt.StrategyGo))
+			againFmt, _, err := terraformfmt.Format(context.Background(), fmtBytes, inPath, string(terraformfmt.StrategyGo))
 			if err != nil {
 				t.Fatalf("format fmt: %v", err)
 			}
 
-                        againFmt, _, err := terraformfmt.Format(fmtBytes, inPath, string(terraformfmt.StrategyGo))
-                        if err != nil {
-                                t.Fatalf("format fmt: %v", err)
-                        }
+			againFmt, _, err := terraformfmt.Format(context.Background(), fmtBytes, inPath, string(terraformfmt.StrategyGo))
+			if err != nil {
+				t.Fatalf("format fmt: %v", err)
+			}
 			hadFmtNewline := len(fmtBytes) > 0 && fmtBytes[len(fmtBytes)-1] == '\n'
 			if !hadFmtNewline && len(againFmt) > 0 && againFmt[len(againFmt)-1] == '\n' {
 				againFmt = againFmt[:len(againFmt)-1]
