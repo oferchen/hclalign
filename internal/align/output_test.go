@@ -14,6 +14,7 @@ func TestOutputAttributeOrder(t *testing.T) {
 	src := []byte(`output "example" {
   depends_on  = [var.x]
   value       = var.v
+  ephemeral   = true
   description = "desc"
   sensitive   = true
 }`)
@@ -25,6 +26,7 @@ func TestOutputAttributeOrder(t *testing.T) {
   description = "desc"
   value       = var.v
   sensitive   = true
+  ephemeral   = true
   depends_on  = [var.x]
 }`
 	require.Equal(t, exp, got)

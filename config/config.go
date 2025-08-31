@@ -37,7 +37,7 @@ type Config struct {
 
 var (
 	DefaultInclude = []string{"**/*.tf", "**/*.tfvars"}
-	DefaultExclude = []string{".terraform/**", "**/vendor/**"}
+	DefaultExclude = []string{".terraform/**", "**/vendor/**", "**/*~", "**/*.swp", "**/*.tmp", "**/*.tfstate*"}
 	CanonicalOrder = []string{"description", "type", "default", "sensitive", "nullable"}
 )
 
