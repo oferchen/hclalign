@@ -84,6 +84,11 @@ func (m *Matcher) Matches(path string) bool {
 		}
 	}
 	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
 	isDir := err == nil && info.IsDir()
 	if isDir {
 		return true
