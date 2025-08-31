@@ -23,7 +23,10 @@ jobs:
       - run: make init
       - run: make tidy
       - run: make fmt
-      - run: make strip
+      - run: |
+          go run ./tools/strip --repo-root .
+          go run ./cmd/commentcheck
+          git diff --exit-code
       - run: make lint
       - run: make vet
       - run: make test-race
