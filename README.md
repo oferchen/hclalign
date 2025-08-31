@@ -169,7 +169,7 @@ cat variables.tf | hclalign --stdin --stdout
 
 Terraform CLI is optional. If installed, `make fmt` runs `terraform fmt` on `tests/cases` and regenerates golden test files.
 
-`make fmt` uses `go run mvdan.cc/gofumpt@latest` so contributors do not need to install `gofumpt` manually.
+`make fmt` uses `go run mvdan.cc/gofumpt@v0.6.0` so contributors do not need to install `gofumpt` manually.
 
 ## Continuous Integration
 Use `hclalign . --check` in CI to fail builds when formatting is needed. The provided GitHub Actions workflow runs `make tidy`, `make fmt`, `make lint`, `make test-race`, and `make cover` on Linux and macOS with multiple Go versions.
