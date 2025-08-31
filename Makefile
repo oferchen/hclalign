@@ -1,6 +1,6 @@
 	# /Makefile
 PKG ?= ./...
-COVER ?= coverage.out
+COVER ?= .build/coverage.out
 MINCOV ?= 95
 
 GO ?= go
@@ -31,7 +31,7 @@ fmt: ## format code and regenerate test fixtures
 	xargs -0 -n1 -I{} sh -c 'dir=$$(dirname {}); $(GO) run ./cmd/hclalign --stdin --stdout < {} > $$dir/fmt.tf; $(GO) run ./cmd/hclalign --stdin --stdout --all < {} > $$dir/aligned.tf'
 
 strip: ## normalize Go file comments and enforce policy
-        @$(GO) run ./tools/strip --repo-root .
+	@$(GO) run ./tools/strip --repo-root .
 	@$(GO) run ./cmd/commentcheck
 	@git diff --exit-code
 
@@ -41,11 +41,12 @@ lint: ## run linters
 vet: ## vet code
 	@$(GO) vet $(PKG)
 
-test: ## run tests
-	@$(GO) test -shuffle=on -cover $(PKG)
+test: ## run tests with race detector and coverage gate
+	@mkdir -p $(dir $(COVER))
+	@$(GO) test -race -shuffle=on -cover -coverprofile=$(COVER) $(PKG)
+	@$(GO) tool cover -func=$(COVER) | $(GO) run ./tools/covercheck $(MINCOV)
 
-test-race: ## run tests with race detector
-	@$(GO) test -race -shuffle=on $(PKG)
+test-race: test ## legacy alias
 
 fuzz: ## run fuzz tests
 	@$(GO) test ./... -run=^$ -fuzz=Fuzz -fuzztime=5s
@@ -54,6 +55,7 @@ fuzz: ## run fuzz tests
 	@$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/hcl
 
 cover: ## run coverage check
+	@mkdir -p $(dir $(COVER))
 	@$(GO) test -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=$(COVER) ./...
 	@$(GO) tool cover -func=$(COVER) | $(GO) run ./tools/covercheck $(MINCOV)
 

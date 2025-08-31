@@ -27,8 +27,7 @@ jobs:
           git diff --exit-code
       - run: make lint
       - run: make vet
-      - run: make test-race
-      - run: make cover
+      - run: make test
         env:
           MINCOV: 95
       - run: make build
