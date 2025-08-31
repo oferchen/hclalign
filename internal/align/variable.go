@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/oferchen/hclalign/config"
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
 
@@ -16,12 +15,13 @@ type variableStrategy struct{}
 func (variableStrategy) Name() string { return "variable" }
 
 func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
+	canonical := CanonicalBlockAttrOrder["variable"]
 	order := opts.Order
 	if len(order) == 0 {
-		order = config.CanonicalOrder
+		order = canonical
 	}
-	canonicalSet := make(map[string]struct{}, len(config.CanonicalOrder))
-	for _, name := range config.CanonicalOrder {
+	canonicalSet := make(map[string]struct{}, len(canonical))
+	for _, name := range canonical {
 		canonicalSet[name] = struct{}{}
 	}
 	knownOrder := make([]string, 0, len(order))
@@ -43,16 +43,16 @@ func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		}
 	}
 	if len(knownOrder) == 0 {
-		knownOrder = config.CanonicalOrder
+		knownOrder = canonical
 	}
-	return reorderVariableBlock(block, knownOrder, canonicalSet, validationPos, opts.PrefixOrder)
+	return reorderVariableBlock(block, knownOrder, canonical, canonicalSet, validationPos, opts.PrefixOrder)
 }
 
 func init() {
 	Register(variableStrategy{})
 }
 
-func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet map[string]struct{}, validationPos int, prefixOrder bool) error {
+func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder []string, canonicalSet map[string]struct{}, validationPos int, prefixOrder bool) error {
 	body := block.Body()
 
 	attrs := body.Attributes()
@@ -181,7 +181,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 	body.AppendUnstructuredTokens(prefixTokens)
 
 	canonicalOrderSet := map[string]struct{}{}
-	orderedKnown := make([]string, 0, len(config.CanonicalOrder))
+	orderedKnown := make([]string, 0, len(canonicalOrder))
 	for _, name := range order {
 		if _, ok := canonicalSet[name]; !ok {
 			continue
@@ -192,7 +192,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalSet ma
 		}
 	}
 
-	for _, name := range config.CanonicalOrder {
+	for _, name := range canonicalOrder {
 		if _, already := canonicalOrderSet[name]; already {
 			continue
 		}

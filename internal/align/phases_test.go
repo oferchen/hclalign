@@ -2,10 +2,10 @@
 package align_test
 
 import (
-        "context"
-        "os"
-        "path/filepath"
-        "testing"
+	"context"
+	"os"
+	"path/filepath"
+	"testing"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -36,18 +36,12 @@ func TestPhases(t *testing.T) {
 			fmtBytes, _, err := terraformfmt.Format(context.Background(), inBytes, inPath, string(terraformfmt.StrategyGo))
 			require.NoError(t, err)
 
-                        fmtBytes, _, err := terraformfmt.Format(context.Background(), inBytes, inPath, string(terraformfmt.StrategyGo))
-                        require.NoError(t, err)
-
 			hadNewline := len(inBytes) > 0 && inBytes[len(inBytes)-1] == '\n'
 			if !hadNewline && len(fmtBytes) > 0 && fmtBytes[len(fmtBytes)-1] == '\n' {
 				fmtBytes = fmtBytes[:len(fmtBytes)-1]
 			}
 			againFmt, _, err := terraformfmt.Format(context.Background(), fmtBytes, inPath, string(terraformfmt.StrategyGo))
 			require.NoError(t, err)
-
-                        againFmt, _, err := terraformfmt.Format(context.Background(), fmtBytes, inPath, string(terraformfmt.StrategyGo))
-                        require.NoError(t, err)
 			hadFmtNewline := len(fmtBytes) > 0 && fmtBytes[len(fmtBytes)-1] == '\n'
 			if !hadFmtNewline && len(againFmt) > 0 && againFmt[len(againFmt)-1] == '\n' {
 				againFmt = againFmt[:len(againFmt)-1]
@@ -79,8 +73,4 @@ func TestPhases(t *testing.T) {
 		_, _, err := terraformfmt.Format(context.Background(), []byte("variable \"a\" {"), "bad.hcl", string(terraformfmt.StrategyGo))
 		require.Error(t, err)
 	})
-
-                _, _, err := terraformfmt.Format(context.Background(), []byte("variable \"a\" {"), "bad.hcl", string(terraformfmt.StrategyGo))
-                require.Error(t, err)
-        })
 }
