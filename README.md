@@ -18,7 +18,7 @@
 Attributes are reordered inside these block types using canonical schemas:
 
 - **variable:** `description`, `type`, `default`, `sensitive`, `nullable`, then any other attributes followed by `validation` blocks
-- **output:** `description`, `value`, `sensitive`, `depends_on`, then other attributes
+- **output:** `description`, `value`, `sensitive`, `ephemeral`, `depends_on`, then other attributes
 - **locals:** no reordering
 - **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically and other attributes
 - **provider:** `alias` followed by remaining attributes in their original order
