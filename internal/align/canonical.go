@@ -10,4 +10,11 @@ var CanonicalBlockAttrOrder = map[string][]string{
 	"provider": {"alias"},
 	"resource": {"provider", "count", "for_each", "depends_on"},
 	"data":     {"provider", "count", "for_each", "depends_on"},
+	"terraform": {
+		"required_version",
+		"experiments",
+		"required_providers",
+		"backend",
+		"cloud",
+	},
 }
