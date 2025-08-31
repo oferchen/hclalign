@@ -43,7 +43,6 @@ func run(args []string) int {
 	rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().BoolP("verbose", "v", false, "enable verbose logging")
-	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")
 	rootCmd.MarkFlagsMutuallyExclusive("types", "all")
