@@ -122,7 +122,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 	}
 
 	styled := internalfs.ApplyHints(append([]byte(nil), formatted...), hints)
-	changed := !bytes.Equal(originalWithHints, styled)
+	changed := !bytes.Equal(internalfs.PrepareForParse(originalWithHints, hints), internalfs.PrepareForParse(styled, hints))
 
 	switch cfg.Mode {
 	case config.ModeDiff:

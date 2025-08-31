@@ -13,7 +13,7 @@ import (
 )
 
 func TestPhases(t *testing.T) {
-	cases := []string{"simple", "heredocs", "trailing_commas", "comments", "locals", "output", "module", "provider", "terraform", "resource", "data", "idempotency"}
+	cases := []string{"simple", "heredocs", "trailing_commas", "comments", "locals", "output", "module", "provider", "terraform", "resource", "data", "idempotency", "templates"}
 	base := filepath.Join("..", "..", "tests", "cases")
 	schemaPath := filepath.Join("..", "..", "tests", "testdata", "providers-schema.json")
 
@@ -49,42 +49,4 @@ func TestPhases(t *testing.T) {
 		_, err := ProcessReader(context.Background(), bytes.NewReader([]byte("variable \"a\" {")), &out, cfg)
 		require.Error(t, err)
 	})
-}
-
-func TestTemplatesIdempotent(t *testing.T) {
-	base := filepath.Join("..", "..", "tests", "cases", "templates")
-	inBytes, err := os.ReadFile(filepath.Join(base, "in.tf"))
-	require.NoError(t, err)
-	cfg := &config.Config{Stdout: true}
-	var out bytes.Buffer
-	changed, err := ProcessReader(context.Background(), bytes.NewReader(inBytes), &out, cfg)
-	require.NoError(t, err)
-	require.False(t, changed)
-
-	first := out.Bytes()
-	out.Reset()
-
-	changed, err = ProcessReader(context.Background(), bytes.NewReader(first), &out, cfg)
-	require.NoError(t, err)
-	require.False(t, changed)
-	require.Equal(t, string(first), out.String())
-}
-
-func TestTemplatesProcessReaderTwice(t *testing.T) {
-	base := filepath.Join("..", "..", "tests", "cases", "templates")
-	inBytes, err := os.ReadFile(filepath.Join(base, "in.tf"))
-	require.NoError(t, err)
-
-	cfg := &config.Config{Stdout: true}
-	var first bytes.Buffer
-	changed, err := ProcessReader(context.Background(), bytes.NewReader(inBytes), &first, cfg)
-	require.NoError(t, err)
-	require.False(t, changed)
-
-	var second bytes.Buffer
-	changed, err = ProcessReader(context.Background(), bytes.NewReader(first.Bytes()), &second, cfg)
-	require.NoError(t, err)
-	require.False(t, changed)
-	require.Equal(t, first.String(), second.String())
-
 }
