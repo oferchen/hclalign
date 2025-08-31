@@ -1,4 +1,5 @@
 resource "null_resource" "example" {
+
   provisioner "local-exec" {
     bar  = "b"
     when = "destroy"
