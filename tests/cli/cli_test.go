@@ -128,6 +128,46 @@ func TestCLI(t *testing.T) {
 		require.Empty(t, stderr.String())
 	})
 
+	t.Run("types_and_all", func(t *testing.T) {
+		dir := t.TempDir()
+		file := filepath.Join(dir, "test.tf")
+		require.NoError(t, os.WriteFile(file, []byte("output \"o\" {\n  value = \"v\"\n}\n"), 0o644))
+
+		cmd := exec.Command(bin, file, "--types", "output", "--all")
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		err := cmd.Run()
+		require.Error(t, err)
+		exitErr, ok := err.(*exec.ExitError)
+		require.True(t, ok)
+		require.Equal(t, 2, exitErr.ExitCode())
+		require.Empty(t, stdout.String())
+		require.NotEmpty(t, stderr.String())
+	})
+
+	t.Run("types_output", func(t *testing.T) {
+		unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n\noutput \"o\" {\n  value = \"v\"\n  description = \"d\"\n}\n"
+		want := "variable \"a\" {\n  type        = string\n  description = \"d\"\n}\n\noutput \"o\" {\n  description = \"d\"\n  value       = \"v\"\n}\n"
+
+		dir := t.TempDir()
+		file := filepath.Join(dir, "test.tf")
+		require.NoError(t, os.WriteFile(file, []byte(unformatted), 0o644))
+
+		cmd := exec.Command(bin, file, "--write", "--types", "output")
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		err := cmd.Run()
+		require.NoError(t, err)
+		require.Empty(t, stdout.String())
+		require.Empty(t, stderr.String())
+
+		data, err := os.ReadFile(file)
+		require.NoError(t, err)
+		require.Equal(t, want, string(data))
+	})
+
 	t.Run("missing_target", func(t *testing.T) {
 		cmd := exec.Command(bin)
 		var stdout, stderr bytes.Buffer

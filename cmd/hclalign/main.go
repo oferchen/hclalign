@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -45,12 +46,18 @@ func run(args []string) int {
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")
 	rootCmd.MarkFlagsMutuallyExclusive("types", "all")
+	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
+		return &cli.ExitCodeError{Err: err, Code: 2}
+	})
 
 	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
 		var ec *cli.ExitCodeError
 		if errors.As(err, &ec) {
 			return ec.Code
+		}
+		if strings.Contains(err.Error(), "if any flags in the group") {
+			return 2
 		}
 		return 1
 	}
