@@ -30,6 +30,13 @@ func TestCanonicalOrderMatchesBuiltInAttributes(t *testing.T) {
 	}
 }
 
+func TestDefaultIncludeMatchesExpected(t *testing.T) {
+	expected := []string{"**/*.tf", "**/*.tfvars"}
+	if !reflect.DeepEqual(DefaultInclude, expected) {
+		t.Fatalf("expected DefaultInclude to be %v, got %v", expected, DefaultInclude)
+	}
+}
+
 func TestValidateOrder_EmptyAttributeName(t *testing.T) {
 	err := ValidateOrder([]string{"description", ""})
 	if err == nil || err.Error() != "attribute name cannot be empty" {
@@ -38,7 +45,7 @@ func TestValidateOrder_EmptyAttributeName(t *testing.T) {
 }
 
 func TestDefaultExcludeMatchesExpected(t *testing.T) {
-	expected := []string{".terraform/**", "**/.terraform/**", "vendor/**"}
+	expected := []string{".terraform/**", "**/vendor/**"}
 	if !reflect.DeepEqual(DefaultExclude, expected) {
 		t.Fatalf("expected DefaultExclude to be %v, got %v", expected, DefaultExclude)
 	}

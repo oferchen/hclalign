@@ -85,7 +85,7 @@ keep their original order.
 - `--check`: exit with non‑zero status if changes are required
 - `--diff`: print unified diff instead of writing files
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
-- `--include`, `--exclude`: glob patterns controlling which files are processed
+- `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `**/vendor/**`)
 - `--follow-symlinks`: traverse symbolic links
 - `--order`: control variable attribute order
 - `--concurrency`: maximum parallel file processing

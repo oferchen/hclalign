@@ -27,7 +27,7 @@ Non-negotiables:
 * Language: Go ≥ 1.21
 * HCL engine: `hcl/v2/hclwrite` with **SetAttributeRaw** + **BuildTokens** only
 * CLI: `--providers-schema`, `--use-terraform-schema`, `--check`, `--diff`
-* Defaults: include `**/*.tf`; exclude `.terraform/**`, `**/.terraform/**`, `vendor/**`
+* Defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `**/vendor/**`
 * Structure (target):
 
   * `/cmd/hclalign/`

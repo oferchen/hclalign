@@ -74,7 +74,7 @@ func TestMatcherDefaultExclude(t *testing.T) {
 	require.NoError(t, os.Mkdir(filepath.Join(wd, ".terraform"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(wd, ".terraform", "ignored.tf"), []byte(""), 0o644))
 	require.NoError(t, os.MkdirAll(filepath.Join(wd, "nested", ".terraform"), 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", ".terraform", "ignored.tf"), []byte(""), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(wd, "nested", ".terraform", "included.tf"), []byte(""), 0o644))
 	require.NoError(t, os.Mkdir(filepath.Join(wd, "vendor"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(wd, "vendor", "ignored.tf"), []byte(""), 0o644))
 
@@ -82,11 +82,11 @@ func TestMatcherDefaultExclude(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.True(t, m.Matches(filepath.Join(wd, "main.tf")))
+	assert.True(t, m.Matches(filepath.Join(wd, "nested", ".terraform")))
+	assert.True(t, m.Matches(filepath.Join(wd, "nested", ".terraform", "included.tf")))
 	paths := []string{
 		filepath.Join(wd, ".terraform"),
 		filepath.Join(wd, ".terraform", "ignored.tf"),
-		filepath.Join(wd, "nested", ".terraform"),
-		filepath.Join(wd, "nested", ".terraform", "ignored.tf"),
 		filepath.Join(wd, "vendor"),
 		filepath.Join(wd, "vendor", "ignored.tf"),
 	}
