@@ -1,6 +1,6 @@
-// tools/tools.go
 //go:build tools
 
+// tools/tools.go
 package tools
 
 import (
