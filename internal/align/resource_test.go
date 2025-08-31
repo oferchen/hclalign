@@ -72,8 +72,8 @@ resource "null_resource" "n" {
 	got := string(file.Bytes())
 	exp := `resource "aws_s3_bucket" "b" {
   bucket = "b"
-  acl    = "private"
   tags   = {}
+  acl    = "private"
   id     = "id"
 }
 
@@ -149,18 +149,18 @@ func TestLifecycleProvisionerOrder(t *testing.T) {
   count      = 1
   for_each   = {}
   depends_on = []
+  foo        = 1
+  bar        = 2
+  baz        = 3
+  random     = 4
+
+  provisioner "local-exec" {}
 
   lifecycle {
     prevent_destroy = true
   }
 
-  provisioner "local-exec" {}
-
   provisioner "remote-exec" {}
-  foo    = 1
-  bar    = 2
-  baz    = 3
-  random = 4
 }`
 	require.Equal(t, exp, got)
 

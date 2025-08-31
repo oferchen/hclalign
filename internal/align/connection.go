@@ -2,9 +2,8 @@
 package align
 
 import (
-	"sort"
-
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	ihcl "github.com/oferchen/hclalign/internal/hcl"
 )
 
 type connectionStrategy struct{}
@@ -37,17 +36,18 @@ func (connectionStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		"host_key":             {},
 		"bastion_host_key":     {},
 	}
-	var known, unknown []string
-	for name := range attrs {
+	order := ihcl.AttributeOrder(block.Body(), attrs)
+	var names []string
+	for _, name := range order {
 		if _, ok := allowed[name]; ok {
-			known = append(known, name)
-		} else {
-			unknown = append(unknown, name)
+			names = append(names, name)
 		}
 	}
-	sort.Strings(known)
-	sort.Strings(unknown)
-	names := append(known, unknown...)
+	for _, name := range order {
+		if _, ok := allowed[name]; !ok {
+			names = append(names, name)
+		}
+	}
 	return reorderBlock(block, names)
 }
 

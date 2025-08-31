@@ -32,7 +32,7 @@ func TestTerraformAttributeOrderAndBlocks(t *testing.T) {
 
   cloud {}
   experiments = ["a"]
-  other = 1
+  other       = 1
 }`
 	require.Equal(t, exp, got)
 }
@@ -52,10 +52,10 @@ func TestTerraformRequiredProvidersSorting(t *testing.T) {
 	exp := `terraform {
 
   required_providers {
-    # provider a
-    a = {}
     # provider b
     b = {}
+    # provider a
+    a = {}
   }
 }`
 	require.Equal(t, exp, string(file.Bytes()))

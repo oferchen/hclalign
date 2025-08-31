@@ -3,16 +3,8 @@ resource "aws_s3_bucket" "b" {
   count      = 1
   for_each   = {}
   depends_on = []
-
-  lifecycle {
-    prevent_destroy = true
-  }
-
-  provisioner "local-exec" {
-    command = "echo"
-  }
-  bucket = "b"
-  acl    = "private"
+  bucket     = "b"
+  acl        = "private"
   tags = [
     "a",
     "b",
@@ -22,4 +14,12 @@ resource "aws_s3_bucket" "b" {
     "x",
     "y",
   ]
+
+  provisioner "local-exec" {
+    command = "echo"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }

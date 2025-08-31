@@ -2,9 +2,6 @@
 package align
 
 import (
-	"sort"
-
-	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
@@ -24,34 +21,31 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 	body := block.Body()
 	attrs := body.Attributes()
 	originalOrder := ihcl.AttributeOrder(body, attrs)
-	names := make([]string, 0, len(attrs))
-	for name := range attrs {
-		names = append(names, name)
-	}
-	if opts == nil || opts.Schema == nil {
-		canonical := CanonicalBlockAttrOrder[block.Type()]
-		metaAttrs := []string{}
-		for _, n := range canonical {
-			if _, ok := attrs[n]; ok {
-				metaAttrs = append(metaAttrs, n)
-			}
-		}
-		metaSet := map[string]struct{}{}
-		for _, n := range metaAttrs {
+
+	canonical := CanonicalBlockAttrOrder[block.Type()]
+	metaAttrs := make([]string, 0, len(canonical))
+	metaSet := map[string]struct{}{}
+	for _, n := range canonical {
+		if _, ok := attrs[n]; ok {
+			metaAttrs = append(metaAttrs, n)
 			metaSet[n] = struct{}{}
 		}
-		var rest []string
-		for _, n := range originalOrder {
-			if _, ok := metaSet[n]; !ok {
-				rest = append(rest, n)
-			}
+	}
+
+	var rest []string
+	for _, n := range originalOrder {
+		if _, ok := metaSet[n]; !ok {
+			rest = append(rest, n)
 		}
+	}
+
+	if opts == nil || opts.Schema == nil {
 		order := append(metaAttrs, rest...)
 		return reorderBlock(block, order)
 	}
 
-	var req, opt, comp []string
-	for _, name := range names {
+	var req, opt, comp, unk []string
+	for _, name := range rest {
 		if _, ok := opts.Schema.Required[name]; ok {
 			req = append(req, name)
 			continue
@@ -64,131 +58,13 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 			comp = append(comp, name)
 			continue
 		}
-	}
-	sort.Strings(req)
-	sort.Strings(opt)
-	sort.Strings(comp)
-
-	canonical := CanonicalBlockAttrOrder[block.Type()]
-	metaAttrs := []string{}
-	for _, n := range canonical {
-		if _, ok := attrs[n]; ok {
-			metaAttrs = append(metaAttrs, n)
-		}
+		unk = append(unk, name)
 	}
 
-	known := map[string]struct{}{}
-	for _, n := range metaAttrs {
-		known[n] = struct{}{}
-	}
-	for _, n := range req {
-		known[n] = struct{}{}
-	}
-	for _, n := range opt {
-		known[n] = struct{}{}
-	}
-	for _, n := range comp {
-		known[n] = struct{}{}
-	}
+	order := append(metaAttrs, req...)
+	order = append(order, opt...)
+	order = append(order, comp...)
+	order = append(order, unk...)
 
-	var unk []string
-	for _, n := range originalOrder {
-		if _, ok := known[n]; !ok {
-			unk = append(unk, n)
-		}
-	}
-
-	blocks := body.Blocks()
-	var lifecycleBlock *hclwrite.Block
-	var provisionerBlocks []*hclwrite.Block
-	var otherBlocks []*hclwrite.Block
-	for _, nb := range blocks {
-		switch nb.Type() {
-		case "lifecycle":
-			lifecycleBlock = nb
-		case "provisioner":
-			provisionerBlocks = append(provisionerBlocks, nb)
-		default:
-			otherBlocks = append(otherBlocks, nb)
-		}
-	}
-
-	tokens := body.BuildTokens(nil)
-	newline := ihcl.DetectLineEnding(tokens)
-	trailingComma := ihcl.HasTrailingComma(tokens)
-
-	attrTokensMap := map[string]ihcl.AttrTokens{}
-	for name, attr := range attrs {
-		attrTokensMap[name] = ihcl.ExtractAttrTokens(attr)
-		body.RemoveAttribute(name)
-	}
-	for _, nb := range blocks {
-		body.RemoveBlock(nb)
-	}
-
-	body.Clear()
-	if len(metaAttrs) > 0 || lifecycleBlock != nil || len(provisionerBlocks) > 0 || len(req) > 0 || len(opt) > 0 || len(comp) > 0 || len(unk) > 0 || len(otherBlocks) > 0 {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
-	}
-
-	appendAttr := func(name string) {
-		if tok, ok := attrTokensMap[name]; ok {
-			body.AppendUnstructuredTokens(tok.LeadTokens)
-			body.SetAttributeRaw(name, tok.ExprTokens)
-		}
-	}
-
-	for _, name := range metaAttrs {
-		appendAttr(name)
-	}
-
-	if lifecycleBlock != nil {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
-		body.AppendBlock(lifecycleBlock)
-	}
-	for _, nb := range provisionerBlocks {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
-		body.AppendBlock(nb)
-	}
-
-	for _, name := range req {
-		appendAttr(name)
-	}
-	for _, name := range opt {
-		appendAttr(name)
-	}
-	for _, name := range comp {
-		appendAttr(name)
-	}
-	for _, name := range unk {
-		appendAttr(name)
-	}
-
-	for _, nb := range otherBlocks {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
-		body.AppendBlock(nb)
-	}
-
-	if trailingComma && (len(metaAttrs) > 0 || lifecycleBlock != nil || len(provisionerBlocks) > 0 || len(req) > 0 || len(opt) > 0 || len(comp) > 0 || len(unk) > 0 || len(otherBlocks) > 0) {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenComma, Bytes: []byte(",")},
-		})
-	}
-
-	toks := body.BuildTokens(nil)
-	if len(toks) > 0 && toks[len(toks)-1].Type != hclsyntax.TokenNewline {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
-	}
-
-	return nil
+	return reorderBlock(block, order)
 }

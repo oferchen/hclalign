@@ -26,10 +26,10 @@ func TestConnectionAttributeOrder(t *testing.T) {
 	exp := `resource "r" "t" {
 
   connection {
-    host    = "h"
-    timeout = "1s"
-    type    = "ssh"
     user    = "u"
+    host    = "h"
+    type    = "ssh"
+    timeout = "1s"
   }
 }`
 	require.Equal(t, exp, got)
