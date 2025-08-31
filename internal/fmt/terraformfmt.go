@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os/exec"
 	"unicode/utf8"
 
@@ -37,24 +36,38 @@ func Format(ctx context.Context, src []byte, filename, strategy string) ([]byte,
 	}
 }
 
-func FormatFile(ctx context.Context, path string) (bool, error) {
+func FormatFile(ctx context.Context, path string) ([]byte, internalfs.Hints, bool, error) {
 	if err := ctx.Err(); err != nil {
-		return false, err
+		return nil, internalfs.Hints{}, false, err
 	}
 	if _, err := exec.LookPath("terraform"); err != nil {
-		return false, nil
+		return nil, internalfs.Hints{}, false, nil
 	}
-	cmd := exec.CommandContext(ctx, "terraform", "fmt", "-no-color", "-list=false", "-write=true", path)
-	cmd.Stdout = io.Discard
+	data, _, hints, err := internalfs.ReadFileWithHints(ctx, path)
+	if err != nil {
+		return nil, hints, false, err
+	}
+	prepared := internalfs.PrepareForParse(data, hints)
+	if len(prepared) > 0 && !utf8.Valid(prepared) {
+		return nil, hints, false, fmt.Errorf("input is not valid UTF-8")
+	}
+	cmd := exec.CommandContext(ctx, "terraform", "fmt", "-no-color", "-list=false", "-write=false", path)
+	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		if stderrStr := stderr.String(); stderrStr != "" {
-			return false, fmt.Errorf("terraform fmt failed: %w: %s", err, stderrStr)
+			return nil, hints, false, fmt.Errorf("terraform fmt failed: %w: %s", err, stderrStr)
 		}
-		return false, fmt.Errorf("terraform fmt failed: %w", err)
+		return nil, hints, false, fmt.Errorf("terraform fmt failed: %w", err)
 	}
-	return true, nil
+	formatted := stdout.Bytes()
+	if len(formatted) > 0 {
+		formatted = bytes.TrimRight(formatted, "\n")
+		formatted = append(formatted, '\n')
+	}
+	return formatted, hints, true, nil
 }
 
 func formatBinary(ctx context.Context, src []byte) ([]byte, internalfs.Hints, error) {

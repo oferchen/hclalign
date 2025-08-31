@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/oferchen/hclalign/config"
+	internalfs "github.com/oferchen/hclalign/internal/fs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,8 +28,8 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 	}
 
 	origFmt := terraformFmtFormatFile
-	terraformFmtFormatFile = func(ctx context.Context, p string) (bool, error) {
-		return false, fmt.Errorf("boom")
+	terraformFmtFormatFile = func(ctx context.Context, p string) ([]byte, internalfs.Hints, bool, error) {
+		return nil, internalfs.Hints{}, false, fmt.Errorf("boom")
 	}
 	defer func() { terraformFmtFormatFile = origFmt }()
 
