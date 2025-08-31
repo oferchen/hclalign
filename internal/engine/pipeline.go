@@ -138,7 +138,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 
 	ranFmt := false
 	if p.cfg.Mode == config.ModeWrite && !p.cfg.SkipTerraformFmt {
-		tmp, err := os.CreateTemp("", "hclalign-*")
+		tmp, err := os.CreateTemp("", "hclalign-*.tf")
 		if err != nil {
 			return false, nil, fmt.Errorf("error creating temp file for %s: %w", filePath, err)
 		}
