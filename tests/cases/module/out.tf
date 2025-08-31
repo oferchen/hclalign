@@ -10,10 +10,10 @@ module "complex" {
   count      = 1
   for_each   = {}
   depends_on = []
-  z          = 0
   a          = 1
-  c          = 3
   b          = 2
+  c          = 3
+  z          = 0
 
   foo {
     x = 1
@@ -21,7 +21,7 @@ module "complex" {
 }
 
 module "vars_only" {
-  c = 3
-  b = 2
   a = 1
+  b = 2
+  c = 3
 }

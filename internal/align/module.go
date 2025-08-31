@@ -42,9 +42,7 @@ func (moduleStrategy) Align(block *hclwrite.Block, opts *Options) error {
 			vars = append(vars, name)
 		}
 	}
-	if opts != nil && opts.PrefixOrder {
-		sort.Strings(vars)
-	}
+	sort.Strings(vars)
 
 	order = append(order, vars...)
 
