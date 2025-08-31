@@ -43,6 +43,3 @@ make build
 
 We appreciate your help in improving `hclalign`!
 
-## Testing Flags
-
-For development and test scenarios, a hidden CLI flag `--skip-terraform-fmt` is available to bypass Terraform formatting.

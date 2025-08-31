@@ -45,8 +45,6 @@ func run(args []string) int {
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")
 	rootCmd.Flags().Bool("prefix-order", false, "lexicographically sort unknown attributes and module provider maps")
-	rootCmd.Flags().Bool("skip-terraform-fmt", false, "skip running terraform fmt")
-	rootCmd.Flags().MarkHidden("skip-terraform-fmt")
 	rootCmd.MarkFlagsMutuallyExclusive("types", "all")
 
 	rootCmd.SetArgs(args)

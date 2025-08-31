@@ -137,7 +137,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
 
 	ranFmt := false
-	if p.cfg.Mode == config.ModeWrite && !p.cfg.SkipTerraformFmt {
+	if p.cfg.Mode == config.ModeWrite {
 		tmp, err := os.CreateTemp("", "hclalign-*.tf")
 		if err != nil {
 			return false, nil, fmt.Errorf("error creating temp file for %s: %w", filePath, err)
@@ -171,10 +171,9 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	}
 
 	var formatted []byte
-	switch {
-	case p.cfg.SkipTerraformFmt || ranFmt:
+	if ranFmt {
 		formatted = data
-	default:
+	} else {
 		formatted, _, err = terraformFmtRun(ctx, data)
 		if err != nil {
 			return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
@@ -203,13 +202,9 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 		testHookAfterReorder()
 	}
 
-	if !p.cfg.SkipTerraformFmt {
-		formatted, _, err = terraformFmtRun(ctx, file.Bytes())
-		if err != nil {
-			return false, nil, err
-		}
-	} else {
-		formatted = file.Bytes()
+	formatted, _, err = terraformFmtRun(ctx, file.Bytes())
+	if err != nil {
+		return false, nil, err
 	}
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
