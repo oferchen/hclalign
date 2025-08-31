@@ -113,6 +113,43 @@ func TestCLI(t *testing.T) {
 		require.Equal(t, unformatted, string(data))
 	})
 
+	t.Run("exclude_terraform_and_vendor", func(t *testing.T) {
+		unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
+		want := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
+
+		dir := t.TempDir()
+		rootFile := filepath.Join(dir, "root.tf")
+		terraformFile := filepath.Join(dir, ".terraform", "mod", "ignored.tf")
+		vendorFile := filepath.Join(dir, "vendor", "mod", "ignored.tf")
+
+		require.NoError(t, os.MkdirAll(filepath.Dir(terraformFile), 0o755))
+		require.NoError(t, os.MkdirAll(filepath.Dir(vendorFile), 0o755))
+		require.NoError(t, os.WriteFile(rootFile, []byte(unformatted), 0o644))
+		require.NoError(t, os.WriteFile(terraformFile, []byte(unformatted), 0o644))
+		require.NoError(t, os.WriteFile(vendorFile, []byte(unformatted), 0o644))
+
+		cmd := exec.Command(bin, dir, "--write")
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		err := cmd.Run()
+		require.NoError(t, err)
+		require.Empty(t, stdout.String())
+		require.Empty(t, stderr.String())
+
+		data, err := os.ReadFile(rootFile)
+		require.NoError(t, err)
+		require.Equal(t, want, string(data))
+
+		data, err = os.ReadFile(terraformFile)
+		require.NoError(t, err)
+		require.Equal(t, unformatted, string(data))
+
+		data, err = os.ReadFile(vendorFile)
+		require.NoError(t, err)
+		require.Equal(t, unformatted, string(data))
+	})
+
 	t.Run("stdin_stdout", func(t *testing.T) {
 		unformatted := "variable \"a\" {\n  type = string\n  description = \"d\"\n}\n"
 		want := "variable \"a\" {\n  description = \"d\"\n  type        = string\n}\n"
