@@ -27,7 +27,7 @@ fmt: ## format code and regenerate test fixtures
 	else \
 	echo "terraform not found; skipping terraform fmt"; \
 	fi
-	$(GO) run ./cmd/hclalign tests/cases
+	go run ./cmd/hclalign --all tests/cases
 
 strip: ## normalize Go file comments and enforce policy
 	$(GO) run ./tools/stripcomments --repo-root "$(PWD)"

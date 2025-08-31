@@ -1,4 +1,5 @@
 resource "null_resource" "example" {
+
   lifecycle {
     foo                   = "foo"
     create_before_destroy = true
