@@ -74,9 +74,6 @@ func (terraformStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		}
 		otherAttrs = append(otherAttrs, name)
 	}
-	if opts != nil && opts.PrefixOrder {
-		sort.Strings(otherAttrs)
-	}
 
 	type item struct {
 		name   string

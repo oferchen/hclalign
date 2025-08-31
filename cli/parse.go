@@ -31,7 +31,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	followSymlinks := getBool(cmd, "follow-symlinks", &err)
 	types := getStringSlice(cmd, "types", &err)
 	all := getBool(cmd, "all", &err)
-	prefixOrder := getBool(cmd, "prefix-order", &err)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +83,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		Verbose:            verbose,
 		FollowSymlinks:     followSymlinks,
 		Types:              cfgTypes,
-		PrefixOrder:        prefixOrder,
 	}
 
 	if err := cfg.Validate(); err != nil {

@@ -32,7 +32,6 @@ type Config struct {
 	ProvidersSchema    string
 	UseTerraformSchema bool
 	Types              []string
-	PrefixOrder        bool
 }
 
 var (

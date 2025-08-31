@@ -40,7 +40,6 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when traversing directories")
 	cmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	cmd.Flags().Bool("all", false, "align all block types")
-	cmd.Flags().Bool("prefix-order", false, "lexicographically sort unknown attributes and module provider maps")
 	cmd.MarkFlagsMutuallyExclusive("types", "all")
 	if exclusive {
 		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")

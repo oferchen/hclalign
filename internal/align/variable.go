@@ -3,7 +3,6 @@ package align
 
 import (
 	"bytes"
-	"sort"
 
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -45,14 +44,14 @@ func (variableStrategy) Align(block *hclwrite.Block, opts *Options) error {
 	if len(knownOrder) == 0 {
 		knownOrder = canonical
 	}
-	return reorderVariableBlock(block, knownOrder, canonical, canonicalSet, validationPos, opts.PrefixOrder)
+	return reorderVariableBlock(block, knownOrder, canonical, canonicalSet, validationPos)
 }
 
 func init() {
 	Register(variableStrategy{})
 }
 
-func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder []string, canonicalSet map[string]struct{}, validationPos int, prefixOrder bool) error {
+func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder []string, canonicalSet map[string]struct{}, validationPos int) error {
 	body := block.Body()
 
 	attrs := body.Attributes()
@@ -211,9 +210,6 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 			unknown = append(unknown, name)
 			seenUnknown[name] = struct{}{}
 		}
-	}
-	if prefixOrder {
-		sort.Strings(unknown)
 	}
 
 	insertedValidation := false
