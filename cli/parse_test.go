@@ -74,3 +74,11 @@ func TestParseConfigPrefixOrder(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, cfg.PrefixOrder)
 }
+
+func TestParseConfigSkipTerraformFmt(t *testing.T) {
+	cmd := newRootCmd(true)
+	require.NoError(t, cmd.ParseFlags([]string{"--skip-terraform-fmt"}))
+	cfg, err := parseConfig(cmd, []string{"target"})
+	require.NoError(t, err)
+	require.True(t, cfg.SkipTerraformFmt)
+}

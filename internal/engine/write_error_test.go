@@ -43,6 +43,8 @@ func newRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	cmd.Flags().Bool("all", false, "align all block types")
 	cmd.Flags().Bool("prefix-order", false, "lexicographically sort unknown attributes and module provider maps")
+	cmd.Flags().Bool("skip-terraform-fmt", false, "skip running terraform fmt")
+	cmd.Flags().MarkHidden("skip-terraform-fmt")
 	cmd.MarkFlagsMutuallyExclusive("types", "all")
 	if exclusive {
 		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")

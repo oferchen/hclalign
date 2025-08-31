@@ -20,6 +20,11 @@ import (
 	internalfs "github.com/oferchen/hclalign/internal/fs"
 )
 
+var (
+	terraformFmtFormatFile = terraformfmt.FormatFile
+	terraformFmtRun        = terraformfmt.Run
+)
+
 type Processor struct {
 	cfg     *config.Config
 	schemas map[string]*align.Schema
@@ -119,9 +124,9 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 		return false, nil, err
 	}
 	ranFmt := false
-	if p.cfg.Mode == config.ModeWrite {
+	if p.cfg.Mode == config.ModeWrite && !p.cfg.SkipTerraformFmt {
 		var err error
-		ranFmt, err = terraformfmt.FormatFile(ctx, filePath)
+		ranFmt, err = terraformFmtFormatFile(ctx, filePath)
 		if err != nil {
 			return false, nil, fmt.Errorf("error formatting file %s: %w", filePath, err)
 		}
@@ -142,10 +147,11 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
 
 	var formatted []byte
-	if ranFmt {
+	switch {
+	case p.cfg.SkipTerraformFmt || ranFmt:
 		formatted = data
-	} else {
-		formatted, _, err = terraformfmt.Run(ctx, data)
+	default:
+		formatted, _, err = terraformFmtRun(ctx, data)
 		if err != nil {
 			return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
 		}
@@ -173,9 +179,13 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 		testHookAfterReorder()
 	}
 
-	formatted, _, err = terraformfmt.Run(ctx, file.Bytes())
-	if err != nil {
-		return false, nil, err
+	if !p.cfg.SkipTerraformFmt {
+		formatted, _, err = terraformFmtRun(ctx, file.Bytes())
+		if err != nil {
+			return false, nil, err
+		}
+	} else {
+		formatted = file.Bytes()
 	}
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
