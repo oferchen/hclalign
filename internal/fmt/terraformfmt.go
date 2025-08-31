@@ -21,14 +21,17 @@ const (
 	StrategyGo     Strategy = "go"
 )
 
-func Format(src []byte, filename, strategy string) ([]byte, internalfs.Hints, error) {
+func Format(ctx context.Context, src []byte, filename, strategy string) ([]byte, internalfs.Hints, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, internalfs.Hints{}, err
+	}
 	switch Strategy(strategy) {
 	case StrategyGo:
 		return formatter.Format(src, filename)
 	case StrategyBinary:
-		return formatBinary(context.Background(), src)
+		return formatBinary(ctx, src)
 	case StrategyAuto, "":
-		return Run(context.Background(), src)
+		return Run(ctx, src)
 	default:
 		return nil, internalfs.Hints{}, fmt.Errorf("unknown fmt strategy %q", strategy)
 	}
@@ -60,7 +63,11 @@ func formatBinary(ctx context.Context, src []byte) ([]byte, internalfs.Hints, er
 	if len(src) > 0 && !utf8.Valid(src) {
 		return nil, hints, fmt.Errorf("input is not valid UTF-8")
 	}
-	cmd := exec.CommandContext(ctx, "terraform", "fmt", "-no-color", "-list=false", "-write=false", "-")
+	path := terraformBinary()
+	if path == "" {
+		return nil, hints, fmt.Errorf("terraform binary not found")
+	}
+	cmd := exec.CommandContext(ctx, path, "fmt", "-no-color", "-list=false", "-write=false", "-")
 	cmd.Stdin = bytes.NewReader(src)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
