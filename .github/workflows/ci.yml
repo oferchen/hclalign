@@ -29,7 +29,7 @@ jobs:
       - run: make test-race
       - run: make cover
         env:
-          COVER_THRESH: 95
+          MINCOV: 95
       - run: make build
       - name: Upload coverage
         uses: actions/upload-artifact@v4
