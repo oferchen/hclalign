@@ -35,6 +35,10 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		return nil, err
 	}
 
+	if (writeMode && checkMode) || (writeMode && diffMode) || (checkMode && diffMode) {
+		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify more than one of --write, --check, or --diff"), Code: 2}
+	}
+
 	attrOrder, err := config.ParseOrder(orderRaw)
 	if err != nil {
 		return nil, &ExitCodeError{Err: err, Code: 2}
