@@ -25,7 +25,6 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 		RunE:         RunE,
 		SilenceUsage: true,
 	}
-	cmd.Flags().Bool("write", false, "write result to file(s)")
 	cmd.Flags().Bool("check", false, "check if files are formatted")
 	cmd.Flags().Bool("diff", false, "print the diff of required changes")
 	cmd.Flags().Bool("stdin", false, "read from STDIN")
@@ -42,7 +41,7 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Bool("all", false, "align all block types")
 	cmd.MarkFlagsMutuallyExclusive("types", "all")
 	if exclusive {
-		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
+		cmd.MarkFlagsMutuallyExclusive("check", "diff")
 	}
 	return cmd
 }
@@ -210,8 +209,8 @@ func TestRunEModes(t *testing.T) {
 			wantStdout: formatted,
 		},
 		{
-			name:     "write",
-			flags:    []string{"--write"},
+			name:     "default",
+			flags:    nil,
 			wantCode: 0,
 			withFile: true,
 			wantFile: formatted,

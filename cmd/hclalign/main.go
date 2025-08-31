@@ -29,10 +29,9 @@ func run(args []string) int {
 		SilenceUsage: true,
 	}
 
-	rootCmd.Flags().Bool("write", false, "write result to file(s)")
 	rootCmd.Flags().Bool("check", false, "check if files are formatted")
 	rootCmd.Flags().Bool("diff", false, "print the diff of required changes")
-	rootCmd.MarkFlagsMutuallyExclusive("write", "check", "diff")
+	rootCmd.MarkFlagsMutuallyExclusive("check", "diff")
 	rootCmd.Flags().Bool("stdin", false, "read from STDIN")
 	rootCmd.Flags().Bool("stdout", false, "write result to STDOUT")
 	rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
