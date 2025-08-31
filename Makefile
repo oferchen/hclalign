@@ -1,7 +1,7 @@
 # /Makefile
 PKG ?= ./...
-BIN ?= ./.build/hclalign
-COVER ?= ./.build/coverage.out
+BIN ?= .build/hclalign
+COVER ?= coverage.out
 MINCOV ?= 95
 
 GO ?= go
@@ -21,17 +21,19 @@ tidy: ## tidy modules
 	@$(GO) mod tidy -v
 
 fmt: ## format code and regenerate test fixtures
-	@$(GO) run mvdan.cc/gofumpt@latest -w .
+	@$(GO) run mvdan.cc/gofumpt@v0.6.0 -l -w .
 	@if command -v terraform >/dev/null 2>&1; then \
 	terraform fmt -recursive tests/cases; \
 	else \
 	echo "terraform not found; skipping terraform fmt"; \
 	fi
-	@$(GO) run ./cmd/hclalign --all tests/cases
+	@find tests/cases -name in.tf -print0 | \
+	xargs -0 -n1 -I{} sh -c 'dir=$$(dirname {}); $(GO) run ./cmd/hclalign --stdin --stdout < {} > $$dir/fmt.tf; $(GO) run ./cmd/hclalign --stdin --stdout --all < {} > $$dir/aligned.tf'
 
 strip: ## normalize Go file comments and enforce policy
-	@$(GO) run ./tools/stripcomments --repo-root "$(PWD)"
+	@$(GO) run ./tools/stripcomments
 	@$(GO) run ./cmd/commentcheck
+	@git diff --exit-code
 
 lint: ## run linters
 	@$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 run --timeout=5m
@@ -52,13 +54,13 @@ fuzz: ## run fuzz tests
 	@$(GO) test -run=^$$ -fuzz=Fuzz -fuzztime=10s ./internal/hcl
 
 cover: ## run coverage check
-	@mkdir -p $(dir $(COVER))
 	@$(GO) test -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=$(COVER) ./...
-	@$(GO) tool cover -func=$(COVER) | awk -v min=$(MINCOV) '/^total:/ { sub(/%/, "", $$3); if ($$3+0 < min) { printf "coverage %.1f%% is below %d%%\n", $$3, min; exit 1 } }'
+	@$(GO) tool cover -func=$(COVER) | $(GO) run ./tools/covercheck $(MINCOV)
 
 build: ## build binary
 	@mkdir -p $(dir $(BIN))
 	@$(GO) build -trimpath -ldflags="-s -w" -buildvcs=false -o $(BIN) ./cmd/hclalign
 
 clean: ## remove build artifacts
-	@rm -rf $(dir $(BIN))
+	@rm -rf .build $(COVER)
+
