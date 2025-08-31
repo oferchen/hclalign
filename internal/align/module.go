@@ -3,7 +3,9 @@ package align
 
 import (
 	"sort"
+	"strings"
 
+	hcl "github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	ihcl "github.com/oferchen/hclalign/internal/hcl"
@@ -96,6 +98,9 @@ func (moduleStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		ordered := orderModuleAttrs(seg.attrs, canonical)
 		for _, name := range ordered {
 			tok := attrTokens[name]
+			if name == "providers" && opts != nil && opts.PrefixOrder {
+				tok.ExprTokens = sortProviders(tok.ExprTokens)
+			}
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
 		}
@@ -137,6 +142,43 @@ func orderModuleAttrs(names, canonical []string) []string {
 	sort.Strings(vars)
 	order = append(order, vars...)
 	return order
+}
+
+func sortProviders(tokens hclwrite.Tokens) hclwrite.Tokens {
+	buf := make([]byte, 0, len(tokens))
+	for _, t := range tokens {
+		buf = append(buf, t.Bytes...)
+	}
+	s := strings.TrimSpace(string(buf))
+	if len(s) < 2 || s[0] != '{' || s[len(s)-1] != '}' {
+		return tokens
+	}
+	body := strings.TrimSpace(s[1 : len(s)-1])
+	if body == "" {
+		return tokens
+	}
+	lines := strings.Split(body, "\n")
+	items := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			items = append(items, line)
+		}
+	}
+	sort.Strings(items)
+	var b strings.Builder
+	b.WriteString("providers = {\n")
+	for _, it := range items {
+		b.WriteString("  ")
+		b.WriteString(it)
+		b.WriteByte('\n')
+	}
+	b.WriteString("}\n")
+	f, diags := hclwrite.ParseConfig([]byte(b.String()), "p.tf", hcl.InitialPos)
+	if diags.HasErrors() {
+		return tokens
+	}
+	return ihcl.ExtractAttrTokens(f.Body().GetAttribute("providers")).ExprTokens
 }
 
 func init() { Register(moduleStrategy{}) }
