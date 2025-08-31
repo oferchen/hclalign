@@ -42,7 +42,11 @@ func formatBinary(ctx context.Context, src []byte) ([]byte, internalfs.Hints, er
 	if len(src) > 0 && !utf8.Valid(src) {
 		return nil, hints, fmt.Errorf("input is not valid UTF-8")
 	}
-	cmd := exec.CommandContext(ctx, "terraform", "fmt", "-no-color", "-list=false", "-write=false", "-")
+	path := terraformBinary()
+	if path == "" {
+		return nil, hints, fmt.Errorf("terraform binary not found")
+	}
+	cmd := exec.CommandContext(ctx, path, "fmt", "-no-color", "-list=false", "-write=false", "-")
 	cmd.Stdin = bytes.NewReader(src)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
