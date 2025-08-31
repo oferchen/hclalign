@@ -102,6 +102,9 @@ func getBool(cmd *cobra.Command, name string, err *error) bool {
 	}
 	var v bool
 	v, *err = cmd.Flags().GetBool(name)
+	if *err != nil {
+		*err = fmt.Errorf("get flag %s: %w", name, *err)
+	}
 	return v
 }
 
@@ -111,6 +114,9 @@ func getStringSlice(cmd *cobra.Command, name string, err *error) []string {
 	}
 	var v []string
 	v, *err = cmd.Flags().GetStringSlice(name)
+	if *err != nil {
+		*err = fmt.Errorf("get flag %s: %w", name, *err)
+	}
 	return v
 }
 
@@ -120,6 +126,9 @@ func getString(cmd *cobra.Command, name string, err *error) string {
 	}
 	var v string
 	v, *err = cmd.Flags().GetString(name)
+	if *err != nil {
+		*err = fmt.Errorf("get flag %s: %w", name, *err)
+	}
 	return v
 }
 
@@ -129,5 +138,8 @@ func getInt(cmd *cobra.Command, name string, err *error) int {
 	}
 	var v int
 	v, *err = cmd.Flags().GetInt(name)
+	if *err != nil {
+		*err = fmt.Errorf("get flag %s: %w", name, *err)
+	}
 	return v
 }

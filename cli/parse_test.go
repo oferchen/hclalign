@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/oferchen/hclalign/config"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,4 +69,32 @@ func TestParseConfigConcurrencyValidation(t *testing.T) {
 	var exitErr *ExitCodeError
 	require.ErrorAs(t, err, &exitErr)
 	require.Equal(t, 2, exitErr.Code)
+}
+
+func TestGetBoolError(t *testing.T) {
+	cmd := &cobra.Command{Use: "test"}
+	var err error
+	_ = getBool(cmd, "missing", &err)
+	require.EqualError(t, err, "get flag missing: flag accessed but not defined: missing")
+}
+
+func TestGetStringSliceError(t *testing.T) {
+	cmd := &cobra.Command{Use: "test"}
+	var err error
+	_ = getStringSlice(cmd, "missing", &err)
+	require.EqualError(t, err, "get flag missing: flag accessed but not defined: missing")
+}
+
+func TestGetStringError(t *testing.T) {
+	cmd := &cobra.Command{Use: "test"}
+	var err error
+	_ = getString(cmd, "missing", &err)
+	require.EqualError(t, err, "get flag missing: flag accessed but not defined: missing")
+}
+
+func TestGetIntError(t *testing.T) {
+	cmd := &cobra.Command{Use: "test"}
+	var err error
+	_ = getInt(cmd, "missing", &err)
+	require.EqualError(t, err, "get flag missing: flag accessed but not defined: missing")
 }
