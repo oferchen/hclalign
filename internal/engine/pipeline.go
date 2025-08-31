@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"sync"
 	"sync/atomic"
 
@@ -119,15 +118,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	if err := ctx.Err(); err != nil {
 		return false, nil, err
 	}
-	info, err := os.Stat(filePath)
-	if err != nil {
-		return false, nil, fmt.Errorf("error reading file %s: %w", filePath, err)
-	}
-	perm := info.Mode()
-	if err := ctx.Err(); err != nil {
-		return false, nil, err
-	}
-	data, err := os.ReadFile(filePath)
+	data, perm, hints, err := internalfs.ReadFileWithHints(ctx, filePath)
 	if err != nil {
 		return false, nil, fmt.Errorf("error reading file %s: %w", filePath, err)
 	}
@@ -136,21 +127,15 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	}
 
 	original := append([]byte(nil), data...)
+	originalWithHints := append(append([]byte(nil), hints.BOM()...), original...)
 	hadNewline := len(data) > 0 && data[len(data)-1] == '\n'
-	formatted, hints, err := terraformfmt.Run(ctx, data)
+
+	formatted, _, err := terraformfmt.Run(ctx, data)
 	if err != nil {
 		return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
 	}
 
-	file, diags := hclwrite.ParseConfig(formatted, filePath, hcl.InitialPos)
-
-        formatted, _, err := terraformfmt.Run(ctx, data)
-        if err != nil {
-                return false, nil, fmt.Errorf("parsing error in file %s: %w", filePath, err)
-        }
-
-        parseData := internalfs.PrepareForParse(formatted, hints)
-
+	parseData := internalfs.PrepareForParse(formatted, hints)
 	file, diags := hclwrite.ParseConfig(parseData, filePath, hcl.InitialPos)
 	if diags.HasErrors() {
 		return false, nil, fmt.Errorf("parsing error in file %s: %v", filePath, diags.Errs())
@@ -171,22 +156,18 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	if testHookAfterReorder != nil {
 		testHookAfterReorder()
 	}
+
 	formatted, _, err = terraformfmt.Run(ctx, file.Bytes())
 	if err != nil {
 		return false, nil, err
 	}
-
-        formatted, _, err = terraformfmt.Run(ctx, file.Bytes())
-        if err != nil {
-                return false, nil, err
-        }
 
 	if !hadNewline && len(formatted) > 0 && formatted[len(formatted)-1] == '\n' {
 		formatted = formatted[:len(formatted)-1]
 	}
 
 	styled := internalfs.ApplyHints(formatted, hints)
-	changed := !bytes.Equal(original, styled)
+	changed := !bytes.Equal(originalWithHints, styled)
 
 	var out []byte
 	switch p.cfg.Mode {
@@ -210,7 +191,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 	case config.ModeDiff:
 		if changed {
 			styledForDiff := styled
-			originalForDiff := original
+			originalForDiff := originalWithHints
 			if hints.HasBOM {
 				bom := hints.BOM()
 				if len(styledForDiff) >= len(bom) {
