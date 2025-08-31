@@ -16,31 +16,31 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	}
 
 	var err error
+	writeMode := getBool(cmd, "write", &err)
 	checkMode := getBool(cmd, "check", &err)
 	diffMode := getBool(cmd, "diff", &err)
 	stdin := getBool(cmd, "stdin", &err)
 	stdout := getBool(cmd, "stdout", &err)
 	include := getStringSlice(cmd, "include", &err)
 	exclude := getStringSlice(cmd, "exclude", &err)
-	orderRaw := getStringSlice(cmd, "order", &err)
-	prefixOrder := getBool(cmd, "prefix-order", &err)
 	providersSchema := getString(cmd, "providers-schema", &err)
 	useTerraformSchema := getBool(cmd, "use-terraform-schema", &err)
 	concurrency := getInt(cmd, "concurrency", &err)
-	verbose := getBool(cmd, "verbose", &err)
 	types := getStringSlice(cmd, "types", &err)
+	followSymlinks := getBool(cmd, "follow-symlinks", &err)
 	all := getBool(cmd, "all", &err)
 	if err != nil {
 		return nil, err
 	}
 
-	if checkMode && diffMode {
-		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify both --check and --diff"), Code: 2}
+	modeCount := 0
+	for _, m := range []bool{writeMode, checkMode, diffMode} {
+		if m {
+			modeCount++
+		}
 	}
-
-	attrOrder, err := config.ParseOrder(orderRaw)
-	if err != nil {
-		return nil, &ExitCodeError{Err: err, Code: 2}
+	if modeCount > 1 {
+		return nil, &ExitCodeError{Err: fmt.Errorf("cannot specify multiple modes"), Code: 2}
 	}
 
 	if !stdin && target == "" {
@@ -55,6 +55,8 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 
 	var mode config.Mode
 	switch {
+	case writeMode:
+		mode = config.ModeWrite
 	case checkMode:
 		mode = config.ModeCheck
 	case diffMode:
@@ -77,13 +79,11 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		Stdout:             stdout,
 		Include:            include,
 		Exclude:            exclude,
-		Order:              attrOrder,
-		PrefixOrder:        prefixOrder,
 		ProvidersSchema:    providersSchema,
 		UseTerraformSchema: useTerraformSchema,
 		Concurrency:        concurrency,
-		Verbose:            verbose,
 		Types:              cfgTypes,
+		FollowSymlinks:     followSymlinks,
 	}
 
 	if err := cfg.Validate(); err != nil {

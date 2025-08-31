@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"sync/atomic"
 
@@ -96,9 +95,6 @@ func runPipeline(ctx context.Context, cfg *config.Config, files []string) (map[s
 							return
 						}
 					}
-					if cfg.Verbose {
-						log.Printf("processed file: %s", f)
-					}
 				}
 			}
 		}()
@@ -175,7 +171,7 @@ func (p *Processor) processFile(ctx context.Context, filePath string) (bool, []b
 			typesMap[t] = struct{}{}
 		}
 	}
-	if err := align.Apply(file, &align.Options{Order: p.cfg.Order, Schemas: p.schemas, Types: typesMap, PrefixOrder: p.cfg.PrefixOrder}); err != nil {
+	if err := align.Apply(file, &align.Options{Schemas: p.schemas, Types: typesMap}); err != nil {
 		return false, nil, err
 	}
 	if testHookAfterReorder != nil {

@@ -43,10 +43,26 @@ func scan(ctx context.Context, cfg *config.Config) ([]string, error) {
 				return err
 			}
 			path := filepath.Join(dir, entry.Name())
-			if entry.Type()&os.ModeSymlink != 0 {
-				continue
+			info, err := entry.Info()
+			if err != nil {
+				if os.IsNotExist(err) {
+					continue
+				}
+				return err
 			}
-			if entry.IsDir() {
+			if info.Mode()&os.ModeSymlink != 0 {
+				if !cfg.FollowSymlinks {
+					continue
+				}
+				info, err = os.Stat(path)
+				if err != nil {
+					if os.IsNotExist(err) {
+						continue
+					}
+					return err
+				}
+			}
+			if info.IsDir() {
 				if err := walk(ctx, path); err != nil {
 					return err
 				}
@@ -59,11 +75,16 @@ func scan(ctx context.Context, cfg *config.Config) ([]string, error) {
 		return nil
 	}
 
-	info, err := os.Lstat(cfg.Target)
+	var info os.FileInfo
+	if cfg.FollowSymlinks {
+		info, err = os.Stat(cfg.Target)
+	} else {
+		info, err = os.Lstat(cfg.Target)
+	}
 	if err != nil {
 		return nil, err
 	}
-	if info.Mode()&os.ModeSymlink != 0 {
+	if info.Mode()&os.ModeSymlink != 0 && !cfg.FollowSymlinks {
 		return nil, nil
 	}
 	if info.IsDir() {
