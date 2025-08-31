@@ -29,7 +29,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	useTerraformSchema := getBool(cmd, "use-terraform-schema", &err)
 	concurrency := getInt(cmd, "concurrency", &err)
 	types := getStringSlice(cmd, "types", &err)
-	followSymlinks := getBool(cmd, "follow-symlinks", &err)
 	all := getBool(cmd, "all", &err)
 	if err != nil {
 		return nil, err
@@ -63,8 +62,6 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		mode = config.ModeCheck
 	case diffMode:
 		mode = config.ModeDiff
-	case writeMode:
-		mode = config.ModeWrite
 	}
 
 	var cfgTypes []string
@@ -81,8 +78,7 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		Stdout:             stdout,
 		Include:            include,
 		Exclude:            exclude,
-		Order:              attrOrder,
-		PrefixOrder:        false,
+		Order:              orderRaw,
 		ProvidersSchema:    providersSchema,
 		UseTerraformSchema: useTerraformSchema,
 		Concurrency:        concurrency,

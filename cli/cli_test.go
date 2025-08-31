@@ -38,7 +38,6 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	cmd.Flags().Bool("all", false, "align all block types")
-	cmd.Flags().Bool("follow-symlinks", false, "follow symlinks when scanning")
 	cmd.MarkFlagsMutuallyExclusive("types", "all")
 	if exclusive {
 		cmd.MarkFlagsMutuallyExclusive("write", "check", "diff")

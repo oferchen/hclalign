@@ -69,7 +69,6 @@ func run(args []string) int {
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")
-	rootCmd.Flags().Bool("follow-symlinks", false, "follow symlinks when scanning")
 	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
 		return &cli.ExitCodeError{Err: err, Code: 2}
 	})

@@ -7,6 +7,5 @@ terraform {
 
   cloud {}
   experiments = ["a"]
-  other = 1
+  other       = 1
 }
-
