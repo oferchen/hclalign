@@ -2,12 +2,10 @@
 package terraformfmt
 
 import (
-        "bytes"
-        "context"
-        "os"
-        "os/exec"
-        "path/filepath"
-        "testing"
+	"context"
+	"os"
+	"os/exec"
+	"testing"
 
 	"github.com/stretchr/testify/require"
 )
