@@ -2,44 +2,38 @@
 
 Thank you for considering a contribution to `hclalign`!
 
-## Coding Standards
+## Comment Policy
 
-- Go code is formatted with `gofumpt`.
-- Follow idiomatic Go practices and keep functions small and well tested.
-- New features should include unit tests and, when appropriate, fuzz tests.
+Every Go source file must begin with a single comment on line 1 containing its repository‑relative path:
 
-## Required Checks
-
-Run the comment stripping tool to ensure each Go file begins with a path comment:
-
-```sh
-make sanitize
+```go
+// path/to/file.go
 ```
 
-Before submitting a pull request, ensure the continuous integration pipeline passes:
+Run `make strip` before committing to normalize file headers and verify the policy with `cmd/commentcheck`.
+
+## Development Workflow
+
+From the repository root, run the following targets before submitting a pull request:
 
 ```sh
-make ci
+make tidy   # download modules and tidy go.mod
+make fmt    # format Go code and regenerate fixtures
+make strip  # enforce comment policy
+make lint   # static analysis via golangci-lint
+make test   # execute tests with coverage
+make cover  # enforce >=95% coverage
+make build  # compile the hclalign binary
 ```
 
-This command formats the code, vets, lints, runs the tests with the race detector,
-performs a short fuzz run, and builds the project. If you prefer to run steps
-individually, execute the following from the repository root:
+## Continuous Integration
 
-```sh
-make fmt
-make vet
-make lint
-make test-race
-make fuzz
-make build
-```
+GitHub Actions executes `make tidy`, `make fmt`, `make lint`, `make test`, `make cover`, and `make build` on Linux and macOS with multiple Go versions. Pull requests must pass this workflow.
 
 ## Commit Guidelines
 
-- Make commits concise and focused; avoid unrelated changes.
-- Write meaningful commit messages using the imperative mood.
+- Keep commits focused and avoid unrelated changes.
+- Use imperative, descriptive commit messages.
 - Ensure the working tree is clean and all checks pass before committing.
 
 We appreciate your help in improving `hclalign`!
-

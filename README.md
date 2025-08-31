@@ -11,23 +11,21 @@
 
 `terraform fmt` is run again after alignment to ensure canonical layout. This process is idempotent: running the tool multiple times yields the same result.
 
-## Supported Blocks
+## Supported Blocks and Canonical Order
 
-`hclalign` aligns attributes inside Terraform blocks including `variable`, `output`, `locals`, `module`, `provider`, `terraform`, `resource`, `data`, `dynamic`, `lifecycle`, and `provisioner`.
+`hclalign` aligns attributes inside Terraform blocks. By default it processes only `variable` blocks and targets files matching the glob patterns `**/*.tf` and `**/*.tfvars` while excluding `.terraform/**` and `**/vendor/**`.
 
-## Schema Options
+Attributes are reordered inside these block types using canonical schemas:
 
-The default schema orders variable attributes as `description → type → default → sensitive → nullable → validation`. Additional block types have their own canonical order:
+- **variable:** `description`, `type`, `default`, `sensitive`, `nullable`, then any other attributes followed by `validation` blocks
+- **output:** `description`, `value`, `sensitive`, `depends_on`, then other attributes
+- **locals:** no reordering
+- **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically and other attributes
+- **provider:** `alias` followed by remaining attributes in their original order
+- **terraform:** `required_version`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then other attributes and blocks
+- **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical), followed by any other attributes
 
-- **output:** `description`, `value`, `sensitive`, `depends_on`
-- **module:** `source`, `version`, `providers`, `count`, `for_each`, `depends_on`, then input variables alphabetically
-- **provider:** `alias` followed by other attributes alphabetically
-- **terraform:** `required_version`, `required_providers` (entries sorted alphabetically), `backend`, `cloud`, then remaining attributes and blocks in their original order
-- **resource/data:** `provider`, `count`, `for_each`, `depends_on`, `lifecycle`, `provisioner`, then provider schema attributes grouped as required → optional → computed (each alphabetical)
-
-Validation blocks are placed immediately after canonical attributes. Attributes not in the canonical list or provider schema are appended in their original order.
-
-Entries within `required_providers` are sorted alphabetically by provider name. Other `terraform` attributes follow `required_version`, `backend`, and `cloud` in that order.
+Validation blocks are placed immediately after canonical attributes. Attributes not covered by a canonical list or provider schema keep their original order. Entries within `required_providers` are sorted alphabetically by provider name.
 
 ### `required_providers` sorting
 
@@ -99,8 +97,8 @@ keep their original order.
 ## Exit Codes
 
 - `0`: success
-- `1`: changes required when running with `--check` or `--diff`
-- `2`: invalid CLI usage or configuration error
+- `1`: files need formatting when run with `--check` or `--diff`
+- `2`: invalid CLI usage or configuration
 - `3`: processing error during formatting or alignment
 
 ## Atomic Writes and BOM Preservation
@@ -158,10 +156,7 @@ cat variables.tf | hclalign --stdin --stdout
 | `make fmt` | run `gofumpt` (v0.6.0); regenerate golden files; run `terraform fmt` on test cases if available |
 | `make strip` | remove comments and enforce the single-line comment policy |
 | `make lint` | execute `golangci-lint` |
-| `make vet` | run `go vet` |
 | `make test` | run tests with coverage |
-| `make test-race` | run tests with the race detector |
-| `make fuzz` | run fuzz tests |
 | `make cover` | verify coverage ≥95% |
 | `make build` | build the `hclalign` binary into `.build/` |
 | `make clean` | remove build artifacts |
@@ -171,7 +166,7 @@ Terraform CLI is optional. If installed, `make fmt` runs `terraform fmt` on `tes
 `make fmt` uses `go run mvdan.cc/gofumpt@v0.6.0` so contributors do not need to install `gofumpt` manually.
 
 ## Continuous Integration
-Use `hclalign . --check` in CI to fail builds when formatting is needed. The provided GitHub Actions workflow runs `make tidy`, `make fmt`, `make lint`, `make test-race`, and `make cover` on Linux and macOS with multiple Go versions.
+Use `hclalign . --check` in CI to fail builds when formatting is needed. The provided GitHub Actions workflow runs `make tidy`, `make fmt`, `make lint`, `make test`, and `make cover` on Linux and macOS with multiple Go versions.
 
 ## License
 
