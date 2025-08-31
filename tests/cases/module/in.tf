@@ -4,10 +4,18 @@ module "m" {
 }
 
 module "complex" {
-  z          = 0
-  for_each   = {}
-  source     = "./complex"
-  providers  = {}
+  z = 0
+
+  provisioner "local-exec" {
+    command = "echo hi"
+  }
+
+  for_each  = {}
+  source    = "./complex"
+  providers = {
+    b = aws.b
+    a = aws.a
+  }
   depends_on = []
   version    = "1.0"
   count      = 1
