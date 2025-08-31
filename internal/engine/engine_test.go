@@ -22,8 +22,8 @@ func TestProcessMissingTarget(t *testing.T) {
 	t.Parallel()
 
 	cfg := &config.Config{
-		Target:      "nonexistent.hcl",
-		Include:     []string{"**/*.hcl"},
+		Target:      "nonexistent.tf",
+		Include:     []string{"**/*.tf"},
 		Concurrency: 1,
 	}
 
@@ -35,14 +35,14 @@ func TestProcessMissingTarget(t *testing.T) {
 
 func TestProcessContextCancelled(t *testing.T) {
 	dir := t.TempDir()
-	data, err := os.ReadFile(filepath.Join("testdata", "idempotent_input.hcl"))
+	data, err := os.ReadFile(filepath.Join("testdata", "idempotent_input.tf"))
 	require.NoError(t, err)
-	filePath := filepath.Join(dir, "example.hcl")
+	filePath := filepath.Join(dir, "example.tf")
 	require.NoError(t, os.WriteFile(filePath, data, 0o644))
 
 	cfg := &config.Config{
 		Target:      dir,
-		Include:     []string{"**/*.hcl"},
+		Include:     []string{"**/*.tf"},
 		Concurrency: 1,
 	}
 
@@ -57,14 +57,14 @@ func TestProcessContextCancelled(t *testing.T) {
 
 func TestProcessContextCancelledAfterReorder(t *testing.T) {
 	dir := t.TempDir()
-	data, err := os.ReadFile(filepath.Join("testdata", "idempotent_input.hcl"))
+	data, err := os.ReadFile(filepath.Join("testdata", "idempotent_input.tf"))
 	require.NoError(t, err)
-	filePath := filepath.Join(dir, "example.hcl")
+	filePath := filepath.Join(dir, "example.tf")
 	require.NoError(t, os.WriteFile(filePath, data, 0o644))
 
 	cfg := &config.Config{
 		Target:      dir,
-		Include:     []string{"**/*.hcl"},
+		Include:     []string{"**/*.tf"},
 		Concurrency: 1,
 	}
 

@@ -17,19 +17,19 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	path := filepath.Join(dir, "bad.hcl")
+	path := filepath.Join(dir, "bad.tf")
 	orig := "variable \"a\" {"
 	require.NoError(t, os.WriteFile(path, []byte(orig), 0o644))
 
 	cfg := &config.Config{
 		Target:      path,
-		Include:     []string{"**/*.hcl"},
+		Include:     []string{"**/*.tf"},
 		Concurrency: 1,
 	}
 
 	changed, err := Process(context.Background(), cfg)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "parsing error")
+	require.Contains(t, err.Error(), "Unclosed configuration block")
 	require.False(t, changed)
 
 	data, err := os.ReadFile(path)
@@ -39,9 +39,9 @@ func TestProcessInvalidHCLFile(t *testing.T) {
 
 func TestProcessAggregatesErrors(t *testing.T) {
 	dir := t.TempDir()
-	bad1 := filepath.Join(dir, "bad1.hcl")
-	bad2 := filepath.Join(dir, "bad2.hcl")
-	goodPath := filepath.Join(dir, "good.hcl")
+	bad1 := filepath.Join(dir, "bad1.tf")
+	bad2 := filepath.Join(dir, "bad2.tf")
+	goodPath := filepath.Join(dir, "good.tf")
 
 	bad := "variable \"bad\" {"
 	require.NoError(t, os.WriteFile(bad1, []byte(bad), 0o644))
@@ -52,15 +52,15 @@ func TestProcessAggregatesErrors(t *testing.T) {
 
 	cfg := &config.Config{
 		Target:      dir,
-		Include:     []string{"**/*.hcl"},
+		Include:     []string{"**/*.tf"},
 		Concurrency: 2,
 	}
 
 	changed, err := Process(context.Background(), cfg)
 	require.Error(t, err)
 	require.False(t, changed)
-	require.Contains(t, err.Error(), "bad1.hcl")
-	require.Contains(t, err.Error(), "bad2.hcl")
+	require.Contains(t, err.Error(), "bad1.tf")
+	require.Contains(t, err.Error(), "bad2.tf")
 
 	data, readErr := os.ReadFile(goodPath)
 	require.NoError(t, readErr)

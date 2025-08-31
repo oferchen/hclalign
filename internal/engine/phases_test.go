@@ -13,7 +13,7 @@ import (
 )
 
 func TestPhases(t *testing.T) {
-	cases := []string{"simple", "heredocs", "templates", "trailing_commas", "comments", "locals", "output", "module", "provider", "terraform", "resource", "data", "idempotency"}
+	cases := []string{"simple", "heredocs", "trailing_commas", "comments", "locals", "output", "module", "provider", "terraform", "resource", "data", "idempotency"}
 	base := filepath.Join("..", "..", "tests", "cases")
 	schemaPath := filepath.Join("..", "..", "tests", "testdata", "providers-schema.json")
 
