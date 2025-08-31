@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 - Documented exit codes and provided CI/editor usage examples to encourage safe automation.
 - Enforced single-line SPDX comment rule.
 - Achieved ≥95% line coverage across core packages.
+- Introduced `--prefix-order` flag to alphabetize non-canonical attributes and sort module provider maps.
 - Updated documentation for provider alphabetical ordering, new `experiments` and `ephemeral` terraform attributes, default excludes, and the `--prefix-order` flag with usage examples.
 - Added `experiments` after `required_version` in the canonical `terraform` block order.
 - Sorted `provider` block attributes alphabetically after `alias`.

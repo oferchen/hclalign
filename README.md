@@ -93,7 +93,7 @@ keep their original order.
 - `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `.terraform.lock.hcl`, `**/vendor/**`)
 - `--follow-symlinks`: traverse symbolic links
 - `--order`: control variable attribute order
-- `--prefix-order`: comma-separated provider name prefixes that take precedence when sorting `required_providers`
+- `--prefix-order`: alphabetize attributes not in canonical lists
 - `--concurrency`: maximum parallel file processing
 - `-v, --verbose`: enable verbose logging
 - `--providers-schema`: path to a provider schema JSON file

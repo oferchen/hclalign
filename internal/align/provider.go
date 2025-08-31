@@ -24,16 +24,18 @@ func (providerStrategy) Align(block *hclwrite.Block, opts *Options) error {
 		reserved[name] = struct{}{}
 	}
 
-	others := make([]string, 0, len(attrs))
-	for name := range attrs {
+	original := ihcl.AttributeOrder(block.Body(), attrs)
+	extra := make([]string, 0)
+	for _, name := range original {
 		if _, ok := reserved[name]; ok {
 			continue
 		}
-		others = append(others, name)
+		extra = append(extra, name)
 	}
-	sort.Strings(others)
-	names = append(names, others...)
-
+	if opts != nil && opts.PrefixOrder {
+		sort.Strings(extra)
+	}
+	names = append(names, extra...)
 	return reorderBlock(block, names)
 }
 
