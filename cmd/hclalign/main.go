@@ -62,6 +62,7 @@ func run(args []string) int {
 	rootCmd.Flags().Bool("stdout", false, "write result to STDOUT")
 	rootCmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	rootCmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
+	rootCmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symbolic links when traversing directories")
 	rootCmd.Flags().String("providers-schema", "", "path to providers schema file")
 	rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")

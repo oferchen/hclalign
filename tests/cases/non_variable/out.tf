@@ -14,8 +14,8 @@ provider "p" {
 }
 
 module "m" {
-  a = 2
   b = 1
+  a = 2
 }
 
 output "o" {

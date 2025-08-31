@@ -74,7 +74,6 @@ func (terraformStrategy) Align(block *hclwrite.Block, _ *Options) error {
 		}
 		otherAttrs = append(otherAttrs, name)
 	}
-
 	type item struct {
 		name   string
 		block  *hclwrite.Block

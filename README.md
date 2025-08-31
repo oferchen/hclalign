@@ -55,6 +55,21 @@ terraform {
 }
 ```
 
+### Flag interactions
+
+Use `--types` to select which block types to align. `--order` customizes the variable schema and has no effect on other block types:
+
+```sh
+# align module and output blocks using their default order
+hclalign . --types module,output
+
+# override variable attribute order while still aligning modules with defaults
+hclalign . --types variable,module --order value,description,type
+
+# --order is ignored when variable blocks are not selected
+hclalign . --types module --order value,description,type
+```
+
 ## Provider Schema Integration
 
 Resource and data blocks can be ordered according to provider schemas. Supply a
@@ -72,6 +87,7 @@ By default `hclalign` rewrites files in place. The following flags adjust this b
 - `--follow-symlinks`: follow symbolic links when searching for files
 - `--stdin`, `--stdout`: read from stdin and/or write to stdout
 - `--include`, `--exclude`: glob patterns controlling which files are processed (defaults: include `**/*.tf`, `**/*.tfvars`; exclude `.terraform/**`, `.terraform.lock.hcl`, `**/vendor/**`)
+- `--order`: control variable attribute order
 - `--concurrency`: maximum parallel file processing
 - `--providers-schema`: path to a provider schema JSON file
 - `--use-terraform-schema`: derive schema via `terraform providers schema -json`

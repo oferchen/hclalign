@@ -19,7 +19,28 @@ func (variableStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	for _, name := range canonical {
 		canonicalSet[name] = struct{}{}
 	}
-	return reorderVariableBlock(block, canonical, canonical, canonicalSet, -1)
+	knownOrder := make([]string, 0, len(order))
+	seen := make(map[string]struct{}, len(order))
+	validationPos := -1
+	for _, name := range order {
+		if name == "validation" {
+			if validationPos == -1 {
+				validationPos = len(knownOrder)
+			}
+			continue
+		}
+		if _, ok := canonicalSet[name]; ok {
+			if _, dup := seen[name]; dup {
+				continue
+			}
+			knownOrder = append(knownOrder, name)
+			seen[name] = struct{}{}
+		}
+	}
+	if len(knownOrder) == 0 {
+		knownOrder = canonical
+	}
+	return reorderVariableBlock(block, knownOrder, canonical, canonicalSet, validationPos)
 }
 
 func init() {

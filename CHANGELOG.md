@@ -26,3 +26,4 @@ All notable changes to this project will be documented in this file.
 - Added `experiments` after `required_version` in the canonical `terraform` block order.
 - Sorted `provider` block attributes alphabetically after `alias`.
 - Added `ephemeral` to canonical ordering for output blocks.
+- Removed `--prefix-order` flag; provider maps and extra attributes keep their original order.

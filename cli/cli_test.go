@@ -31,6 +31,7 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Bool("stdout", false, "write result to STDOUT")
 	cmd.Flags().StringSlice("include", config.DefaultInclude, "glob patterns to include")
 	cmd.Flags().StringSlice("exclude", config.DefaultExclude, "glob patterns to exclude")
+	cmd.Flags().StringSlice("order", config.CanonicalOrder, "order of variable block fields")
 	cmd.Flags().Bool("follow-symlinks", false, "follow symbolic links when traversing directories")
 	cmd.Flags().String("providers-schema", "", "path to providers schema file")
 	cmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")

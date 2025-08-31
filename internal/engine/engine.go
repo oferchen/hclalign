@@ -105,7 +105,7 @@ func processReader(ctx context.Context, r io.Reader, w io.Writer, cfg *config.Co
 			typesMap[t] = struct{}{}
 		}
 	}
-	if err := align.Apply(file, &align.Options{Schemas: schemas, Types: typesMap}); err != nil {
+	if err := align.Apply(file, &align.Options{Order: cfg.Order, Schemas: schemas, Types: typesMap}); err != nil {
 		return false, err
 	}
 	if testHookAfterReorder != nil {

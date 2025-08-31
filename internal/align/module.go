@@ -116,26 +116,23 @@ func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 }
 
 func orderModuleAttrs(names, canonical []string) []string {
-	reserved := make(map[string]struct{}, len(canonical))
-	for _, n := range canonical {
-		reserved[n] = struct{}{}
+	canonicalSet := make(map[string]struct{}, len(canonical))
+	for _, c := range canonical {
+		canonicalSet[c] = struct{}{}
 	}
 	order := make([]string, 0, len(names))
-	for _, n := range canonical {
-		for _, m := range names {
-			if m == n {
-				order = append(order, m)
+	for _, c := range canonical {
+		for _, n := range names {
+			if n == c {
+				order = append(order, n)
 			}
 		}
 	}
-	vars := make([]string, 0, len(names))
 	for _, n := range names {
-		if _, ok := reserved[n]; !ok {
-			vars = append(vars, n)
+		if _, ok := canonicalSet[n]; !ok {
+			order = append(order, n)
 		}
 	}
-	sort.Strings(vars)
-	order = append(order, vars...)
 	return order
 }
 

@@ -23,6 +23,7 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	stdout := getBool(cmd, "stdout", &err)
 	include := getStringSlice(cmd, "include", &err)
 	exclude := getStringSlice(cmd, "exclude", &err)
+	orderRaw := getStringSlice(cmd, "order", &err)
 	followSymlinks := getBool(cmd, "follow-symlinks", &err)
 	providersSchema := getString(cmd, "providers-schema", &err)
 	useTerraformSchema := getBool(cmd, "use-terraform-schema", &err)
@@ -71,7 +72,7 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		Stdout:             stdout,
 		Include:            include,
 		Exclude:            exclude,
-		Order:              config.CanonicalOrder,
+		Order:              attrOrder,
 		PrefixOrder:        false,
 		ProvidersSchema:    providersSchema,
 		UseTerraformSchema: useTerraformSchema,
