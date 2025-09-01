@@ -11,6 +11,8 @@
 
 `terraform fmt` is run again after alignment to ensure canonical layout. This process is idempotent: running the tool multiple times yields the same result.
 
+The Go formatter emits the same spacing, alignment, and comment layout as `terraform fmt`. Parity tests exercise fixtures covering comments, heredocs, CRLF line endings, and UTF-8 BOM files. When the Terraform CLI is unavailable, `hclalign` logs a warning and falls back to this Go formatter.
+
 ## Supported Blocks and Canonical Order
 
 `hclalign` aligns attributes inside Terraform blocks. By default it processes only `variable` blocks and targets files matching the glob pattern `**/*.tf` while excluding `.terraform/**` and `vendor/**`.

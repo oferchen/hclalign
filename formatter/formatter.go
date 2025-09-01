@@ -27,7 +27,7 @@ func Format(src []byte, filename string) (formatted []byte, hints internalfs.Hin
 		err = diags
 		return
 	}
-	formatted = hclwrite.Format(f.Bytes())
+	formatted = f.Bytes()
 	formatted = bytes.ReplaceAll(formatted, []byte("\r\n"), []byte("\n"))
 	if len(formatted) > 0 {
 		formatted = bytes.TrimRight(formatted, "\n")
