@@ -35,6 +35,8 @@ func newTestRootCmd(exclusive bool) *cobra.Command {
 	cmd.Flags().Bool("follow-symlinks", false, "follow symbolic links when traversing directories")
 	cmd.Flags().String("providers-schema", "", "path to providers schema file")
 	cmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
+	cmd.Flags().String("schema-cache", "", "directory for provider schema cache")
+	cmd.Flags().Bool("no-schema-cache", false, "disable provider schema caching")
 	cmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	cmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	cmd.Flags().Bool("all", false, "align all block types")

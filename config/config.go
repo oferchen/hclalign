@@ -29,6 +29,8 @@ type Config struct {
 	Concurrency        int
 	ProvidersSchema    string
 	UseTerraformSchema bool
+	SchemaCache        string
+	NoSchemaCache      bool
 	Types              []string
 	FollowSymlinks     bool
 }

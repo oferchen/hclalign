@@ -27,6 +27,8 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 	followSymlinks := getBool(cmd, "follow-symlinks", &err)
 	providersSchema := getString(cmd, "providers-schema", &err)
 	useTerraformSchema := getBool(cmd, "use-terraform-schema", &err)
+	schemaCache := getString(cmd, "schema-cache", &err)
+	noSchemaCache := getBool(cmd, "no-schema-cache", &err)
 	concurrency := getInt(cmd, "concurrency", &err)
 	types := getStringSlice(cmd, "types", &err)
 	all := getBool(cmd, "all", &err)
@@ -81,6 +83,8 @@ func parseConfig(cmd *cobra.Command, args []string) (*config.Config, error) {
 		Order:              orderRaw,
 		ProvidersSchema:    providersSchema,
 		UseTerraformSchema: useTerraformSchema,
+		SchemaCache:        schemaCache,
+		NoSchemaCache:      noSchemaCache,
 		Concurrency:        concurrency,
 		Types:              cfgTypes,
 		FollowSymlinks:     followSymlinks,

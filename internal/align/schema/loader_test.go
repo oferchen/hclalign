@@ -82,22 +82,62 @@ func TestLoad(t *testing.T) {
 
 func TestFromTerraformCaching(t *testing.T) {
 	dir := t.TempDir()
-	cache := filepath.Join(dir, "schema.json")
+	cacheDir := filepath.Join(dir, "cache")
 	samplePath := filepath.Join(dir, "sample.json")
+	versionPath := filepath.Join(dir, "version.json")
 	require.NoError(t, os.WriteFile(samplePath, []byte(sample), 0o644))
+	version := `{"terraform_version":"1.0.0","provider_selections":{"registry.terraform.io/hashicorp/test":{"version":"1.0.0"}}}`
+	require.NoError(t, os.WriteFile(versionPath, []byte(version), 0o644))
 
-	var calls int
+	var providersCalls int
 	orig := execCommandContext
 	execCommandContext = func(ctx context.Context, name string, args ...string) *exec.Cmd {
-		calls++
+		if len(args) > 0 && args[0] == "version" {
+			return exec.CommandContext(ctx, "cat", versionPath)
+		}
+		providersCalls++
 		return exec.CommandContext(ctx, "cat", samplePath)
 	}
 	defer func() { execCommandContext = orig }()
 
 	ctx := context.Background()
-	_, err := FromTerraform(ctx, cache)
+	_, err := FromTerraform(ctx, cacheDir, dir, false)
 	require.NoError(t, err)
-	_, err = FromTerraform(ctx, cache)
+	_, err = FromTerraform(ctx, cacheDir, dir, false)
 	require.NoError(t, err)
-	require.Equal(t, 1, calls)
+	require.Equal(t, 1, providersCalls)
+
+	version = `{"terraform_version":"1.0.0","provider_selections":{"registry.terraform.io/hashicorp/test":{"version":"2.0.0"}}}`
+	require.NoError(t, os.WriteFile(versionPath, []byte(version), 0o644))
+	_, err = FromTerraform(ctx, cacheDir, dir, false)
+	require.NoError(t, err)
+	require.Equal(t, 2, providersCalls)
+}
+
+func TestFromTerraformNoCache(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+	samplePath := filepath.Join(dir, "sample.json")
+	versionPath := filepath.Join(dir, "version.json")
+	require.NoError(t, os.WriteFile(samplePath, []byte(sample), 0o644))
+	version := `{"terraform_version":"1.0.0","provider_selections":{}}`
+	require.NoError(t, os.WriteFile(versionPath, []byte(version), 0o644))
+
+	var providersCalls int
+	orig := execCommandContext
+	execCommandContext = func(ctx context.Context, name string, args ...string) *exec.Cmd {
+		if len(args) > 0 && args[0] == "version" {
+			return exec.CommandContext(ctx, "cat", versionPath)
+		}
+		providersCalls++
+		return exec.CommandContext(ctx, "cat", samplePath)
+	}
+	defer func() { execCommandContext = orig }()
+
+	ctx := context.Background()
+	_, err := FromTerraform(ctx, cacheDir, dir, true)
+	require.NoError(t, err)
+	_, err = FromTerraform(ctx, cacheDir, dir, true)
+	require.NoError(t, err)
+	require.Equal(t, 2, providersCalls)
 }

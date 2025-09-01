@@ -66,6 +66,8 @@ func run(args []string) int {
 	rootCmd.Flags().Bool("follow-symlinks", false, "follow symbolic links when traversing directories")
 	rootCmd.Flags().String("providers-schema", "", "path to providers schema file")
 	rootCmd.Flags().Bool("use-terraform-schema", false, "use terraform schema for providers")
+	rootCmd.Flags().String("schema-cache", "", "directory for provider schema cache")
+	rootCmd.Flags().Bool("no-schema-cache", false, "disable provider schema caching")
 	rootCmd.Flags().Int("concurrency", runtime.GOMAXPROCS(0), "maximum concurrency")
 	rootCmd.Flags().StringSlice("types", []string{"variable"}, "comma-separated list of block types to align")
 	rootCmd.Flags().Bool("all", false, "align all block types")

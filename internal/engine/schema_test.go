@@ -59,11 +59,13 @@ func TestLoadSchemasProvidersSchema(t *testing.T) {
 func TestLoadSchemasUseTerraformSchema(t *testing.T) {
 	dir := t.TempDir()
 	samplePath := filepath.Join(dir, "sample.json")
+	versionPath := filepath.Join(dir, "version.json")
 	require.NoError(t, os.WriteFile(samplePath, []byte(sample), 0o644))
+	require.NoError(t, os.WriteFile(versionPath, []byte(`{"terraform_version":"1.0.0"}`), 0o644))
 	script := filepath.Join(dir, "terraform")
-	require.NoError(t, os.WriteFile(script, []byte("#!/bin/sh\n/bin/cat "+samplePath+"\n"), 0o755))
+	require.NoError(t, os.WriteFile(script, []byte("#!/bin/sh\nif [ \"$1\" = \"version\" ]; then\n  /bin/cat "+versionPath+"\nelse\n  /bin/cat "+samplePath+"\nfi\n"), 0o755))
 	t.Setenv("PATH", dir)
-	cfg := &config.Config{UseTerraformSchema: true, ProvidersSchema: filepath.Join(dir, "schema.json")}
+	cfg := &config.Config{UseTerraformSchema: true, SchemaCache: filepath.Join(dir, "cache"), Target: dir}
 	schemas, err := loadSchemas(context.Background(), cfg)
 	require.NoError(t, err)
 	_, ok := schemas["test_thing"]
@@ -74,10 +76,12 @@ func TestLoadSchemasUseTerraformSchema(t *testing.T) {
 
 func TestLoadSchemasUseTerraformSchemaError(t *testing.T) {
 	dir := t.TempDir()
+	versionPath := filepath.Join(dir, "version.json")
+	require.NoError(t, os.WriteFile(versionPath, []byte(`{"terraform_version":"1.0.0"}`), 0o644))
 	script := filepath.Join(dir, "terraform")
-	require.NoError(t, os.WriteFile(script, []byte("#!/bin/sh\nexit 1\n"), 0o755))
+	require.NoError(t, os.WriteFile(script, []byte("#!/bin/sh\nif [ \"$1\" = \"version\" ]; then\n  /bin/cat "+versionPath+"\nelse\n  exit 1\nfi\n"), 0o755))
 	t.Setenv("PATH", dir)
-	cfg := &config.Config{UseTerraformSchema: true, ProvidersSchema: filepath.Join(dir, "schema.json")}
+	cfg := &config.Config{UseTerraformSchema: true, SchemaCache: filepath.Join(dir, "cache"), Target: dir}
 	schemas, err := loadSchemas(context.Background(), cfg)
 	require.Error(t, err)
 	require.Nil(t, schemas)
@@ -86,16 +90,17 @@ func TestLoadSchemasUseTerraformSchemaError(t *testing.T) {
 func TestLoadSchemasUseTerraformSchemaCache(t *testing.T) {
 	dir := t.TempDir()
 	samplePath := filepath.Join(dir, "sample.json")
+	versionPath := filepath.Join(dir, "version.json")
 	require.NoError(t, os.WriteFile(samplePath, []byte(sample), 0o644))
+	require.NoError(t, os.WriteFile(versionPath, []byte(`{"terraform_version":"1.0.0"}`), 0o644))
 	script := filepath.Join(dir, "terraform")
-	require.NoError(t, os.WriteFile(script, []byte("#!/bin/sh\n/bin/cat "+samplePath+"\n"), 0o755))
-	cache := filepath.Join(dir, "schema.json")
+	require.NoError(t, os.WriteFile(script, []byte("#!/bin/sh\nif [ \"$1\" = \"version\" ]; then\n  /bin/cat "+versionPath+"\nelse\n  /bin/cat "+samplePath+"\nfi\n"), 0o755))
+	cacheDir := filepath.Join(dir, "cache")
 	t.Setenv("PATH", dir)
-	cfg := &config.Config{UseTerraformSchema: true, ProvidersSchema: cache}
+	cfg := &config.Config{UseTerraformSchema: true, SchemaCache: cacheDir, Target: dir}
 	_, err := loadSchemas(context.Background(), cfg)
 	require.NoError(t, err)
-	require.NoError(t, os.Remove(script))
-	t.Setenv("PATH", "")
+	require.NoError(t, os.WriteFile(script, []byte("#!/bin/sh\nif [ \"$1\" = \"version\" ]; then\n  /bin/cat "+versionPath+"\nelse\n  exit 1\nfi\n"), 0o755))
 	schemas, err := loadSchemas(context.Background(), cfg)
 	require.NoError(t, err)
 	_, ok := schemas["test_thing"]

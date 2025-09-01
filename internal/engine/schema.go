@@ -3,6 +3,7 @@ package engine
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 
 	"github.com/oferchen/hclalign/config"
@@ -14,12 +15,19 @@ func loadSchemas(ctx context.Context, cfg *config.Config) (map[string]*align.Sch
 	if cfg.ProvidersSchema == "" && !cfg.UseTerraformSchema {
 		return nil, nil
 	}
-	path := cfg.ProvidersSchema
-	if path == "" {
-		path = filepath.Join(".terraform", "providers-schema.json")
+	if cfg.ProvidersSchema != "" {
+		return alignschema.LoadFile(cfg.ProvidersSchema)
 	}
-	if cfg.UseTerraformSchema {
-		return alignschema.FromTerraform(ctx, path)
+	modulePath := cfg.Target
+	if modulePath == "" {
+		modulePath = "."
 	}
-	return alignschema.LoadFile(path)
+	if fi, err := os.Stat(modulePath); err == nil && !fi.IsDir() {
+		modulePath = filepath.Dir(modulePath)
+	}
+	cacheDir := cfg.SchemaCache
+	if cacheDir == "" {
+		cacheDir = filepath.Join(modulePath, ".terraform", "schema-cache")
+	}
+	return alignschema.FromTerraform(ctx, cacheDir, modulePath, cfg.NoSchemaCache)
 }
