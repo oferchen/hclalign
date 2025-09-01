@@ -14,40 +14,20 @@ import (
 func TestExtractAttrTokens(t *testing.T) {
 	src := []byte("//c\nname = 1 //trail\n")
 	f, _ := hclwrite.ParseConfig(src, "test.tf", hcl2.InitialPos)
-	body := f.Body()
-	attr := body.GetAttribute("name")
-	tokensMap, start := ExtractAttrTokens(body, map[string]*hclwrite.Attribute{"name": attr})
-	require.Len(t, start, 0)
-	toks := tokensMap["name"]
-	require.Len(t, toks.PreTokens, 0)
+	attr := f.Body().GetAttribute("name")
+	pre := hclwrite.Tokens{&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: []byte("\n")}}
+	toks := ExtractAttrTokens(attr, pre)
+	require.Len(t, toks.PreTokens, 1)
+	require.Equal(t, "\n", string(toks.PreTokens[0].Bytes))
 	require.Len(t, toks.LeadTokens, 1)
 	require.Equal(t, "//c\n", string(toks.LeadTokens[0].Bytes))
 	var buf bytes.Buffer
 	for _, tk := range toks.ExprTokens {
 		buf.Write(tk.Bytes)
 	}
-	require.Equal(t, "1//trail", buf.String())
-	require.Len(t, toks.PostTokens, 0)
-}
-
-func TestExtractAttrTokensPrePost(t *testing.T) {
-	src := []byte("a=1\n#ta\n\nb=2//ib\n#tb\n")
-	f, _ := hclwrite.ParseConfig(src, "t.tf", hcl2.InitialPos)
-	body := f.Body()
-	attrs := map[string]*hclwrite.Attribute{
-		"a": body.GetAttribute("a"),
-		"b": body.GetAttribute("b"),
-	}
-	toks, start := ExtractAttrTokens(body, attrs)
-	require.Len(t, start, 0)
-	a := toks["a"]
-	require.Len(t, a.PostTokens, 1)
-	require.Equal(t, "#ta\n", string(a.PostTokens[0].Bytes))
-	b := toks["b"]
-	require.Len(t, b.PreTokens, 1)
-	require.Equal(t, "\n", string(b.PreTokens[0].Bytes))
-	require.Len(t, b.PostTokens, 1)
-	require.Equal(t, "#tb\n", string(b.PostTokens[0].Bytes))
+	require.Equal(t, "1", buf.String())
+	require.Len(t, toks.TrailTokens, 1)
+	require.Equal(t, "//trail\n", string(toks.TrailTokens[0].Bytes))
 }
 
 func TestHasTrailingComma(t *testing.T) {

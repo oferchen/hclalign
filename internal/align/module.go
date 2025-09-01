@@ -20,7 +20,10 @@ func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	newline := ihcl.DetectLineEnding(tokens)
 	trailingComma := ihcl.HasTrailingComma(tokens)
 
-	attrTokens, startTokens := ihcl.ExtractAttrTokens(body, attrs)
+	attrTokens := make(map[string]ihcl.AttrTokens, len(attrs))
+	for name, attr := range attrs {
+		attrTokens[name] = ihcl.ExtractAttrTokens(attr, nil)
+	}
 	blocks := body.Blocks()
 
 	type segment struct {

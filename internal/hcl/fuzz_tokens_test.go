@@ -18,13 +18,12 @@ func FuzzExtractAttrTokens(f *testing.F) {
 			t.Skip()
 		}
 		attr := file.Body().GetAttribute("a")
-		toksMap, start := ExtractAttrTokens(file.Body(), map[string]*hclwrite.Attribute{"a": attr})
-		toks := toksMap["a"]
+		toks := ExtractAttrTokens(attr, nil)
 		body := hclwrite.NewEmptyFile().Body()
-		body.AppendUnstructuredTokens(start)
-		raw := append(hclwrite.Tokens{}, toks.LeadTokens...)
+		raw := append(hclwrite.Tokens{}, toks.PreTokens...)
+		raw = append(raw, toks.LeadTokens...)
 		raw = append(raw, toks.ExprTokens...)
-		body.AppendUnstructuredTokens(toks.PreTokens)
+		raw = append(raw, toks.TrailTokens...)
 		body.SetAttributeRaw("a", raw)
 		body.AppendUnstructuredTokens(toks.PostTokens)
 		out := hclwrite.Format(body.BuildTokens(nil).Bytes())

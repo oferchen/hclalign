@@ -9,30 +9,26 @@ import (
 )
 
 type AttrTokens struct {
-	PreTokens  hclwrite.Tokens
-	LeadTokens hclwrite.Tokens
-	ExprTokens hclwrite.Tokens
-	PostTokens hclwrite.Tokens
+	PreTokens   hclwrite.Tokens
+	LeadTokens  hclwrite.Tokens
+	ExprTokens  hclwrite.Tokens
+	TrailTokens hclwrite.Tokens
 }
 
-func ExtractAttrTokens(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute) (map[string]AttrTokens, hclwrite.Tokens) {
-	tokens := body.BuildTokens(nil)
-	res := make(map[string]AttrTokens, len(attrs))
-	depth := 0
-	cursor := 0
-	prev := ""
-	start := hclwrite.Tokens{}
-	for i := 0; i < len(tokens); i++ {
-		tok := tokens[i]
-		switch tok.Type {
-		case hclsyntax.TokenOBrace, hclsyntax.TokenOParen:
-			depth++
-			continue
-		case hclsyntax.TokenCBrace, hclsyntax.TokenCParen:
-			if depth > 0 {
-				depth--
-			}
-			continue
+func ExtractAttrTokens(attr *hclwrite.Attribute, pre hclwrite.Tokens) AttrTokens {
+	toks := attr.BuildTokens(nil)
+	i := 0
+	for i < len(toks) && toks[i].Type == hclsyntax.TokenComment {
+		i++
+	}
+	lead := toks[:i]
+	expr := toks[i+2:]
+	trail := hclwrite.Tokens{}
+	if n := len(expr); n > 0 {
+		last := expr[n-1]
+		if last.Type == hclsyntax.TokenNewline || last.Type == hclsyntax.TokenComment {
+			trail = append(trail, last)
+			expr = expr[:n-1]
 		}
 		if depth == 0 && tok.Type == hclsyntax.TokenIdent {
 			name := string(tok.Bytes)
@@ -91,7 +87,7 @@ func ExtractAttrTokens(body *hclwrite.Body, attrs map[string]*hclwrite.Attribute
 	} else if cursor < len(tokens) {
 		start = append(start, tokens[cursor:]...)
 	}
-	return res, start
+	return AttrTokens{PreTokens: pre, LeadTokens: lead, ExprTokens: expr, TrailTokens: trail}
 }
 
 func HasTrailingComma(tokens hclwrite.Tokens) bool {

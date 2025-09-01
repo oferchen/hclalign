@@ -23,8 +23,9 @@ func (terraformStrategy) Align(block *hclwrite.Block, _ *Options) error {
 
 	order := ihcl.AttributeOrder(body, attrs)
 
-	attrTokens, startTokens := ihcl.ExtractAttrTokens(body, attrs)
-	for name := range attrs {
+	attrTokens := map[string]ihcl.AttrTokens{}
+	for name, attr := range attrs {
+		attrTokens[name] = ihcl.ExtractAttrTokens(attr, nil)
 		body.RemoveAttribute(name)
 	}
 
