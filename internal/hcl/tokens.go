@@ -9,11 +9,13 @@ import (
 )
 
 type AttrTokens struct {
-	LeadTokens hclwrite.Tokens
-	ExprTokens hclwrite.Tokens
+	PreTokens   hclwrite.Tokens
+	LeadTokens  hclwrite.Tokens
+	ExprTokens  hclwrite.Tokens
+	TrailTokens hclwrite.Tokens
 }
 
-func ExtractAttrTokens(attr *hclwrite.Attribute) AttrTokens {
+func ExtractAttrTokens(attr *hclwrite.Attribute, pre hclwrite.Tokens) AttrTokens {
 	toks := attr.BuildTokens(nil)
 	i := 0
 	for i < len(toks) && toks[i].Type == hclsyntax.TokenComment {
@@ -21,18 +23,15 @@ func ExtractAttrTokens(attr *hclwrite.Attribute) AttrTokens {
 	}
 	lead := toks[:i]
 	expr := toks[i+2:]
+	trail := hclwrite.Tokens{}
 	if n := len(expr); n > 0 {
 		last := expr[n-1]
-		if last.Type == hclsyntax.TokenNewline {
+		if last.Type == hclsyntax.TokenNewline || last.Type == hclsyntax.TokenComment {
+			trail = append(trail, last)
 			expr = expr[:n-1]
-		} else if last.Type == hclsyntax.TokenComment {
-			b := last.Bytes
-			if len(b) > 0 && b[len(b)-1] == '\n' {
-				expr[n-1].Bytes = b[:len(b)-1]
-			}
 		}
 	}
-	return AttrTokens{LeadTokens: lead, ExprTokens: expr}
+	return AttrTokens{PreTokens: pre, LeadTokens: lead, ExprTokens: expr, TrailTokens: trail}
 }
 
 func HasTrailingComma(tokens hclwrite.Tokens) bool {

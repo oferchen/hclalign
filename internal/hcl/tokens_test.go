@@ -15,14 +15,19 @@ func TestExtractAttrTokens(t *testing.T) {
 	src := []byte("//c\nname = 1 //trail\n")
 	f, _ := hclwrite.ParseConfig(src, "test.tf", hcl2.InitialPos)
 	attr := f.Body().GetAttribute("name")
-	toks := ExtractAttrTokens(attr)
+	pre := hclwrite.Tokens{&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: []byte("\n")}}
+	toks := ExtractAttrTokens(attr, pre)
+	require.Len(t, toks.PreTokens, 1)
+	require.Equal(t, "\n", string(toks.PreTokens[0].Bytes))
 	require.Len(t, toks.LeadTokens, 1)
 	require.Equal(t, "//c\n", string(toks.LeadTokens[0].Bytes))
 	var buf bytes.Buffer
 	for _, tk := range toks.ExprTokens {
 		buf.Write(tk.Bytes)
 	}
-	require.Equal(t, "1//trail", buf.String())
+	require.Equal(t, "1", buf.String())
+	require.Len(t, toks.TrailTokens, 1)
+	require.Equal(t, "//trail\n", string(toks.TrailTokens[0].Bytes))
 }
 
 func TestHasTrailingComma(t *testing.T) {

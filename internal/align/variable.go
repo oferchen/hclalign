@@ -158,7 +158,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 
 	attrTokensMap := make(map[string]ihcl.AttrTokens)
 	for name, attr := range attrs {
-		at := ihcl.ExtractAttrTokens(attr)
+		at := ihcl.ExtractAttrTokens(attr, nil)
 		if extra, ok := attrExtraLead[name]; ok {
 			at.LeadTokens = append(extra, at.LeadTokens...)
 		}

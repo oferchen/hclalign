@@ -22,7 +22,7 @@ func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 
 	attrTokens := make(map[string]ihcl.AttrTokens, len(attrs))
 	for name, attr := range attrs {
-		attrTokens[name] = ihcl.ExtractAttrTokens(attr)
+		attrTokens[name] = ihcl.ExtractAttrTokens(attr, nil)
 	}
 	blocks := body.Blocks()
 
