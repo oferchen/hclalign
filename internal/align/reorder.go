@@ -101,10 +101,15 @@ func reorderBlock(block *hclwrite.Block, order []string) error {
 		})
 	}
 	toks := body.BuildTokens(nil)
-	if len(toks) > 0 && toks[len(toks)-1].Type != hclsyntax.TokenNewline {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
+	if len(toks) > 0 {
+		last := toks[len(toks)-1]
+		if last.Type != hclsyntax.TokenNewline {
+			if last.Type != hclsyntax.TokenComment || (len(last.Bytes) > 0 && last.Bytes[len(last.Bytes)-1] != '\n') {
+				body.AppendUnstructuredTokens(hclwrite.Tokens{
+					&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
+				})
+			}
+		}
 	}
 	return nil
 }

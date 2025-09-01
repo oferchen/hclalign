@@ -25,6 +25,7 @@ func FuzzExtractAttrTokens(f *testing.F) {
 		raw = append(raw, toks.ExprTokens...)
 		raw = append(raw, toks.TrailTokens...)
 		body.SetAttributeRaw("a", raw)
+		body.AppendUnstructuredTokens(toks.PostTokens)
 		out := hclwrite.Format(body.BuildTokens(nil).Bytes())
 		_, diags = hclwrite.ParseConfig(out, "fuzz.hcl", hcl.InitialPos)
 		if diags.HasErrors() {

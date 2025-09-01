@@ -177,6 +177,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 	}
 
 	body.Clear()
+	body.AppendUnstructuredTokens(startTokens)
 	body.AppendUnstructuredTokens(prefixTokens)
 
 	canonicalOrderSet := map[string]struct{}{}
@@ -224,8 +225,10 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 			insertedValidation = true
 		}
 		if tok, ok := attrTokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.PreTokens)
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
+			body.AppendUnstructuredTokens(tok.PostTokens)
 		}
 	}
 	if !insertedValidation && validationPos != -1 {
@@ -255,8 +258,10 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 
 	for _, name := range unknown {
 		if tok, ok := attrTokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.PreTokens)
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
+			body.AppendUnstructuredTokens(tok.PostTokens)
 		}
 	}
 

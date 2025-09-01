@@ -30,6 +30,62 @@ func ExtractAttrTokens(attr *hclwrite.Attribute, pre hclwrite.Tokens) AttrTokens
 			trail = append(trail, last)
 			expr = expr[:n-1]
 		}
+		if depth == 0 && tok.Type == hclsyntax.TokenIdent {
+			name := string(tok.Bytes)
+			attr, ok := attrs[name]
+			if ok && i+1 < len(tokens) && tokens[i+1].Type == hclsyntax.TokenEqual {
+				attrToks := attr.BuildTokens(nil)
+				leadCount := 0
+				for leadCount < len(attrToks) && attrToks[leadCount].Type == hclsyntax.TokenComment {
+					leadCount++
+				}
+				lead := attrToks[:leadCount]
+				expr := attrToks[leadCount+2:]
+				if n := len(expr); n > 0 {
+					last := expr[n-1]
+					if last.Type == hclsyntax.TokenNewline {
+						expr = expr[:n-1]
+					} else if last.Type == hclsyntax.TokenComment {
+						b := last.Bytes
+						if len(b) > 0 && b[len(b)-1] == '\n' {
+							expr[n-1] = &hclwrite.Token{Type: hclsyntax.TokenComment, Bytes: b[:len(b)-1]}
+						}
+					}
+				}
+
+				attrStart := i - leadCount
+				between := tokens[cursor:attrStart]
+				split := len(between)
+				for split > 0 && between[split-1].Type == hclsyntax.TokenNewline {
+					split--
+				}
+				prevPost := between[:split]
+				pre := between[split:]
+				if split == 0 {
+					prevPost = between
+					pre = nil
+				}
+				if prev != "" {
+					at := res[prev]
+					at.PostTokens = append(at.PostTokens, prevPost...)
+					res[prev] = at
+				} else {
+					start = prevPost
+				}
+				res[name] = AttrTokens{PreTokens: pre, LeadTokens: lead, ExprTokens: expr}
+				prev = name
+				cursor = attrStart + len(attrToks)
+				i = cursor - 1
+				continue
+			}
+		}
+	}
+	if prev != "" {
+		at := res[prev]
+		at.PostTokens = append(at.PostTokens, tokens[cursor:]...)
+		res[prev] = at
+	} else if cursor < len(tokens) {
+		start = append(start, tokens[cursor:]...)
 	}
 	return AttrTokens{PreTokens: pre, LeadTokens: lead, ExprTokens: expr, TrailTokens: trail}
 }
