@@ -44,21 +44,41 @@ func schemaAwareOrder(block *hclwrite.Block, opts *Options) error {
 		return reorderBlock(block, order)
 	}
 
-	var req, opt, comp, unk []string
+	reqSet := map[string]struct{}{}
+	optSet := map[string]struct{}{}
+	compSet := map[string]struct{}{}
+	var unk []string
 	for _, name := range rest {
 		if _, ok := opts.Schema.Required[name]; ok {
-			req = append(req, name)
+			reqSet[name] = struct{}{}
 			continue
 		}
 		if _, ok := opts.Schema.Optional[name]; ok {
-			opt = append(opt, name)
+			optSet[name] = struct{}{}
 			continue
 		}
 		if _, ok := opts.Schema.Computed[name]; ok {
-			comp = append(comp, name)
+			compSet[name] = struct{}{}
 			continue
 		}
 		unk = append(unk, name)
+	}
+
+	var req, opt, comp []string
+	for _, n := range opts.Schema.RequiredOrder {
+		if _, ok := reqSet[n]; ok {
+			req = append(req, n)
+		}
+	}
+	for _, n := range opts.Schema.OptionalOrder {
+		if _, ok := optSet[n]; ok {
+			opt = append(opt, n)
+		}
+	}
+	for _, n := range opts.Schema.ComputedOrder {
+		if _, ok := compSet[n]; ok {
+			comp = append(comp, n)
+		}
 	}
 
 	order := append(metaAttrs, req...)

@@ -19,18 +19,35 @@ const sample = `{
         "test_thing": {
           "block": {
             "attributes": {
-              "foo": {"required": true},
-              "bar": {"optional": true},
-              "baz": {"computed": true}
+              "r1": {"required": true},
+              "r2": {"required": true},
+              "o1": {"optional": true},
+              "o2": {"optional": true},
+              "c1": {"computed": true},
+              "c2": {"computed": true}
+            },
+            "block_types": {
+              "first": {
+                "block": {
+                  "attributes": {"x": {"required": true}}
+                }
+              },
+              "second": {
+                "block": {
+                  "attributes": {"y": {"optional": true}}
+                }
+              }
             }
           }
         }
-      },
-      "data_source_schemas": {
-        "test_data": {
+      }
+    },
+    "registry.terraform.io/acme/test": {
+      "resource_schemas": {
+        "test_thing": {
           "block": {
             "attributes": {
-              "id": {"computed": true}
+              "foo": {"required": true}
             }
           }
         }
@@ -44,21 +61,23 @@ func TestLoad(t *testing.T) {
 	schemas, err := Load(r)
 	require.NoError(t, err)
 
-	s, ok := schemas["test_thing"]
+	k1 := "registry.terraform.io/hashicorp/test/test_thing"
+	s, ok := schemas[k1]
 	require.True(t, ok)
-	_, req := s.Required["foo"]
-	require.True(t, req)
-	_, opt := s.Optional["bar"]
-	require.True(t, opt)
-	_, comp := s.Computed["baz"]
-	require.True(t, comp)
-	_, meta := s.Meta["provider"]
-	require.True(t, meta)
+	require.Equal(t, []string{"r1", "r2"}, s.RequiredOrder)
+	require.Equal(t, []string{"o1", "o2"}, s.OptionalOrder)
+	require.Equal(t, []string{"c1", "c2"}, s.ComputedOrder)
+	require.Equal(t, []string{"first", "second"}, s.BlocksOrder)
+	first, ok := s.Blocks["first"]
+	require.True(t, ok)
+	require.Equal(t, []string{"x"}, first.RequiredOrder)
+	second, ok := s.Blocks["second"]
+	require.True(t, ok)
+	require.Equal(t, []string{"y"}, second.OptionalOrder)
 
-	ds, ok := schemas["test_data"]
+	k2 := "registry.terraform.io/acme/test/test_thing"
+	_, ok = schemas[k2]
 	require.True(t, ok)
-	_, comp2 := ds.Computed["id"]
-	require.True(t, comp2)
 }
 
 func TestFromTerraformCaching(t *testing.T) {

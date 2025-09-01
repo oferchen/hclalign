@@ -21,12 +21,14 @@ func Load(r io.Reader) (map[string]*align.Schema, error) {
 		return nil, err
 	}
 	result := make(map[string]*align.Schema)
-	for _, ps := range root.ProviderSchemas {
+	for prov, ps := range root.ProviderSchemas {
 		for typ, s := range ps.ResourceSchemas {
-			result[typ] = buildSchema(s.Block.Attributes)
+			key := prov + "/" + typ
+			result[key] = buildSchema(s.Block)
 		}
 		for typ, s := range ps.DataSourceSchemas {
-			result[typ] = buildSchema(s.Block.Attributes)
+			key := prov + "/" + typ
+			result[key] = buildSchema(s.Block)
 		}
 	}
 	return result, nil
@@ -46,7 +48,66 @@ type schemaBlock struct {
 }
 
 type block struct {
-	Attributes map[string]attribute `json:"attributes"`
+	Attributes orderedAttributes `json:"attributes"`
+	BlockTypes orderedBlockTypes `json:"block_types"`
+}
+
+type orderedAttributes struct {
+	Order []string
+	Items map[string]attribute
+}
+
+func (o *orderedAttributes) UnmarshalJSON(data []byte) error {
+	o.Items = map[string]attribute{}
+	dec := json.NewDecoder(bytes.NewReader(data))
+	t, err := dec.Token()
+	if err != nil || t != json.Delim('{') {
+		return err
+	}
+	for dec.More() {
+		tok, err := dec.Token()
+		if err != nil {
+			return err
+		}
+		key := tok.(string)
+		o.Order = append(o.Order, key)
+		var a attribute
+		if err := dec.Decode(&a); err != nil {
+			return err
+		}
+		o.Items[key] = a
+	}
+	_, err = dec.Token()
+	return err
+}
+
+type orderedBlockTypes struct {
+	Order []string
+	Items map[string]schemaBlock
+}
+
+func (o *orderedBlockTypes) UnmarshalJSON(data []byte) error {
+	o.Items = map[string]schemaBlock{}
+	dec := json.NewDecoder(bytes.NewReader(data))
+	t, err := dec.Token()
+	if err != nil || t != json.Delim('{') {
+		return err
+	}
+	for dec.More() {
+		tok, err := dec.Token()
+		if err != nil {
+			return err
+		}
+		key := tok.(string)
+		o.Order = append(o.Order, key)
+		var sb schemaBlock
+		if err := dec.Decode(&sb); err != nil {
+			return err
+		}
+		o.Items[key] = sb
+	}
+	_, err = dec.Token()
+	return err
 }
 
 type attribute struct {
@@ -55,22 +116,32 @@ type attribute struct {
 	Computed bool `json:"computed"`
 }
 
-func buildSchema(attrs map[string]attribute) *align.Schema {
+func buildSchema(b block) *align.Schema {
 	s := &align.Schema{
 		Required: map[string]struct{}{},
 		Optional: map[string]struct{}{},
 		Computed: map[string]struct{}{},
 		Meta:     map[string]struct{}{"count": {}, "for_each": {}, "provider": {}, "depends_on": {}},
+		Blocks:   map[string]*align.Schema{},
 	}
-	for name, attr := range attrs {
+	for _, name := range b.Attributes.Order {
+		attr := b.Attributes.Items[name]
 		switch {
 		case attr.Required:
 			s.Required[name] = struct{}{}
+			s.RequiredOrder = append(s.RequiredOrder, name)
 		case attr.Optional:
 			s.Optional[name] = struct{}{}
+			s.OptionalOrder = append(s.OptionalOrder, name)
 		case attr.Computed:
 			s.Computed[name] = struct{}{}
+			s.ComputedOrder = append(s.ComputedOrder, name)
 		}
+	}
+	for _, name := range b.BlockTypes.Order {
+		sb := b.BlockTypes.Items[name]
+		s.BlocksOrder = append(s.BlocksOrder, name)
+		s.Blocks[name] = buildSchema(sb.Block)
 	}
 	return s
 }

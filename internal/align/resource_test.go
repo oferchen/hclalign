@@ -26,10 +26,13 @@ func TestSchemaAwareOrder(t *testing.T) {
 	require.False(t, diags.HasErrors())
 
 	sch := &alignpkg.Schema{
-		Required: map[string]struct{}{"foo": {}},
-		Optional: map[string]struct{}{"bar": {}},
-		Computed: map[string]struct{}{"baz": {}},
-		Meta:     map[string]struct{}{"provider": {}, "depends_on": {}, "count": {}, "for_each": {}},
+		Required:      map[string]struct{}{"foo": {}},
+		Optional:      map[string]struct{}{"bar": {}},
+		Computed:      map[string]struct{}{"baz": {}},
+		Meta:          map[string]struct{}{"provider": {}, "depends_on": {}, "count": {}, "for_each": {}},
+		RequiredOrder: []string{"foo"},
+		OptionalOrder: []string{"bar"},
+		ComputedOrder: []string{"baz"},
 	}
 	schemas := map[string]*alignpkg.Schema{"test_thing": sch}
 
@@ -134,10 +137,13 @@ func TestLifecycleProvisionerOrder(t *testing.T) {
 	require.False(t, diags.HasErrors())
 
 	sch := &alignpkg.Schema{
-		Required: map[string]struct{}{"foo": {}},
-		Optional: map[string]struct{}{"bar": {}},
-		Computed: map[string]struct{}{"baz": {}},
-		Meta:     map[string]struct{}{"provider": {}, "depends_on": {}, "count": {}, "for_each": {}},
+		Required:      map[string]struct{}{"foo": {}},
+		Optional:      map[string]struct{}{"bar": {}},
+		Computed:      map[string]struct{}{"baz": {}},
+		Meta:          map[string]struct{}{"provider": {}, "depends_on": {}, "count": {}, "for_each": {}},
+		RequiredOrder: []string{"foo"},
+		OptionalOrder: []string{"bar"},
+		ComputedOrder: []string{"baz"},
 	}
 	schemas := map[string]*alignpkg.Schema{"test_thing": sch}
 
