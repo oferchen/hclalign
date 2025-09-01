@@ -3,6 +3,7 @@ package terraformfmt
 
 import (
 	"context"
+	"log"
 	"os/exec"
 	"sync"
 
@@ -27,5 +28,6 @@ func Run(ctx context.Context, src []byte) ([]byte, internalfs.Hints, error) {
 	if terraformBinary() != "" {
 		return formatBinary(ctx, src)
 	}
+	log.Printf("terraform binary not found; using Go formatter")
 	return formatter.Format(src, "")
 }
