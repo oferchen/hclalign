@@ -156,9 +156,8 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 		}
 	}
 
-	attrTokensMap := make(map[string]ihcl.AttrTokens)
-	for name, attr := range attrs {
-		at := ihcl.ExtractAttrTokens(attr)
+	attrTokensMap, startTokens := ihcl.ExtractAttrTokens(body, attrs)
+	for name, at := range attrTokensMap {
 		if extra, ok := attrExtraLead[name]; ok {
 			at.LeadTokens = append(extra, at.LeadTokens...)
 		}
@@ -177,6 +176,7 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 	}
 
 	body.Clear()
+	body.AppendUnstructuredTokens(startTokens)
 	body.AppendUnstructuredTokens(prefixTokens)
 
 	canonicalOrderSet := map[string]struct{}{}
@@ -224,8 +224,10 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 			insertedValidation = true
 		}
 		if tok, ok := attrTokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.PreTokens)
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
+			body.AppendUnstructuredTokens(tok.PostTokens)
 		}
 	}
 	if !insertedValidation && validationPos != -1 {
@@ -255,8 +257,10 @@ func reorderVariableBlock(block *hclwrite.Block, order []string, canonicalOrder 
 
 	for _, name := range unknown {
 		if tok, ok := attrTokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.PreTokens)
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
+			body.AppendUnstructuredTokens(tok.PostTokens)
 		}
 	}
 

@@ -20,10 +20,7 @@ func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	newline := ihcl.DetectLineEnding(tokens)
 	trailingComma := ihcl.HasTrailingComma(tokens)
 
-	attrTokens := make(map[string]ihcl.AttrTokens, len(attrs))
-	for name, attr := range attrs {
-		attrTokens[name] = ihcl.ExtractAttrTokens(attr)
-	}
+	attrTokens, startTokens := ihcl.ExtractAttrTokens(body, attrs)
 	blocks := body.Blocks()
 
 	type segment struct {
@@ -75,6 +72,7 @@ func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 		body.RemoveBlock(b)
 	}
 	body.Clear()
+	body.AppendUnstructuredTokens(startTokens)
 
 	if len(segments) > 0 {
 		body.AppendUnstructuredTokens(hclwrite.Tokens{
@@ -94,8 +92,10 @@ func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 		ordered := orderModuleAttrs(seg.attrs, canonical)
 		for _, name := range ordered {
 			tok := attrTokens[name]
+			body.AppendUnstructuredTokens(tok.PreTokens)
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
+			body.AppendUnstructuredTokens(tok.PostTokens)
 		}
 	}
 
@@ -105,10 +105,15 @@ func (moduleStrategy) Align(block *hclwrite.Block, _ *Options) error {
 		})
 	}
 	toks := body.BuildTokens(nil)
-	if len(toks) > 0 && toks[len(toks)-1].Type != hclsyntax.TokenNewline {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
+	if len(toks) > 0 {
+		last := toks[len(toks)-1]
+		if last.Type != hclsyntax.TokenNewline {
+			if last.Type != hclsyntax.TokenComment || (len(last.Bytes) > 0 && last.Bytes[len(last.Bytes)-1] != '\n') {
+				body.AppendUnstructuredTokens(hclwrite.Tokens{
+					&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
+				})
+			}
+		}
 	}
 	return nil
 }

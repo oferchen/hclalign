@@ -23,9 +23,8 @@ func (terraformStrategy) Align(block *hclwrite.Block, _ *Options) error {
 
 	order := ihcl.AttributeOrder(body, attrs)
 
-	attrTokens := map[string]ihcl.AttrTokens{}
-	for name, attr := range attrs {
-		attrTokens[name] = ihcl.ExtractAttrTokens(attr)
+	attrTokens, startTokens := ihcl.ExtractAttrTokens(body, attrs)
+	for name := range attrs {
 		body.RemoveAttribute(name)
 	}
 
@@ -92,20 +91,21 @@ func (terraformStrategy) Align(block *hclwrite.Block, _ *Options) error {
 	}
 
 	body.Clear()
-	if len(items) > 0 {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
-	}
+	body.AppendUnstructuredTokens(startTokens)
 	for _, it := range items {
 		if it.isAttr {
 			tok := attrTokens[it.name]
+			body.AppendUnstructuredTokens(tok.PreTokens)
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(it.name, tok.ExprTokens)
+			body.AppendUnstructuredTokens(tok.PostTokens)
 		} else {
-			body.AppendUnstructuredTokens(hclwrite.Tokens{
-				&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-			})
+			toks := body.BuildTokens(nil)
+			if len(toks) == 0 || toks[len(toks)-1].Type != hclsyntax.TokenNewline {
+				body.AppendUnstructuredTokens(hclwrite.Tokens{
+					&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
+				})
+			}
 			body.AppendBlock(it.block)
 		}
 	}
@@ -115,10 +115,15 @@ func (terraformStrategy) Align(block *hclwrite.Block, _ *Options) error {
 		})
 	}
 	toks := body.BuildTokens(nil)
-	if len(toks) > 0 && toks[len(toks)-1].Type != hclsyntax.TokenNewline {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
+	if len(toks) > 0 {
+		last := toks[len(toks)-1]
+		if last.Type != hclsyntax.TokenNewline {
+			if last.Type != hclsyntax.TokenComment || (len(last.Bytes) > 0 && last.Bytes[len(last.Bytes)-1] != '\n') {
+				body.AppendUnstructuredTokens(hclwrite.Tokens{
+					&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
+				})
+			}
+		}
 	}
 	return nil
 }

@@ -16,10 +16,7 @@ func reorderBlock(block *hclwrite.Block, order []string) error {
 	newline := ihcl.DetectLineEnding(tokens)
 	trailingComma := ihcl.HasTrailingComma(tokens)
 
-	attrTokensMap := map[string]ihcl.AttrTokens{}
-	for name, attr := range attrs {
-		attrTokensMap[name] = ihcl.ExtractAttrTokens(attr)
-	}
+	attrTokensMap, startTokens := ihcl.ExtractAttrTokens(body, attrs)
 
 	for name := range attrs {
 		body.RemoveAttribute(name)
@@ -29,21 +26,22 @@ func reorderBlock(block *hclwrite.Block, order []string) error {
 	}
 
 	body.Clear()
-	if len(order) > 0 || len(nestedBlocks) > 0 {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
-	}
+	body.AppendUnstructuredTokens(startTokens)
 	for _, name := range order {
 		if tok, ok := attrTokensMap[name]; ok {
+			body.AppendUnstructuredTokens(tok.PreTokens)
 			body.AppendUnstructuredTokens(tok.LeadTokens)
 			body.SetAttributeRaw(name, tok.ExprTokens)
+			body.AppendUnstructuredTokens(tok.PostTokens)
 		}
 	}
 	for _, nb := range nestedBlocks {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
+		toks := body.BuildTokens(nil)
+		if len(toks) == 0 || toks[len(toks)-1].Type != hclsyntax.TokenNewline {
+			body.AppendUnstructuredTokens(hclwrite.Tokens{
+				&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
+			})
+		}
 		body.AppendBlock(nb)
 	}
 	if trailingComma && (len(order) > 0 || len(nestedBlocks) > 0) {
@@ -52,10 +50,15 @@ func reorderBlock(block *hclwrite.Block, order []string) error {
 		})
 	}
 	toks := body.BuildTokens(nil)
-	if len(toks) > 0 && toks[len(toks)-1].Type != hclsyntax.TokenNewline {
-		body.AppendUnstructuredTokens(hclwrite.Tokens{
-			&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
-		})
+	if len(toks) > 0 {
+		last := toks[len(toks)-1]
+		if last.Type != hclsyntax.TokenNewline {
+			if last.Type != hclsyntax.TokenComment || (len(last.Bytes) > 0 && last.Bytes[len(last.Bytes)-1] != '\n') {
+				body.AppendUnstructuredTokens(hclwrite.Tokens{
+					&hclwrite.Token{Type: hclsyntax.TokenNewline, Bytes: newline},
+				})
+			}
+		}
 	}
 	return nil
 }
