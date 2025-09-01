@@ -28,6 +28,15 @@ func TestParseConfigFollowSymlinks(t *testing.T) {
 	require.True(t, cfg.FollowSymlinks)
 }
 
+func TestParseConfigSchemaCache(t *testing.T) {
+	cmd := newRootCmd(true)
+	require.NoError(t, cmd.ParseFlags([]string{"--schema-cache", "path", "--no-schema-cache"}))
+	cfg, err := parseConfig(cmd, []string{"target"})
+	require.NoError(t, err)
+	require.Equal(t, "path", cfg.SchemaCache)
+	require.True(t, cfg.NoSchemaCache)
+}
+
 func TestParseConfigTargetWithStdin(t *testing.T) {
 	cmd := newRootCmd(true)
 	require.NoError(t, cmd.ParseFlags([]string{"--stdin", "--stdout"}))

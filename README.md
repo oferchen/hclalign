@@ -76,8 +76,11 @@ hclalign . --types module --order value,description,type
 
 Resource and data blocks can be ordered according to provider schemas. Supply a
 schema file via `--providers-schema` or let `hclalign` invoke `terraform
-providers schema -json` by passing `--use-terraform-schema`. Unknown attributes
-keep their original order.
+providers schema -json` by passing `--use-terraform-schema`. When Terraform is
+invoked, schemas are cached under `--schema-cache` (default
+`.terraform/schema-cache`) using a key derived from the Terraform version,
+provider versions, and module path. Disable caching with
+`--no-schema-cache`. Unknown attributes keep their original order.
 
 ## CLI Flags
 
@@ -93,6 +96,8 @@ By default `hclalign` rewrites files in place. The following flags adjust this b
 - `--concurrency`: maximum parallel file processing
 - `--providers-schema`: path to a provider schema JSON file
 - `--use-terraform-schema`: derive schema via `terraform providers schema -json`
+- `--schema-cache`: directory for Terraform schema cache
+- `--no-schema-cache`: disable Terraform schema caching
 - `--types`: comma-separated list of block types to align (defaults to `variable`)
 - `--all`: align all supported block types (mutually exclusive with `--types`)
 

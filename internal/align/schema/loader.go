@@ -4,12 +4,16 @@ package schema
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/oferchen/hclalign/internal/align"
 )
@@ -157,23 +161,56 @@ func LoadFile(path string) (map[string]*align.Schema, error) {
 
 var execCommandContext = exec.CommandContext
 
-func FromTerraform(ctx context.Context, cachePath string) (map[string]*align.Schema, error) {
-	if b, err := os.ReadFile(cachePath); err == nil {
-		return Load(bytes.NewReader(b))
-	} else if !os.IsNotExist(err) {
-		return nil, err
+func cacheKey(ctx context.Context, modulePath string) (string, error) {
+	cmd := execCommandContext(ctx, "terraform", "version", "-json")
+	cmd.Dir = modulePath
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("terraform version: %w", err)
+	}
+	var v struct {
+		TerraformVersion   string `json:"terraform_version"`
+		ProviderSelections map[string]struct {
+			Version string `json:"version"`
+		} `json:"provider_selections"`
+	}
+	if err := json.Unmarshal(out, &v); err != nil {
+		return "", err
+	}
+	providers := make([]string, 0, len(v.ProviderSelections))
+	for name, sel := range v.ProviderSelections {
+		providers = append(providers, name+"@"+sel.Version)
+	}
+	sort.Strings(providers)
+	sum := sha256.Sum256([]byte(v.TerraformVersion + "|" + strings.Join(providers, ",") + "|" + modulePath))
+	return hex.EncodeToString(sum[:]), nil
+}
+
+func FromTerraform(ctx context.Context, cacheDir, modulePath string, noCache bool) (map[string]*align.Schema, error) {
+	var cachePath string
+	if !noCache {
+		key, err := cacheKey(ctx, modulePath)
+		if err != nil {
+			return nil, err
+		}
+		cachePath = filepath.Join(cacheDir, key+".json")
+		if b, err := os.ReadFile(cachePath); err == nil {
+			return Load(bytes.NewReader(b))
+		} else if err != nil && !os.IsNotExist(err) {
+			return nil, err
+		}
 	}
 
 	cmd := execCommandContext(ctx, "terraform", "providers", "schema", "-json")
+	cmd.Dir = modulePath
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("terraform providers schema: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err != nil {
-		return nil, err
-	}
-	if err := os.WriteFile(cachePath, out, 0o644); err != nil {
-		return nil, err
+	if !noCache && cachePath != "" {
+		if err := os.MkdirAll(filepath.Dir(cachePath), 0o755); err == nil {
+			_ = os.WriteFile(cachePath, out, 0o644)
+		}
 	}
 	return Load(bytes.NewReader(out))
 }
